@@ -1,13 +1,15 @@
 README will be edited upon as we plow through this adventure.
-We shall see where this will be us : )
+We shall see where this will bring us : )
 
 ## Examples
-It might look something like this in the future. Who knows.
+It might look like something like this in the future. Who knows.
 
 ```
 lumi>1 to 5 every (*2)
 [2, 4, 6, 8, 10]
 ```
+
+- The goal is to add as much syntax sugar and quality-of-life stuff as possible.
 
 ## Features?
 * Dynamically typed 
@@ -16,6 +18,10 @@ lumi>1 to 5 every (*2)
 * Lists `[a, b, c]`
 * Dictionaries `{a, b, c }`
 * For loops `for (a -> b)`
+
+
+
+### notes for self
 
 ## flow
 * prompt for code, execute after enter   
