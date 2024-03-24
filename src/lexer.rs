@@ -36,6 +36,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    // TODO: strings
+    // TODO: when error occurs in Token we stop?
+    // after a . a digit has to be present or else it's invalid
+    // 2..3 is not valid
+    // 2.,3 is not valid
+    // 2.3 is valid
     pub fn lex(&mut self) -> Vec<Token> {
         while let Some(c) = self.next() {
             match c {
