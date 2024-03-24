@@ -1,4 +1,4 @@
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Float(f64),
     Int(i32),
@@ -9,6 +9,10 @@ pub enum Token {
     RightBrace,
     LeftBracket,
     RightBracket,
+    Plus,
+    Minus,
+    Star,
+    Slash,
     Nil,
     And,
     Or,
@@ -16,6 +20,7 @@ pub enum Token {
     While,
     If,
     Else,
+    To,
     Return,
     Invalid(String),
     Eof,
@@ -24,7 +29,7 @@ pub enum Token {
 pub struct Lexer<'a> {
     code: std::iter::Peekable<std::str::Chars<'a>>,
     line: i8,
-    tokens: Vec<Token>,
+    pub tokens: Vec<Token>,
 }
 
 impl<'a> Lexer<'a> {
@@ -39,14 +44,19 @@ impl<'a> Lexer<'a> {
     // TODO: strings
     // TODO: when error occurs in Token we stop?
     // after a . a digit has to be present or else it's invalid
-    // 2..3 is not valid
-    // 2.,3 is not valid
-    // 2.3 is valid
-    pub fn lex(&mut self) -> Vec<Token> {
+    pub fn lex(&mut self) {
         while let Some(c) = self.next() {
             match c {
+                '\n' => {
+                    self.line += 1;
+                    self.next();
+                }
                 '(' => self.emit(Token::LeftBrace),
                 ')' => self.emit(Token::RightBrace),
+                '+' => self.emit(Token::Plus),
+                '-' => self.emit(Token::Minus),
+                '*' => self.emit(Token::Star),
+                '/' => self.emit(Token::Slash),
                 c => {
                     if c.is_whitespace() {
                         // skip
@@ -61,11 +71,20 @@ impl<'a> Lexer<'a> {
                         if self.peek() == Some(&'.') {
                             number_string.push('.');
                             self.next();
-                            while let Some(number) = self.peek().filter(|d| d.is_digit(10)) {
-                                number_string.push(*number);
-                                self.next();
+
+                            match self.peek() {
+                                Some(&c) if c.is_digit(10) => {
+                                    while let Some(number) = self.peek().filter(|d| d.is_digit(10))
+                                    {
+                                        number_string.push(*number);
+                                        self.next();
+                                    }
+                                    self.try_emit_float(number_string);
+                                }
+                                // TODO: better error handling here
+                                Some(_) => panic!("Has to be a digit"),
+                                None => panic!("Has to be a digit."),
                             }
-                            self.try_emit_float(number_string);
                         } else {
                             // emit int
                             self.try_emit_int(number_string);
@@ -74,8 +93,6 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
-        // prevent error
-        Vec::new()
     }
 
     fn emit(&mut self, token: Token) {

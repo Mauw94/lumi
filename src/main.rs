@@ -27,6 +27,7 @@ fn repl() {
         println!("{}", input);
         let mut lexer = Lexer::new(&input);
         lexer.lex();
+        println!("{:?}", lexer.tokens);
     }
 }
 
