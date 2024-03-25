@@ -10,7 +10,7 @@ pub mod lexer;
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
-    print!("> ");
+    print!("lumi> ");
     if stdout().flush().is_err() {
         return false;
     }
