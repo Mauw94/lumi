@@ -2,7 +2,8 @@
 pub enum Token {
     Float(f64),
     Int(i32),
-    String,
+    String(String),
+    Identifier(String),
     LeftParen,
     RightParen,
     LeftBrace,
@@ -54,6 +55,7 @@ impl<'a> Lexer<'a> {
     }
 
     // TODO: strings
+    // TODO: look for keywords
     // TODO: when error occurs in Token we stop?
     pub fn lex(&mut self) {
         while let Some(c) = self.next() {
@@ -143,6 +145,11 @@ impl<'a> Lexer<'a> {
                         self.emit(Token::Slash);
                     }
                     self.next();
+                }
+                '"' => {
+                    // TODO: check until another " is found, that'll be a string value
+                    // when no " is found throw error for unterminated string
+                    // check error handling in jlox
                 }
                 c => {
                     if c.is_whitespace() {
