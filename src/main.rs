@@ -24,7 +24,6 @@ fn prompt(input: &mut String) -> bool {
 fn repl() {
     let mut input = String::new();
     while prompt(&mut input) {
-        println!("{}", input);
         let mut lexer = Lexer::new(&input);
         lexer.lex();
         println!("{:?}", lexer.tokens);
