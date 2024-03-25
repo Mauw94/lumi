@@ -79,10 +79,6 @@ impl<'a> Lexer<'a> {
                 '-' => self.emit(Token::Minus),
                 '*' => self.emit(Token::Star),
                 '=' => {
-                    if self.is_at_end() {
-                        self.emit(Token::Eof);
-                        break;
-                    }
                     if self.check_next_is_equal('=') {
                         self.emit(Token::EqualEqual);
                     } else {
@@ -91,10 +87,7 @@ impl<'a> Lexer<'a> {
                     self.next();
                 }
                 '!' => {
-                    if self.is_at_end() {
-                        self.emit(Token::Eof);
-                        break;
-                    }
+
                     if self.check_next_is_equal('=') {
                         self.emit(Token::BangEqual);
                     } else {
@@ -103,10 +96,6 @@ impl<'a> Lexer<'a> {
                     self.next();
                 }
                 '<' => {
-                    if self.is_at_end() {
-                        self.emit(Token::Eof);
-                        break;
-                    }
                     if self.check_next_is_equal('=') {
                         self.emit(Token::LessEqual);
                     } else {
@@ -115,10 +104,6 @@ impl<'a> Lexer<'a> {
                     self.next();
                 }
                 '>' => {
-                    if self.is_at_end() {
-                        self.emit(Token::Eof);
-                        break;
-                    }
                     if self.check_next_is_equal('=') {
                         self.emit(Token::GreaterEqual);
                     } else {
@@ -127,9 +112,6 @@ impl<'a> Lexer<'a> {
                     self.next();
                 }
                 '/' => {
-                    if self.is_at_end() {
-                        self.emit(Token::Eof);
-                    }
                     if self.check_next_is_equal('/') {
                         let mut rest_of_line: String = String::new();
                         self.next();
