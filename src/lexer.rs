@@ -81,35 +81,34 @@ impl<'a> Lexer<'a> {
                 '=' => {
                     if self.check_next_is_equal('=') {
                         self.emit(Token::EqualEqual);
+                        self.next();
                     } else {
                         self.emit(Token::Equal);
                     }
-                    self.next();
                 }
                 '!' => {
-
                     if self.check_next_is_equal('=') {
                         self.emit(Token::BangEqual);
+                        self.next();
                     } else {
                         self.emit(Token::Bang);
                     }
-                    self.next();
                 }
                 '<' => {
                     if self.check_next_is_equal('=') {
                         self.emit(Token::LessEqual);
+                        self.next();
                     } else {
                         self.emit(Token::Less);
                     }
-                    self.next();
                 }
                 '>' => {
                     if self.check_next_is_equal('=') {
                         self.emit(Token::GreaterEqual);
+                        self.next();
                     } else {
                         self.emit(Token::Greater);
                     }
-                    self.next();
                 }
                 '/' => {
                     if self.check_next_is_equal('/') {
@@ -323,6 +322,30 @@ mod tests {
         let found_tokens = filter_tokens(tokens, &Token::EqualEqual);
 
         assert_eq!(found_tokens[0], Token::EqualEqual);
+    }
+
+    #[test]
+    fn test_multiple_tokens() {
+        let input: String = String::from("(-*><=.,;\n");
+        let tokens = setup(input.clone());
+
+        let left_parent = filter_tokens(tokens.clone(), &Token::LeftParen);
+        let minus = filter_tokens(tokens.clone(), &Token::Minus);
+        let star = filter_tokens(tokens.clone(), &Token::Star);
+        let greater = filter_tokens(tokens.clone(), &Token::Greater);
+        let less_equal = filter_tokens(tokens.clone(), &Token::LessEqual);
+        let dot = filter_tokens(tokens.clone(), &Token::Dot);
+        let comma = filter_tokens(tokens.clone(), &Token::Comma);
+        let semicolon = filter_tokens(tokens.clone(), &Token::Semicolon);
+
+        assert_eq!(left_parent[0], Token::LeftParen);
+        assert_eq!(minus[0], Token::Minus);
+        assert_eq!(star[0], Token::Star);
+        assert_eq!(greater[0], Token::Greater);
+        assert_eq!(less_equal[0], Token::LessEqual);
+        assert_eq!(dot[0], Token::Dot);
+        assert_eq!(comma[0], Token::Comma);
+        assert_eq!(semicolon[0], Token::Semicolon);
     }
 
     fn setup(input: String) -> Vec<Token> {
