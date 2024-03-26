@@ -364,6 +364,28 @@ mod tests {
     }
 
     #[test]
+    fn test_multiple_strings() {
+        let test_string = "test1";
+        let test_string2 = "test2";
+        let input: String = String::from("\"") + test_string + "\"" + "\"" + test_string2 + "\"";
+        let tokens = setup(input.clone());
+
+        assert_eq!(tokens[0], Token::String(test_string.to_string()));
+        assert_eq!(tokens[1], Token::String(test_string2.to_string()));
+    }
+
+    #[test]
+    fn test_int_float_string() {
+        let test_string = "test";
+        let input: String = String::from("\"") + test_string + "\"" + "34 434.21";
+        let tokens = setup(input.clone());
+
+        assert_eq!(tokens[0], Token::String(test_string.to_string()));
+        assert_eq!(tokens[1], Token::Int(34));
+        assert_eq!(tokens[2], Token::Float(434.21));
+    }
+
+    #[test]
     fn test_multiple_tokens() {
         let input: String = String::from("(-*><=.,;\n");
         let tokens = setup(input.clone());
