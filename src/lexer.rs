@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crate::core::LErr;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -36,6 +38,11 @@ pub enum Token {
     Else,
     To,
     Return,
+    True,
+    False,
+    Fun,
+    Print,
+    Var,
     Comment(String),
     Invalid(String),
     Eof,
@@ -56,7 +63,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    // TODO: strings
     // TODO: look for keywords
     pub fn lex(&mut self) -> Result<Vec<Token>, LErr> {
         while let Some(c) = self.next() {
@@ -132,10 +138,27 @@ impl<'a> Lexer<'a> {
                     Ok(_) => {}
                     Err(e) => return Err(e),
                 },
-                c => match self.number(c) {
-                    Ok(_) => {}
-                    Err(e) => return Err(e),
-                },
+                c => {
+                    if c.is_alphabetic() {
+                        let mut keyword: String = String::new();
+                        keyword.push(c);
+                        while let Some(cc) = self.peek().filter(|x| x.is_alphabetic()) {
+                            keyword.push(*cc);
+                            self.next();
+                        }
+
+                        match self.identifier(&keyword) {
+                            Ok(_) => {}
+                            Err(e) => return Err(e),
+                        }
+                    }
+                    if c.is_digit(10) {
+                        match self.number(c) {
+                            Ok(_) => {}
+                            Err(e) => return Err(e),
+                        }
+                    }
+                }
             }
         }
 
@@ -246,6 +269,30 @@ impl<'a> Lexer<'a> {
 
         self.next();
         self.emit(Token::String(chars));
+        Ok(())
+    }
+
+    fn identifier(&mut self, keyword: &str) -> Result<(), LErr> {
+        let mut keywords = HashMap::new();
+        keywords.insert("and", Token::And);
+        keywords.insert("or", Token::Or);
+        keywords.insert("if", Token::If);
+        keywords.insert("else", Token::Else);
+        keywords.insert("false", Token::False);
+        keywords.insert("true", Token::True);
+        keywords.insert("fun", Token::Fun);
+        keywords.insert("nil", Token::Nil);
+        keywords.insert("print", Token::Print);
+        keywords.insert("return", Token::Return);
+        keywords.insert("var", Token::Var);
+        keywords.insert("while", Token::While);
+
+        if keywords.contains_key(keyword) {
+            self.emit(keywords[keyword].clone());
+        } else {
+            self.emit(Token::Identifier(keyword.to_string()));
+        }
+
         Ok(())
     }
 }
@@ -407,6 +454,18 @@ mod tests {
         assert_eq!(dot[0], Token::Dot);
         assert_eq!(comma[0], Token::Comma);
         assert_eq!(semicolon[0], Token::Semicolon);
+    }
+
+    #[test]
+    fn test_keywords() {
+        let input: String = String::from("and while var asd if");
+        let tokens = setup(input.clone());
+
+        assert_eq!(tokens[0], Token::And);
+        assert_eq!(tokens[1], Token::While);
+        assert_eq!(tokens[2], Token::Var);
+        assert_eq!(tokens[3], Token::Identifier(String::from("asd")));
+        assert_eq!(tokens[4], Token::If);
     }
 
     fn setup(input: String) -> Vec<Token> {
