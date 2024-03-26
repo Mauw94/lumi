@@ -59,13 +59,7 @@ impl<'a> Lexer<'a> {
     // TODO: strings
     // TODO: look for keywords
     pub fn lex(&mut self) -> Result<Vec<Token>, LErr> {
-        let mut error_occured: bool = false;
-        let mut error_message: String = String::new();
-
         while let Some(c) = self.next() {
-            if error_occured {
-                return Err(LErr::lexing_error(error_message.to_string(), self.line));
-            }
             if self.is_at_end() {
                 self.emit(Token::Eof);
                 break;
@@ -139,39 +133,10 @@ impl<'a> Lexer<'a> {
                     // when no " is found throw error for unterminated string
                     // check error handling in jlox
                 }
-                c => {
-                    if c.is_whitespace() {
-                        // skip
-                    } else if c.is_digit(10) {
-                        let mut number_string = c.to_string();
-
-                        while let Some(number) = self.peek().filter(|d| d.is_digit(10)) {
-                            number_string.push(*number);
-                            self.next();
-                        }
-                        if self.peek() == Some(&'.') {
-                            number_string.push('.');
-                            self.next();
-
-                            match self.peek() {
-                                Some(&c) if c.is_digit(10) => {
-                                    while let Some(number) = self.peek().filter(|d| d.is_digit(10))
-                                    {
-                                        number_string.push(*number);
-                                        self.next();
-                                    }
-                                    self.try_emit_float(number_string);
-                                }
-                                None | _ => {
-                                    error_message = String::from("A digit was expected");
-                                    error_occured = true;
-                                }
-                            }
-                        } else {
-                            self.try_emit_int(number_string);
-                        }
-                    }
-                }
+                c => match self.number(c) {
+                    Ok(_) => {}
+                    Err(e) => return Err(e),
+                },
             }
         }
 
@@ -227,6 +192,42 @@ impl<'a> Lexer<'a> {
 
     fn remove_r_n(&mut self, input: &str) -> String {
         input.chars().filter(|&c| c != '\r' && c != '\n').collect()
+    }
+
+    fn number(&mut self, c: char) -> Result<(), LErr> {
+        if c.is_whitespace() {
+            // skip
+        } else if c.is_digit(10) {
+            let mut number_string = c.to_string();
+
+            while let Some(number) = self.peek().filter(|d| d.is_digit(10)) {
+                number_string.push(*number);
+                self.next();
+            }
+            if self.peek() == Some(&'.') {
+                number_string.push('.');
+                self.next();
+
+                match self.peek() {
+                    Some(&c) if c.is_digit(10) => {
+                        while let Some(number) = self.peek().filter(|d| d.is_digit(10)) {
+                            number_string.push(*number);
+                            self.next();
+                        }
+                        self.try_emit_float(number_string);
+                    }
+                    None | _ => {
+                        return Err(LErr::lexing_error(
+                            String::from("A digit was expected."),
+                            self.line,
+                        ));
+                    }
+                }
+            } else {
+                self.try_emit_int(number_string);
+            }
+        }
+        Ok(())
     }
 }
 
