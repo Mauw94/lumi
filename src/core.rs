@@ -6,6 +6,10 @@ impl LErr {
         LErr(message, line)
     }
 
+    pub fn parsing_error(message: String, line: i8) -> Self {
+        LErr(message, line)
+    }
+
     pub fn render(self: LErr) {
         let LErr(message, line) = self;
         println!("Error occured on line [{}] '{}'", line, message);

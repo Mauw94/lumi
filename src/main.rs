@@ -3,11 +3,12 @@ use std::{
     io::{stdin, stdout, Write},
 };
 
-use crate::lexer::Lexer;
+use crate::{lexer::Lexer, parser::Parser};
 
 pub mod core;
 pub mod interpreter;
 pub mod lexer;
+pub mod parser;
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -27,7 +28,14 @@ fn repl() {
     while prompt(&mut input) {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
-            Ok(tokens) => println!("{:?}", tokens),
+            Ok(tokens) => {
+                println!("{:?}", tokens);
+                let mut p = Parser::new(tokens);
+                match p.expression() {
+                    Ok(expr) => println!("{:?}", expr),
+                    Err(e) => e.render(),
+                }
+            }
             Err(e) => e.render(),
         };
     }

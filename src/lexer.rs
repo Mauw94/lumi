@@ -5,7 +5,7 @@ use crate::core::LErr;
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Float(f64),
-    Int(i32),
+    Int(i64),
     String(String),
     Identifier(String),
     LeftParen,
@@ -182,7 +182,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn try_emit_int(&mut self, number_string: String) {
-        match number_string.parse::<i32>() {
+        match number_string.parse::<i64>() {
             Ok(f) => self.emit(Token::Int(f)),
             Err(e) => self.emit(Token::Invalid(format!(
                 "lexing: invalid token found: {}",
@@ -308,7 +308,7 @@ mod tests {
 
         assert_eq!(
             tokens[0],
-            Token::Int(input.parse::<i32>().expect("Expected valid int."))
+            Token::Int(input.parse::<i64>().expect("Expected valid int."))
         );
     }
 
