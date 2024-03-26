@@ -166,8 +166,6 @@ impl<'a> Lexer<'a> {
     }
 
     fn emit(&mut self, token: Token) {
-        // TODO: DEBUG flag so we only log when in debug
-        println!("Emitting token: {:?}", token);
         self.tokens.push(token);
     }
 
