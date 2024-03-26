@@ -1,3 +1,5 @@
+use crate::core::LErr;
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Float(f64),
@@ -56,9 +58,14 @@ impl<'a> Lexer<'a> {
 
     // TODO: strings
     // TODO: look for keywords
-    // TODO: when error occurs in Token we stop?
-    pub fn lex(&mut self) {
+    pub fn lex(&mut self) -> Result<Vec<Token>, LErr> {
+        let mut error_occured: bool = false;
+        let mut error_message: String = String::new();
+
         while let Some(c) = self.next() {
+            if error_occured {
+                return Err(LErr::lexing_error(error_message.to_string(), self.line));
+            }
             if self.is_at_end() {
                 self.emit(Token::Eof);
                 break;
@@ -155,9 +162,10 @@ impl<'a> Lexer<'a> {
                                     }
                                     self.try_emit_float(number_string);
                                 }
-                                // TODO: better error handling here
-                                Some(_) => panic!("Has to be a digit"),
-                                None => panic!("Has to be a digit."),
+                                None | _ => {
+                                    error_message = String::from("A digit was expected");
+                                    error_occured = true;
+                                }
                             }
                         } else {
                             self.try_emit_int(number_string);
@@ -166,6 +174,8 @@ impl<'a> Lexer<'a> {
                 }
             }
         }
+
+        Ok(self.tokens.clone())
     }
 
     fn emit(&mut self, token: Token) {
@@ -350,8 +360,7 @@ mod tests {
 
     fn setup(input: String) -> Vec<Token> {
         let mut lexer = Lexer::new(&input);
-        lexer.lex();
-        lexer.tokens
+        return lexer.lex().unwrap(); // We can safely expect that unit test cases to always return tokens here.
     }
 
     fn filter_tokens(tokens: Vec<Token>, tokens_to_find: &Token) -> Vec<Token> {

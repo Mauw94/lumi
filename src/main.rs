@@ -5,6 +5,7 @@ use std::{
 
 use crate::lexer::Lexer;
 
+pub mod core;
 pub mod interpreter;
 pub mod lexer;
 
@@ -25,8 +26,10 @@ fn repl() {
     let mut input = String::new();
     while prompt(&mut input) {
         let mut lexer = Lexer::new(&input);
-        lexer.lex();
-        println!("{:?}", lexer.tokens);
+        match lexer.lex() {
+            Ok(tokens) => println!("{:?}", tokens),
+            Err(e) => e.render(),
+        };
     }
 }
 
