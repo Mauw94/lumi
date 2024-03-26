@@ -45,7 +45,6 @@ impl Parser {
 
     fn advance(&mut self) -> Option<Token> {
         if !self.is_at_end() {
-            println!("increasing current");
             self.i += 1;
         }
         return self.previous();
@@ -56,7 +55,6 @@ impl Parser {
     }
 
     fn previous(&self) -> Option<Token> {
-        println!("{}", self.i);
         self.tokens.get(self.i - 1).cloned()
     }
 
@@ -80,7 +78,6 @@ impl Parser {
         }
 
         if self.peek() == Some(token.clone()) {
-            println!("token matched [{:?}]", token);
             return true;
         }
 

@@ -3,7 +3,7 @@ use std::{
     io::{stdin, stdout, Write},
 };
 
-use crate::{lexer::Lexer, parser::Parser};
+use crate::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
 
 pub mod core;
 pub mod interpreter;
@@ -29,10 +29,19 @@ fn repl() {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                println!("{:?}", tokens);
+                println!("tokens: {:?}", tokens);
                 let mut p = Parser::new(tokens);
                 match p.expression() {
-                    Ok(expr) => println!("tokens: {:?}", expr),
+                    Ok(expr) =>  {
+                        println!("expressions: {:?}", expr);
+                        let interpreter = Interpreter::new();
+                        match interpreter.eval(&expr) {
+                            Ok(x) => { 
+                                println!("result after eval: {:?}", x);
+                            },
+                            Err(e) => e.render()
+                        }
+                    }
                     Err(e) => e.render(),
                 }
             }
