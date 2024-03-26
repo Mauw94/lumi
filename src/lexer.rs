@@ -128,11 +128,10 @@ impl<'a> Lexer<'a> {
                     }
                     self.next();
                 }
-                '"' => {
-                    // TODO: check until another " is found, that'll be a string value
-                    // when no " is found throw error for unterminated string
-                    // check error handling in jlox
-                }
+                '"' => match self.string() {
+                    Ok(_) => {}
+                    Err(e) => return Err(e),
+                },
                 c => match self.number(c) {
                     Ok(_) => {}
                     Err(e) => return Err(e),
@@ -227,6 +226,26 @@ impl<'a> Lexer<'a> {
                 self.try_emit_int(number_string);
             }
         }
+        Ok(())
+    }
+
+    fn string(&mut self) -> Result<(), LErr> {
+        let mut chars: String = String::new();
+        while self.peek() != Some(&'"') && !self.is_at_end() {
+            let next_char = self.peek().unwrap();
+            chars.push(*next_char);
+            self.next();
+        }
+
+        if self.is_at_end() {
+            return Err(LErr::lexing_error(
+                String::from("Unterminated string."),
+                self.line,
+            ));
+        }
+
+        self.next();
+        self.emit(Token::String(chars));
         Ok(())
     }
 }
@@ -333,6 +352,15 @@ mod tests {
         let found_tokens = filter_tokens(tokens, &Token::EqualEqual);
 
         assert_eq!(found_tokens[0], Token::EqualEqual);
+    }
+
+    #[test]
+    fn test_string() {
+        let test_string = "test";
+        let input: String = String::from("\"") + test_string + "\"";
+        let tokens = setup(input.clone());
+
+        assert_eq!(tokens[0], Token::String(test_string.to_string()));
     }
 
     #[test]
