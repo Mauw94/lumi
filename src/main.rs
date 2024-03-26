@@ -32,7 +32,7 @@ fn repl() {
                 println!("{:?}", tokens);
                 let mut p = Parser::new(tokens);
                 match p.expression() {
-                    Ok(expr) => println!("{:?}", expr),
+                    Ok(expr) => println!("tokens: {:?}", expr),
                     Err(e) => e.render(),
                 }
             }

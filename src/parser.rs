@@ -21,7 +21,10 @@ pub enum Expr {
     Int(i64),
     Float(f64),
     Identifier(String),
+    Unary(Token, Box<Expr>),
+    Logical(Box<Expr>, Token, Box<Expr>),
     Binary(Box<Expr>, Token, Box<Expr>),
+    Var(Token),
     Assign(Box<Expr>, Box<Expr>),
     Sequence(Vec<Box<Expr>>),
 }
@@ -61,6 +64,16 @@ impl Parser {
         self.tokens.get(self.i).cloned()
     }
 
+    #[allow(dead_code)]
+    fn consume(&mut self, token: Token, _msg: String) {
+        if self.check(token) {
+            self.advance();
+        }
+
+        // throw error up e.g. Expect ')' after expression
+        // return Err(LErr::parsing_error(msg, 1));
+    }
+
     fn check(&self, token: Token) -> bool {
         if self.is_at_end() {
             return false;
@@ -75,7 +88,6 @@ impl Parser {
     }
 
     fn matcher(&mut self, tokens: &[Token]) -> bool {
-        println!("Matching tokens..");
         for token in tokens {
             if self.check(token.clone()) {
                 self.advance();
@@ -92,32 +104,60 @@ impl Parser {
                 self.advance();
                 return Ok(Expr::Int(value));
             }
+            Some(Token::Float(value)) => {
+                self.advance();
+                return Ok(Expr::Float(value));
+            }
+            Some(Token::Identifier(value)) => {
+                self.advance();
+                return Ok(Expr::Identifier(value));
+            }
             None | _ => return Err(LErr::parsing_error("Expect expression".to_string(), 1)),
         }
     }
 
     fn call(&mut self) -> Result<Expr, LErr> {
-        let expr = self.primary();
+        let expr = self.primary()?;
 
-        // TODO: logic
+        loop {
+            if self.matcher(&[Token::LeftParen]) {
+            } else if self.matcher(&[Token::Dot]) {
+            } else {
+                break;
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn unary(&mut self) -> Result<Expr, LErr> {
-        // let expr = self.or();
-
-        // TODO: logic
+        if self.matcher(&[Token::Bang, Token::Minus]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.unary()?;
+                    return Ok(Expr::Unary(op, Box::new(right)));
+                }
+                None => return Err(LErr::parsing_error("No operator was found.".to_string(), 1)),
+            }
+        }
 
         return self.call();
     }
 
     fn factor(&mut self) -> Result<Expr, LErr> {
-        let expr = self.unary();
+        let mut expr = self.unary()?;
 
-        // TODO: logic
+        while self.matcher(&[Token::Slash, Token::Star]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.unary()?;
+                    expr = Expr::Binary(Box::new(expr), op, Box::new(right));
+                }
+                None => return Err(LErr::parsing_error("No operator was found.".to_string(), 1)),
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn term(&mut self) -> Result<Expr, LErr> {
@@ -129,7 +169,7 @@ impl Parser {
                     let right = self.term()?;
                     expr = Expr::Binary(Box::new(expr), op, Box::new(right));
                 }
-                None | _ => return Err(LErr::parsing_error("Something kaput".to_string(), 1)),
+                None => return Err(LErr::parsing_error("No operator was found.".to_string(), 1)),
             }
         }
 
@@ -137,47 +177,116 @@ impl Parser {
     }
 
     fn comparison(&mut self) -> Result<Expr, LErr> {
-        let expr = self.term();
+        let mut expr = self.term()?;
 
-        // TODO: logic
+        while self.matcher(&[
+            Token::Greater,
+            Token::GreaterEqual,
+            Token::Less,
+            Token::LessEqual,
+        ]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.term()?;
+                    expr = Expr::Binary(Box::new(expr), op, Box::new(right));
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "No operator token found.".to_string(),
+                        1,
+                    ))
+                }
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn equality(&mut self) -> Result<Expr, LErr> {
-        let expr = self.comparison();
+        let mut expr = self.comparison()?;
 
-        // TODO: logic
+        while self.matcher(&[Token::BangEqual, Token::EqualEqual]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.comparison()?;
+                    expr = Expr::Binary(Box::new(expr), op, Box::new(right));
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "No operator token found.".to_string(),
+                        1,
+                    ))
+                }
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn and(&mut self) -> Result<Expr, LErr> {
-        let expr = self.equality();
+        let mut expr = self.equality()?;
 
-        // TODO: logic
+        while self.matcher(&[Token::And]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.equality()?;
+                    expr = Expr::Logical(Box::new(expr), op, Box::new(right));
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "No operator token found.".to_string(),
+                        1,
+                    ))
+                }
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn or(&mut self) -> Result<Expr, LErr> {
-        let expr = self.and();
+        let mut expr = self.and()?;
 
-        // TODO: logic
+        while self.matcher(&[Token::Or]) {
+            match self.previous() {
+                Some(op) => {
+                    let right = self.and()?;
+                    expr = Expr::Logical(Box::new(expr), op, Box::new(right));
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "No operator token found.".to_string(),
+                        1,
+                    ))
+                }
+            }
+        }
 
-        return expr;
+        Ok(expr)
     }
 
     fn assignment(&mut self) -> Result<Expr, LErr> {
-        let expr = self.or();
+        let mut expr = self.or()?;
 
-        // TODO: logic
-
-        return expr;
+        while self.matcher(&[Token::Equal]) {
+            match self.previous() {
+                Some(_) => {
+                    let value = self.assignment()?;
+                    expr = Expr::Assign(Box::new(expr), Box::new(value));
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "Invalid assignment target.".to_string(),
+                        1,
+                    ))
+                }
+            }
+        }
+        Ok(expr)
     }
 
     pub fn expression(&mut self) -> Result<Expr, LErr> {
-        let expr = vec![Box::new(self.term()?)];
+        let expr = vec![Box::new(self.assignment()?)];
 
         Ok(Expr::Sequence(expr))
     }
