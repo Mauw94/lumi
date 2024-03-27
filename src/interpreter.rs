@@ -1,5 +1,5 @@
 use crate::{
-    core::LErr,
+    core::{LErr, LNum},
     lexer::Token,
     parser::{Expr, LumiExpr},
 };
@@ -10,12 +10,6 @@ pub enum Obj {
     Bool(bool),
     Num(LNum),
     Seq(Seq),
-}
-
-#[derive(Debug, Clone)]
-pub enum LNum {
-    Int(i64),
-    Float(f64),
 }
 
 #[derive(Debug, Clone)]
@@ -75,31 +69,17 @@ impl Interpreter {
                 let lvalue = self.eval(lv)?;
                 let rvalue = self.eval(rv)?;
 
-                // FIXME
-                // TODO: make some function in Num that can combined multiple numbers into 1 Obj::Num
-                let real_l_v = match lvalue {
-                    Obj::Num(value) => match value {
-                        LNum::Int(i) => i as f64,
-                        LNum::Float(f) => f,
-                    },
-                    _ => 0 as f64, // should be error
+                let real_l_v = match LNum::get_real_value(lvalue, lv.start) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
                 };
-                let real_r_v = match rvalue {
-                    Obj::Num(value) => match value {
-                        LNum::Int(i) => i as f64,
-                        LNum::Float(f) => f,
-                    },
-                    _ => 0 as f64, // should be error
+
+                let real_r_v = match LNum::get_real_value(rvalue, rv.start) {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
                 };
-                
-                // FIXME
-                match op {
-                    Token::Plus => return Ok(Obj::Num(LNum::Float(real_l_v + real_r_v))),
-                    Token::Minus => return Ok(Obj::Num(LNum::Float(real_l_v - real_r_v))),
-                    Token::Star => return Ok(Obj::Num(LNum::Float(real_l_v * real_r_v))),
-                    Token::Slash => return Ok(Obj::Num(LNum::Float(real_l_v / real_r_v))),
-                    _ => return Ok(Obj::Null),
-                };
+
+                LNum::complete_binary_op(op, real_l_v, real_r_v)
             }
             Expr::Var(_) => todo!(),
             Expr::Assign(_, _) => todo!(),
