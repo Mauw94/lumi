@@ -32,14 +32,15 @@ fn repl() {
                 println!("tokens: {:?}", tokens);
                 let mut p = Parser::new(tokens);
                 match p.expression() {
-                    Ok(expr) =>  {
+                    Ok(expr) => {
+                        // TODO: function to print expressions without all the CodeLoc overhead
                         println!("expressions: {:?}", expr);
                         let interpreter = Interpreter::new();
                         match interpreter.eval(&expr) {
-                            Ok(x) => { 
+                            Ok(x) => {
                                 println!("result after eval: {:?}", x);
-                            },
-                            Err(e) => e.render()
+                            }
+                            Err(e) => e.render(),
                         }
                     }
                     Err(e) => e.render(),

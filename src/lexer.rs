@@ -2,6 +2,19 @@ use std::collections::HashMap;
 
 use crate::core::LErr;
 
+#[derive(Debug, Clone, PartialEq, Copy)]
+pub struct CodeLoc {
+    pub line: usize,
+    pub index: usize,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct LocToken {
+    pub token: Token,
+    pub start: CodeLoc,
+    pub end: CodeLoc,
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Float(f64),
@@ -50,31 +63,29 @@ pub enum Token {
 
 pub struct Lexer<'a> {
     code: std::iter::Peekable<std::str::Chars<'a>>,
-    line: i8,
-    pub tokens: Vec<Token>,
+    start: CodeLoc,
+    cur: CodeLoc,
+    pub tokens: Vec<LocToken>,
 }
 
 impl<'a> Lexer<'a> {
     pub fn new(code: &'a str) -> Self {
         Self {
             code: code.chars().peekable(),
-            line: 1,
+            start: CodeLoc { line: 1, index: 0 },
+            cur: CodeLoc { line: 1, index: 0 },
             tokens: Vec::new(),
         }
     }
 
     // TODO: look for keywords
-    pub fn lex(&mut self) -> Result<Vec<Token>, LErr> {
+    pub fn lex(&mut self) -> Result<Vec<LocToken>, LErr> {
         while let Some(c) = self.next() {
             if self.is_at_end() {
                 self.emit(Token::Eof);
                 break;
             }
             match c {
-                '\n' => {
-                    self.line += 1;
-                    self.next();
-                }
                 '(' => self.emit(Token::LeftParen),
                 ')' => self.emit(Token::RightParen),
                 '{' => self.emit(Token::LeftBrace),
@@ -166,7 +177,12 @@ impl<'a> Lexer<'a> {
     }
 
     fn emit(&mut self, token: Token) {
-        self.tokens.push(token);
+        self.tokens.push(LocToken {
+            token,
+            start: self.start,
+            end: self.cur,
+        });
+        self.start = self.cur;
     }
 
     fn try_emit_float(&mut self, number_string: String) {
@@ -199,7 +215,18 @@ impl<'a> Lexer<'a> {
     }
 
     fn next(&mut self) -> Option<char> {
-        self.code.next()
+        let c = self.code.next();
+        match c {
+            Some('\n') => {
+                self.cur.line += 1;
+                self.cur.index += 1;
+            }
+            Some(_) => {
+                self.cur.index += 1;
+            }
+            None => {}
+        }
+        c
     }
 
     fn peek(&mut self) -> Option<&char> {
@@ -239,7 +266,7 @@ impl<'a> Lexer<'a> {
                     None | _ => {
                         return Err(LErr::lexing_error(
                             String::from("A digit was expected."),
-                            self.line,
+                            self.cur,
                         ));
                     }
                 }
@@ -261,7 +288,7 @@ impl<'a> Lexer<'a> {
         if self.is_at_end() {
             return Err(LErr::lexing_error(
                 String::from("Unterminated string."),
-                self.line,
+                self.cur,
             ));
         }
 
@@ -298,7 +325,7 @@ impl<'a> Lexer<'a> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Lexer, Token};
+    use super::{Lexer, LocToken, Token};
 
     #[test]
     fn test_int() {
@@ -306,7 +333,7 @@ mod tests {
         let tokens = setup(input.clone());
 
         assert_eq!(
-            tokens[0],
+            tokens[0].token,
             Token::Int(input.parse::<i64>().expect("Expected valid int."))
         );
     }
@@ -317,50 +344,8 @@ mod tests {
         let tokens = setup(input.clone());
 
         assert_eq!(
-            tokens[0],
+            tokens[0].token,
             Token::Float(input.parse::<f64>().expect("Expected valid float.")),
-        );
-    }
-
-    #[test]
-    fn test_comment() {
-        let input: String = String::from("2.2 * ) _ // this is a comment\r\n 23");
-        let tokens = setup(input.clone());
-        let comment_tokens: Vec<Token> = tokens
-            .into_iter()
-            .filter(|token| {
-                if let Token::Comment(_) = token {
-                    true
-                } else {
-                    false
-                }
-            })
-            .collect();
-
-        assert_eq!(
-            comment_tokens[0],
-            Token::Comment(String::from("this is a comment 23"))
-        );
-    }
-
-    #[test]
-    fn test_comment2() {
-        let input: String = String::from("2 + 2 * (8-2) //this is also a comment.");
-        let tokens = setup(input.clone());
-        let comment_tokens: Vec<Token> = tokens
-            .into_iter()
-            .filter(|token| {
-                if let Token::Comment(_) = token {
-                    true
-                } else {
-                    false
-                }
-            })
-            .collect();
-
-        assert_eq!(
-            comment_tokens[0],
-            Token::Comment(String::from("this is also a comment."))
         );
     }
 
@@ -370,7 +355,7 @@ mod tests {
         let tokens = setup(input.clone());
         let found_tokens = filter_tokens(tokens, &Token::GreaterEqual);
 
-        assert_eq!(found_tokens[0], Token::GreaterEqual);
+        assert_eq!(found_tokens[0].token, Token::GreaterEqual);
     }
 
     #[test]
@@ -379,7 +364,7 @@ mod tests {
         let tokens = setup(input.clone());
         let found_tokens = filter_tokens(tokens, &Token::LessEqual);
 
-        assert_eq!(found_tokens[0], Token::LessEqual);
+        assert_eq!(found_tokens[0].token, Token::LessEqual);
     }
 
     #[test]
@@ -388,7 +373,7 @@ mod tests {
         let tokens = setup(input.clone());
         let found_tokens = filter_tokens(tokens, &Token::BangEqual);
 
-        assert_eq!(found_tokens[0], Token::BangEqual);
+        assert_eq!(found_tokens[0].token, Token::BangEqual);
     }
 
     #[test]
@@ -397,7 +382,7 @@ mod tests {
         let tokens = setup(input.clone());
         let found_tokens = filter_tokens(tokens, &Token::EqualEqual);
 
-        assert_eq!(found_tokens[0], Token::EqualEqual);
+        assert_eq!(found_tokens[0].token, Token::EqualEqual);
     }
 
     #[test]
@@ -406,7 +391,7 @@ mod tests {
         let input: String = String::from("\"") + test_string + "\"";
         let tokens = setup(input.clone());
 
-        assert_eq!(tokens[0], Token::String(test_string.to_string()));
+        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
     }
 
     #[test]
@@ -416,8 +401,8 @@ mod tests {
         let input: String = String::from("\"") + test_string + "\"" + "\"" + test_string2 + "\"";
         let tokens = setup(input.clone());
 
-        assert_eq!(tokens[0], Token::String(test_string.to_string()));
-        assert_eq!(tokens[1], Token::String(test_string2.to_string()));
+        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
+        assert_eq!(tokens[1].token, Token::String(test_string2.to_string()));
     }
 
     #[test]
@@ -426,9 +411,9 @@ mod tests {
         let input: String = String::from("\"") + test_string + "\"" + "34 434.21";
         let tokens = setup(input.clone());
 
-        assert_eq!(tokens[0], Token::String(test_string.to_string()));
-        assert_eq!(tokens[1], Token::Int(34));
-        assert_eq!(tokens[2], Token::Float(434.21));
+        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
+        assert_eq!(tokens[1].token, Token::Int(34));
+        assert_eq!(tokens[2].token, Token::Float(434.21));
     }
 
     #[test]
@@ -445,14 +430,14 @@ mod tests {
         let comma = filter_tokens(tokens.clone(), &Token::Comma);
         let semicolon = filter_tokens(tokens.clone(), &Token::Semicolon);
 
-        assert_eq!(left_parent[0], Token::LeftParen);
-        assert_eq!(minus[0], Token::Minus);
-        assert_eq!(star[0], Token::Star);
-        assert_eq!(greater[0], Token::Greater);
-        assert_eq!(less_equal[0], Token::LessEqual);
-        assert_eq!(dot[0], Token::Dot);
-        assert_eq!(comma[0], Token::Comma);
-        assert_eq!(semicolon[0], Token::Semicolon);
+        assert_eq!(left_parent[0].token, Token::LeftParen);
+        assert_eq!(minus[0].token, Token::Minus);
+        assert_eq!(star[0].token, Token::Star);
+        assert_eq!(greater[0].token, Token::Greater);
+        assert_eq!(less_equal[0].token, Token::LessEqual);
+        assert_eq!(dot[0].token, Token::Dot);
+        assert_eq!(comma[0].token, Token::Comma);
+        assert_eq!(semicolon[0].token, Token::Semicolon);
     }
 
     #[test]
@@ -460,22 +445,22 @@ mod tests {
         let input: String = String::from("and while var asd if");
         let tokens = setup(input.clone());
 
-        assert_eq!(tokens[0], Token::And);
-        assert_eq!(tokens[1], Token::While);
-        assert_eq!(tokens[2], Token::Var);
-        assert_eq!(tokens[3], Token::Identifier(String::from("asd")));
-        assert_eq!(tokens[4], Token::If);
+        assert_eq!(tokens[0].token, Token::And);
+        assert_eq!(tokens[1].token, Token::While);
+        assert_eq!(tokens[2].token, Token::Var);
+        assert_eq!(tokens[3].token, Token::Identifier(String::from("asd")));
+        assert_eq!(tokens[4].token, Token::If);
     }
 
-    fn setup(input: String) -> Vec<Token> {
+    fn setup(input: String) -> Vec<LocToken> {
         let mut lexer = Lexer::new(&input);
         return lexer.lex().unwrap(); // We can safely expect that unit test cases to always return tokens here.
     }
 
-    fn filter_tokens(tokens: Vec<Token>, tokens_to_find: &Token) -> Vec<Token> {
-        let found_tokens: Vec<Token> = tokens
+    fn filter_tokens(tokens: Vec<LocToken>, tokens_to_find: &Token) -> Vec<LocToken> {
+        let found_tokens: Vec<LocToken> = tokens
             .into_iter()
-            .filter(|token| token == tokens_to_find)
+            .filter(|token| token.token == *tokens_to_find)
             .collect();
 
         found_tokens

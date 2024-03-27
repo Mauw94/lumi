@@ -1,4 +1,8 @@
-use crate::{core::LErr, lexer::Token, parser::Expr};
+use crate::{
+    core::LErr,
+    lexer::Token,
+    parser::{Expr, LumiExpr},
+};
 
 #[derive(Debug, Clone)]
 pub enum Obj {
@@ -28,8 +32,8 @@ impl Interpreter {
         Self {}
     }
 
-    pub fn eval(&self, expr: &Expr) -> LRes<Obj> {
-        match &expr {
+    pub fn eval(&self, expr: &LumiExpr) -> LRes<Obj> {
+        match &expr.expr {
             Expr::Sequence(xs) => {
                 // let mut ret = Obj::Null;
                 // for (i, x) in xs[..xs.len() - 1].iter().enumerate() {
@@ -44,8 +48,8 @@ impl Interpreter {
             Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
             Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
             Expr::Identifier(v) => Ok(Obj::Seq(Seq::String(v.to_string()))),
-            Expr::Unary(t, v) => {
-                let rvalue = self.eval(v)?;
+            Expr::Unary(t, expr) => {
+                let rvalue = self.eval(expr)?;
 
                 match t {
                     Token::Bang => {
@@ -59,7 +63,7 @@ impl Interpreter {
                         _ => {
                             return Err(LErr::runtime_error(
                                 "Operand must be a number".to_string(),
-                                1,
+                                expr.start,
                             ))
                         }
                     },
