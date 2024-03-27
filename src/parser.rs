@@ -95,7 +95,6 @@ impl Parser {
     }
 
     fn primary(&mut self) -> Result<Expr, LErr> {
-        // TODO: rest of logic
         match self.current() {
             Some(Token::Int(value)) => {
                 self.advance();

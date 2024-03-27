@@ -28,7 +28,6 @@ impl Interpreter {
         Self {}
     }
 
-    // TODO: if eval goes wrong, return runtime errors
     pub fn eval(&self, expr: &Expr) -> LRes<Obj> {
         match &expr {
             Expr::Sequence(xs) => {
@@ -52,20 +51,17 @@ impl Interpreter {
                     Token::Bang => {
                         return Ok(Obj::Bool(self.is_truthy(rvalue)));
                     }
-                    Token::Minus => match self.check_operand(rvalue) {
-                        Ok(o) => match o {
-                            Obj::Num(lnum) => match lnum {
-                                LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
-                                LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
-                            },
-                            _ => {
-                                return Err(LErr::parsing_error(
-                                    "Operand must be a number".to_string(),
-                                    1,
-                                ))
-                            }
+                    Token::Minus => match rvalue {
+                        Obj::Num(lnum) => match lnum {
+                            LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
+                            LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
                         },
-                        Err(e) => return Err(e),
+                        _ => {
+                            return Err(LErr::runtime_error(
+                                "Operand must be a number".to_string(),
+                                1,
+                            ))
+                        }
                     },
                     _ => Ok(Obj::Null),
                 }
@@ -109,18 +105,6 @@ impl Interpreter {
             Obj::Bool(b) => b,
             Obj::Null => false,
             _ => false,
-        }
-    }
-
-    fn check_operand(&self, obj: Obj) -> Result<Obj, LErr> {
-        match obj {
-            Obj::Num(v) => Ok(Obj::Num(v)),
-            _ => {
-                return Err(LErr::parsing_error(
-                    "Operand must be a number.".to_string(),
-                    1,
-                ))
-            }
         }
     }
 }
