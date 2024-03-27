@@ -1,3 +1,5 @@
+use std::fmt;
+
 use crate::{
     core::LErr,
     lexer::{CodeLoc, LocToken, Token},
@@ -34,6 +36,38 @@ pub enum Expr {
     Var(Token),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
+}
+
+impl fmt::Display for LumiExpr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.expr)
+    }
+}
+
+impl fmt::Display for Expr {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Expr::Int(val) => write!(f, "{}", val),
+            Expr::Float(val) => write!(f, "{}", val),
+            Expr::Identifier(name) => write!(f, "{}", name),
+            Expr::Unary(token, expr) => write!(f, "{:?}({})", token, expr),
+            Expr::Logical(left, op, right) => write!(f, "({} {:?} {})", left, op, right),
+            Expr::Binary(left, op, right) => write!(f, "({} {:?} {})", left, op, right),
+            Expr::Var(token) => write!(f, "{:?}", token),
+            Expr::Assign(lhs, rhs) => write!(f, "({} = {})", lhs, rhs),
+            Expr::Sequence(expressions) => {
+                write!(f, "[")?;
+                let mut iter = expressions.iter();
+                if let Some(expr) = iter.next() {
+                    write!(f, "{}", expr)?;
+                    for expr in iter {
+                        write!(f, ", {}", expr)?;
+                    }
+                }
+                write!(f, "]")
+            }
+        }
+    }
 }
 
 pub struct Parser {
@@ -125,6 +159,7 @@ impl Parser {
 
     fn primary(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
+
         match self.current_token() {
             Some(Token::Int(value)) => {
                 self.advance();

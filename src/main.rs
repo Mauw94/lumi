@@ -6,6 +6,7 @@ use std::{
 use crate::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
 
 pub mod core;
+pub mod debug;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
@@ -29,16 +30,15 @@ fn repl() {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                println!("tokens: {:?}", tokens);
+                debug::debug_print_tokens(tokens.clone());
                 let mut p = Parser::new(tokens);
                 match p.expression() {
                     Ok(expr) => {
-                        // TODO: function to print expressions without all the CodeLoc overhead
-                        println!("expressions: {:?}", expr);
+                        debug::debug_print_expressions(expr.clone());
                         let interpreter = Interpreter::new();
                         match interpreter.eval(&expr) {
                             Ok(x) => {
-                                println!("result after eval: {:?}", x);
+                                println!("\nResult after eval: {:?}", x);
                             }
                             Err(e) => e.render(),
                         }

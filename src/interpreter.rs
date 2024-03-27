@@ -75,6 +75,7 @@ impl Interpreter {
                 let lvalue = self.eval(lv)?;
                 let rvalue = self.eval(rv)?;
 
+                // FIXME
                 // TODO: make some function in Num that can combined multiple numbers into 1 Obj::Num
                 let real_l_v = match lvalue {
                     Obj::Num(value) => match value {
@@ -90,7 +91,8 @@ impl Interpreter {
                     },
                     _ => 0 as f64, // should be error
                 };
-
+                
+                // FIXME
                 match op {
                     Token::Plus => return Ok(Obj::Num(LNum::Float(real_l_v + real_r_v))),
                     Token::Minus => return Ok(Obj::Num(LNum::Float(real_l_v - real_r_v))),

@@ -78,7 +78,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    // TODO: look for keywords
     pub fn lex(&mut self) -> Result<Vec<LocToken>, LErr> {
         while let Some(c) = self.next() {
             if self.is_at_end() {
