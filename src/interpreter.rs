@@ -53,7 +53,18 @@ impl Interpreter {
                         return Ok(Obj::Bool(self.is_truthy(rvalue)));
                     }
                     Token::Minus => match self.check_operand(rvalue) {
-                        Ok(o) => return Ok(o), // TODO: negate the value
+                        Ok(o) => match o {
+                            Obj::Num(lnum) => match lnum {
+                                LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
+                                LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
+                            },
+                            _ => {
+                                return Err(LErr::parsing_error(
+                                    "Operand must be a number".to_string(),
+                                    1,
+                                ))
+                            }
+                        },
                         Err(e) => return Err(e),
                     },
                     _ => Ok(Obj::Null),
