@@ -2,6 +2,7 @@ use std::rc::Rc;
 
 use crate::{
     core::{LErr, LNum, LRes, Obj, Seq},
+    eval,
     lexer::Token,
     parser::{Expr, LiteralValue, LumiExpr},
 };
@@ -74,7 +75,7 @@ impl Interpreter {
                 let lhs = self.eval(lv)?;
                 let rhs = self.eval(rv)?;
 
-                LNum::complete_binary_op(op, lhs, rhs, lv.start, rv.start)
+                eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
             }
             Expr::Var(_) => todo!(),
             Expr::Assign(_, _) => todo!(),

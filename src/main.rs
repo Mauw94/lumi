@@ -7,6 +7,7 @@ use crate::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
 
 pub mod core;
 pub mod debug;
+pub mod eval;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
