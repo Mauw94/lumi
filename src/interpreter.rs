@@ -53,11 +53,15 @@ impl Interpreter {
             Expr::Logical(l_expr, op, r_expr) => {
                 let lhs = self.eval(l_expr)?;
 
-                // TODO: implement AND
                 if op == &Token::Or {
                     if self.is_truthy(lhs.clone()) {
                         return Ok(lhs);
                     }
+                } else if op == &Token::And {
+                    let rhs = self.eval(&r_expr)?;
+                    return Ok(Obj::Bool(
+                        self.is_truthy(lhs.clone()) && self.is_truthy(rhs.clone()),
+                    ));
                 } else {
                     if !self.is_truthy(lhs.clone()) {
                         return Ok(lhs);
