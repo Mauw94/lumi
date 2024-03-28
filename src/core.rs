@@ -50,6 +50,13 @@ pub enum LNum {
     Float(f64),
 }
 
+#[allow(dead_code)]
+enum CompareType {
+    Equal,
+    Greater,
+    Less,
+}
+
 impl Obj {
     pub fn is_same_type(&self, other: &Obj) -> bool {
         match (self, other) {
@@ -64,7 +71,7 @@ impl Obj {
     pub fn is_same_value(&self, other: &Obj) -> bool {
         match (self, other) {
             (Obj::Bool(b1), Obj::Bool(b2)) => b1 == b2,
-            (Obj::Num(n1), Obj::Num(n2)) => LNum::compare_lnums(n1, n2),
+            (Obj::Num(n1), Obj::Num(n2)) => LNum::compare_lnums(n1, n2, CompareType::Equal),
             (Obj::Seq(s1), Obj::Seq(s2)) => s1 == s2,
             _ => false,
         }
@@ -87,7 +94,7 @@ impl Obj {
 }
 
 impl LNum {
-    fn compare_lnums(num1: &LNum, num2: &LNum) -> bool {
+    fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
             LNum::Float(f) => *f,
             LNum::Int(i) => *i as f64,
@@ -97,6 +104,10 @@ impl LNum {
             LNum::Int(i) => *i as f64,
         };
 
-        f1 == f2
+        match compare_type {
+            CompareType::Equal => f1 == f2,
+            CompareType::Greater => f1 > f2,
+            CompareType::Less => f1 < f2,
+        }
     }
 }
