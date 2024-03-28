@@ -3,6 +3,8 @@ use std::{
     io::{stdin, stdout, Write},
 };
 
+use debug::Debug;
+
 use crate::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
 
 pub mod core;
@@ -11,6 +13,22 @@ pub mod eval;
 pub mod interpreter;
 pub mod lexer;
 pub mod parser;
+
+struct AppConfig {
+    debug_print_enabled: bool,
+}
+
+impl AppConfig {
+    fn new(debug_print_enabled: bool) -> Self {
+        Self {
+            debug_print_enabled,
+        }
+    }
+
+    fn is_debug_print_enabled(&self) -> bool {
+        self.debug_print_enabled
+    }
+}
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -25,21 +43,23 @@ fn prompt(input: &mut String) -> bool {
     }
 }
 
-fn repl() {
+fn repl(config: &AppConfig) {
+    let mut debugger = Debug::new(config);
     let mut input = String::new();
     while prompt(&mut input) {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                debug::debug_print_tokens(tokens.clone());
+                debugger.set_tokens(tokens.clone());
                 let mut p = Parser::new(tokens);
                 match p.expression() {
                     Ok(expr) => {
-                        debug::debug_print_expressions(expr.clone());
+                        debugger.set_expr(expr.clone());
                         let interpreter = Interpreter::new();
                         match interpreter.eval(&expr) {
                             Ok(x) => {
-                                println!("\nResult after eval: {:?}\n", x);
+                                debugger.set_eval(x.clone());
+                                debugger.debug_print();
                                 x.print_value();
                             }
                             Err(e) => e.render(),
@@ -56,7 +76,9 @@ fn repl() {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    let config = AppConfig::new(false);
+
     if args.len() <= 1 {
-        repl();
+        repl(&config);
     }
 }
