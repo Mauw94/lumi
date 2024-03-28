@@ -1,7 +1,7 @@
 use crate::{
     core::{LErr, LNum},
     lexer::Token,
-    parser::{Expr, LumiExpr},
+    parser::{Expr, LiteralValue, LumiExpr},
 };
 
 #[derive(Debug, Clone)]
@@ -42,12 +42,17 @@ impl Interpreter {
             Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
             Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
             Expr::Identifier(v) => Ok(Obj::Seq(Seq::String(v.to_string()))),
+            Expr::Literal(literal) => match literal {
+                LiteralValue::True => Ok(Obj::Bool(true)),
+                LiteralValue::False => Ok(Obj::Bool(false)),
+                LiteralValue::Nil => Ok(Obj::Null),
+            },
             Expr::Unary(t, expr) => {
                 let rvalue = self.eval(expr)?;
 
                 match t {
                     Token::Bang => {
-                        return Ok(Obj::Bool(self.is_truthy(rvalue)));
+                        return Ok(Obj::Bool(!self.is_truthy(rvalue)));
                     }
                     Token::Minus => match rvalue {
                         Obj::Num(lnum) => match lnum {
@@ -64,7 +69,21 @@ impl Interpreter {
                     _ => Ok(Obj::Null),
                 }
             }
-            Expr::Logical(_, _, _) => todo!(),
+            Expr::Logical(l_expr, op, r_expr) => {
+                let lhs = self.eval(l_expr)?;
+
+                if op == &Token::Or {
+                    if self.is_truthy(lhs) {
+                        return Ok(Obj::Bool(true));
+                    }
+                } else {
+                    if !self.is_truthy(lhs.clone()) {
+                        return Ok(lhs);
+                    }
+                }
+
+                return self.eval(&r_expr);
+            }
             Expr::Binary(lv, op, rv) => {
                 let lvalue = self.eval(lv)?;
                 let rvalue = self.eval(rv)?;

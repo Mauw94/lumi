@@ -26,10 +26,18 @@ pub struct LumiExpr {
 }
 
 #[derive(Debug, Clone)]
+pub enum LiteralValue {
+    True,
+    False,
+    Nil,
+}
+
+#[derive(Debug, Clone)]
 pub enum Expr {
     Int(i64),
     Float(f64),
     Identifier(String),
+    Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -66,6 +74,11 @@ impl fmt::Display for Expr {
                 }
                 write!(f, "]")
             }
+            Expr::Literal(literal) => match literal {
+                LiteralValue::False => write!(f, "false"),
+                LiteralValue::True => write!(f, "true"),
+                LiteralValue::Nil => write!(f, "nil"),
+            },
         }
     }
 }
@@ -183,6 +196,30 @@ impl Parser {
                     start,
                     end: self.peek_loc(),
                     expr: Expr::Identifier(value),
+                });
+            }
+            Some(Token::True) => {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Literal(LiteralValue::True),
+                });
+            }
+            Some(Token::False) => {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Literal(LiteralValue::False),
+                });
+            }
+            Some(Token::Nil) => {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Literal(LiteralValue::Nil),
                 });
             }
             None | _ => {
@@ -441,6 +478,4 @@ impl Parser {
 */
 
 #[cfg(test)]
-mod tests {
-    
-}
+mod tests {}
