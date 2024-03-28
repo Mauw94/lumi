@@ -39,7 +39,8 @@ fn repl() {
                         let interpreter = Interpreter::new();
                         match interpreter.eval(&expr) {
                             Ok(x) => {
-                                println!("\nResult after eval: {:?}", x);
+                                println!("\nResult after eval: {:?}\n", x);
+                                x.print_value();
                             }
                             Err(e) => e.render(),
                         }

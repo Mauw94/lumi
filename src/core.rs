@@ -68,4 +68,18 @@ impl Obj {
             _ => false,
         }
     }
+
+    pub fn print_value(&self) {
+        match &self {
+            Obj::Null => println!("nil"),
+            Obj::Bool(v) => println!("{}", v),
+            Obj::Num(v) => match v {
+                LNum::Int(i) => println!("{}", i),
+                LNum::Float(f) => println!("{}", f),
+            },
+            Obj::Seq(v) => match v {
+                Seq::String(s) => println!("{}", s),
+            },
+        }
+    }
 }
