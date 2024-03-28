@@ -142,7 +142,6 @@ impl<'a> Lexer<'a> {
                     } else {
                         self.emit(Token::Slash);
                     }
-                    self.next();
                 }
                 '"' => match self.string() {
                     Ok(_) => {}
