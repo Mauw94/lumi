@@ -34,6 +34,7 @@ pub enum Obj {
     Bool(bool),
     Num(LNum),
     Seq(Seq),
+    Output(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -80,6 +81,7 @@ impl Obj {
             Obj::Seq(v) => match v {
                 Seq::String(s) => println!("{}", s),
             },
+            Obj::Output(v) => println!("{}", v),
         }
     }
 }

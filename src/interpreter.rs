@@ -79,6 +79,7 @@ impl Interpreter {
             }
             Expr::Var(_) => todo!(),
             Expr::Assign(_, _) => todo!(),
+            Expr::Print(expr) => Ok(self.eval(expr)?),
         }
     }
 

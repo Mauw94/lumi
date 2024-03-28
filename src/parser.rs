@@ -45,6 +45,7 @@ pub enum Expr {
     Var(Token),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
+    Print(Box<LumiExpr>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -56,17 +57,17 @@ impl fmt::Display for LumiExpr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::Int(val) => write!(f, "{}", val),
-            Expr::Float(val) => write!(f, "{}", val),
-            Expr::String(val) => write!(f, "{}", val),
-            Expr::Identifier(name) => write!(f, "{}", name),
-            Expr::Unary(token, expr) => write!(f, "{:?}({})", token, expr),
-            Expr::Logical(left, op, right) => write!(f, "({} {:?} {})", left, op, right),
-            Expr::Binary(left, op, right) => write!(f, "({} {:?} {})", left, op, right),
-            Expr::Var(token) => write!(f, "{:?}", token),
-            Expr::Assign(lhs, rhs) => write!(f, "({} = {})", lhs, rhs),
+            Expr::Int(val) => write!(f, "INT {}", val),
+            Expr::Float(val) => write!(f, "FLOAT {}", val),
+            Expr::String(val) => write!(f, "STRING {}", val),
+            Expr::Identifier(name) => write!(f, "IDNETIFIER {}", name),
+            Expr::Unary(token, expr) => write!(f, "UNARY {:?}({})", token, expr),
+            Expr::Logical(left, op, right) => write!(f, "LOGIXAL ({} {:?} {})", left, op, right),
+            Expr::Binary(left, op, right) => write!(f, "BINARY ({} {:?} {})", left, op, right),
+            Expr::Var(token) => write!(f, "VAR {:?}", token),
+            Expr::Assign(lhs, rhs) => write!(f, "ASSIGN ({} = {})", lhs, rhs),
             Expr::Sequence(expressions) => {
-                write!(f, "[")?;
+                write!(f, "SEQ [")?;
                 let mut iter = expressions.iter();
                 if let Some(expr) = iter.next() {
                     write!(f, "{}", expr)?;
@@ -77,10 +78,11 @@ impl fmt::Display for Expr {
                 write!(f, "]")
             }
             Expr::Literal(literal) => match literal {
-                LiteralValue::False => write!(f, "false"),
-                LiteralValue::True => write!(f, "true"),
-                LiteralValue::Nil => write!(f, "nil"),
+                LiteralValue::False => write!(f, "FALSE"),
+                LiteralValue::True => write!(f, "TRUE"),
+                LiteralValue::Nil => write!(f, "NIL"),
             },
+            Expr::Print(expr) => write!(f, "PRINT {}", expr),
         }
     }
 }
@@ -112,7 +114,9 @@ impl Parser {
 
     fn peek_token(&self) -> Option<Token> {
         match self.tokens.get(self.i) {
-            Some(t) => Some(t.token.clone()),
+            Some(t) => {
+                return Some(t.token.clone());
+            }
             None => None,
         }
     }
@@ -140,14 +144,13 @@ impl Parser {
         }
     }
 
-    #[allow(dead_code)]
-    fn consume(&mut self, token: Token, _msg: String) {
+    fn consume(&mut self, token: Token, msg: String, code_loc: CodeLoc) -> Result<(), LErr> {
         if self.check(token) {
             self.advance();
+            return Ok(());
         }
 
-        // throw error up e.g. Expect ')' after expression
-        // return Err(LErr::parsing_error(msg, 1));
+        return Err(LErr::parsing_error(msg, code_loc));
     }
 
     fn check(&self, token: Token) -> bool {
@@ -465,8 +468,40 @@ impl Parser {
         Ok(expr)
     }
 
-    pub fn expression(&mut self) -> Result<LumiExpr, LErr> {
-        let expr = vec![Box::new(self.assignment()?)];
+    fn expression(&mut self) -> Result<LumiExpr, LErr> {
+        let expr = self.assignment()?;
+
+        let start = self.peek_loc();
+        let end = start;
+
+        Ok(LumiExpr {
+            start,
+            end,
+            expr: Expr::Sequence(vec![Box::new(expr)]),
+        })
+    }
+
+    fn statement(&mut self) -> Result<LumiExpr, LErr> {
+        let start = self.peek_loc();
+        if self.matcher(&[Token::Print]) {
+            let expr = self.expression()?;
+            self.consume(
+                Token::Semicolon,
+                "Expect ';' after value.".to_string(),
+                start,
+            )?;
+            return Ok(LumiExpr {
+                start,
+                end: expr.end,
+                expr: Expr::Print(Box::new(expr)),
+            });
+        }
+
+        self.expression()
+    }
+
+    pub fn parse(&mut self) -> Result<LumiExpr, LErr> {
+        let expr = vec![Box::new(self.statement()?)];
 
         let start = self.peek_loc();
         let end = start;

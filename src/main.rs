@@ -52,7 +52,7 @@ fn repl(config: &AppConfig) {
             Ok(tokens) => {
                 debugger.set_tokens(tokens.clone());
                 let mut p = Parser::new(tokens);
-                match p.expression() {
+                match p.parse() {
                     Ok(expr) => {
                         debugger.set_expr(expr.clone());
                         let interpreter = Interpreter::new();
@@ -76,7 +76,7 @@ fn repl(config: &AppConfig) {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let config = AppConfig::new(false);
+    let config = AppConfig::new(true);
 
     if args.len() <= 1 {
         repl(&config);
