@@ -73,8 +73,8 @@ impl Interpreter {
                 let lhs = self.eval(l_expr)?;
 
                 if op == &Token::Or {
-                    if self.is_truthy(lhs) {
-                        return Ok(Obj::Bool(true));
+                    if self.is_truthy(lhs.clone()) {
+                        return Ok(lhs);
                     }
                 } else {
                     if !self.is_truthy(lhs.clone()) {
@@ -109,7 +109,7 @@ impl Interpreter {
         match obj {
             Obj::Bool(b) => b,
             Obj::Null => false,
-            _ => false,
+            _ => true,
         }
     }
 }
