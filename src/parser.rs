@@ -36,6 +36,7 @@ pub enum LiteralValue {
 pub enum Expr {
     Int(i64),
     Float(f64),
+    String(String),
     Identifier(String),
     Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
@@ -57,6 +58,7 @@ impl fmt::Display for Expr {
         match self {
             Expr::Int(val) => write!(f, "{}", val),
             Expr::Float(val) => write!(f, "{}", val),
+            Expr::String(val) => write!(f, "{}", val),
             Expr::Identifier(name) => write!(f, "{}", name),
             Expr::Unary(token, expr) => write!(f, "{:?}({})", token, expr),
             Expr::Logical(left, op, right) => write!(f, "({} {:?} {})", left, op, right),
@@ -188,6 +190,14 @@ impl Parser {
                     start,
                     end: self.peek_loc(),
                     expr: Expr::Float(value),
+                });
+            }
+            Some(Token::String(value)) => {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::String(value),
                 });
             }
             Some(Token::Identifier(value)) => {

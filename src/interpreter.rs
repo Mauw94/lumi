@@ -1,23 +1,10 @@
+use std::rc::Rc;
+
 use crate::{
-    core::{LErr, LNum},
+    core::{LErr, LNum, LRes, Obj, Seq},
     lexer::Token,
     parser::{Expr, LiteralValue, LumiExpr},
 };
-
-#[derive(Debug, Clone)]
-pub enum Obj {
-    Null,
-    Bool(bool),
-    Num(LNum),
-    Seq(Seq),
-}
-
-#[derive(Debug, Clone)]
-pub enum Seq {
-    String(String),
-}
-
-pub type LRes<T> = Result<T, LErr>;
 
 pub struct Interpreter;
 
@@ -29,32 +16,26 @@ impl Interpreter {
     pub fn eval(&self, expr: &LumiExpr) -> LRes<Obj> {
         match &expr.expr {
             Expr::Sequence(xs) => {
-                // let mut ret = Obj::Null;
-                // for (i, x) in xs[..xs.len() - 1].iter().enumerate() {
-                //     ret = self.eval(x)?;
-                // }
-                // Ok(ret)
-
-                // sequence is nested
+                // Sequence is nested
                 self.eval(xs.last().unwrap())
-                //Ok(Obj::Null)
             }
             Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
             Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
-            Expr::Identifier(v) => Ok(Obj::Seq(Seq::String(v.to_string()))),
+            Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
+            Expr::Identifier(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
             Expr::Literal(literal) => match literal {
                 LiteralValue::True => Ok(Obj::Bool(true)),
                 LiteralValue::False => Ok(Obj::Bool(false)),
                 LiteralValue::Nil => Ok(Obj::Null),
             },
             Expr::Unary(t, expr) => {
-                let rvalue = self.eval(expr)?;
+                let rhs = self.eval(expr)?;
 
                 match t {
                     Token::Bang => {
-                        return Ok(Obj::Bool(!self.is_truthy(rvalue)));
+                        return Ok(Obj::Bool(!self.is_truthy(rhs)));
                     }
-                    Token::Minus => match rvalue {
+                    Token::Minus => match rhs {
                         Obj::Num(lnum) => match lnum {
                             LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
                             LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
@@ -72,6 +53,7 @@ impl Interpreter {
             Expr::Logical(l_expr, op, r_expr) => {
                 let lhs = self.eval(l_expr)?;
 
+                // TODO: implement AND
                 if op == &Token::Or {
                     if self.is_truthy(lhs.clone()) {
                         return Ok(lhs);
@@ -85,20 +67,10 @@ impl Interpreter {
                 return self.eval(&r_expr);
             }
             Expr::Binary(lv, op, rv) => {
-                let lvalue = self.eval(lv)?;
-                let rvalue = self.eval(rv)?;
+                let lhs = self.eval(lv)?;
+                let rhs = self.eval(rv)?;
 
-                let real_l_v = match LNum::get_real_value(lvalue, lv.start) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
-
-                let real_r_v = match LNum::get_real_value(rvalue, rv.start) {
-                    Ok(v) => v,
-                    Err(e) => return Err(e),
-                };
-
-                LNum::complete_binary_op(op, real_l_v, real_r_v)
+                LNum::complete_binary_op(op, lhs, rhs, lv.start, rv.start)
             }
             Expr::Var(_) => todo!(),
             Expr::Assign(_, _) => todo!(),
