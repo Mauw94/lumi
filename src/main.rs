@@ -3,32 +3,7 @@ use std::{
     io::{stdin, stdout, Write},
 };
 
-use debug::Debug;
-
-use crate::{interpreter::Interpreter, lexer::Lexer, parser::Parser};
-
-pub mod core;
-pub mod debug;
-pub mod eval;
-pub mod interpreter;
-pub mod lexer;
-pub mod parser;
-
-struct AppConfig {
-    debug_print_enabled: bool,
-}
-
-impl AppConfig {
-    fn new(debug_print_enabled: bool) -> Self {
-        Self {
-            debug_print_enabled,
-        }
-    }
-
-    fn is_debug_print_enabled(&self) -> bool {
-        self.debug_print_enabled
-    }
-}
+use lumi::{AppConfig, Debug, Interpreter, Lexer, Parser};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();

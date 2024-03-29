@@ -28,7 +28,7 @@ impl LErr {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum Obj {
     Null,
     Bool(bool),
@@ -92,6 +92,14 @@ impl Obj {
             },
             Obj::Output(v) => println!("{}", v),
         }
+    }
+
+    pub fn i64(n: i64) -> Self {
+        Obj::Num(LNum::Int(n))
+    }
+
+    pub fn f64(n: f64) -> Self {
+        Obj::Num(LNum::Float(n))
     }
 }
 

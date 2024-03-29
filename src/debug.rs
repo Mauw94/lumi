@@ -8,7 +8,7 @@ pub struct Debug<'a> {
 }
 
 impl<'a> Debug<'a> {
-    pub(crate) fn new(config: &'a AppConfig) -> Self {
+    pub fn new(config: &'a AppConfig) -> Self {
         Self {
             config,
             tokens: None,
