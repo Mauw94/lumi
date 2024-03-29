@@ -81,7 +81,7 @@ impl Obj {
 
     pub fn print_value(&self) {
         match &self {
-            Obj::Null => println!("nil"),
+            Obj::Null => {}
             Obj::Bool(v) => println!("{}", v),
             Obj::Num(v) => match v {
                 LNum::Int(i) => println!("{}", i),

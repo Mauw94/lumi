@@ -38,6 +38,7 @@ pub enum Expr {
     Float(f64),
     String(String),
     Identifier(String),
+    Declare(String, Box<LumiExpr>),
     Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -83,6 +84,7 @@ impl fmt::Display for Expr {
                 LiteralValue::Nil => write!(f, "NIL"),
             },
             Expr::Print(expr) => write!(f, "PRINT {}", expr),
+            Expr::Declare(t, expr) => write!(f, "DECLARE {} = {}", t, expr),
         }
     }
 }
@@ -496,6 +498,40 @@ impl Parser {
                 expr: Expr::Print(Box::new(expr)),
             });
         }
+        if self.matcher(&[Token::Let]) {
+            let loc_token = self.peek();
+            let variable_name = match loc_token {
+                Some(t) => match t.token {
+                    Token::Identifier(s) => s,
+                    _ => {
+                        return Err(LErr::parsing_error(
+                            "Expect variable name".to_string(),
+                            self.peek_loc(),
+                        ))
+                    }
+                },
+                None => todo!(),
+            };
+            self.advance();
+            if self.matcher(&[Token::Equal]) {
+                let expr = self.expression()?;
+                self.consume(
+                    Token::Semicolon,
+                    "Expect ';' after variable declaration.".to_string(),
+                    start,
+                )?;
+                return Ok(LumiExpr {
+                    start,
+                    end: expr.end,
+                    expr: Expr::Declare(variable_name, Box::new(expr)),
+                });
+            } else {
+                return Err(LErr::parsing_error(
+                    "Expect '=' after variable.".to_string(),
+                    self.peek_loc(),
+                ));
+            }
+        }
 
         self.expression()
     }
@@ -513,11 +549,3 @@ impl Parser {
         })
     }
 }
-
-/*
-    parse expressions in order of precedence
-    e.g. 2 + 2
-    we first find a number token and store it in a Expr.Binary as left,
-    when we find a Plus token we need to find the right side of the expression, starting from a certain point of order of precedence again.
-    this next token could be a ( defining a new term.
-*/

@@ -1,5 +1,6 @@
 pub use crate::core::*;
 pub use crate::debug::*;
+pub use crate::env::*;
 pub use crate::eval::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
@@ -7,6 +8,7 @@ pub use crate::parser::*;
 
 mod core;
 mod debug;
+mod env;
 mod eval;
 mod interpreter;
 mod lexer;
@@ -29,11 +31,11 @@ impl AppConfig {
 }
 
 pub fn quick_eval(code: &str) -> Obj {
+    let mut env = Env::new();
     let mut lexer = Lexer::new(code);
     let tokens = lexer.lex().unwrap();
     println!("{:?}", tokens);
     let mut parser = Parser::new(lexer.lex().unwrap());
-    let interpret = Interpreter::new();
 
-    interpret.eval(&parser.parse().unwrap()).unwrap()
+    evaluate(&mut env, &parser.parse().unwrap()).unwrap()
 }

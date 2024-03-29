@@ -55,7 +55,7 @@ pub enum Token {
     False,
     Fun,
     Print,
-    Var,
+    Let,
     Comment(String),
     Invalid(String),
 }
@@ -304,7 +304,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("nil", Token::Nil);
         keywords.insert("print", Token::Print);
         keywords.insert("return", Token::Return);
-        keywords.insert("var", Token::Var);
+        keywords.insert("let", Token::Let);
         keywords.insert("while", Token::While);
         keywords.insert("to", Token::To);
 

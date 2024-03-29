@@ -3,7 +3,7 @@ use std::{
     io::{stdin, stdout, Write},
 };
 
-use lumi::{AppConfig, Debug, Interpreter, Lexer, Parser};
+use lumi::{evaluate, AppConfig, Debug, Env, Lexer, Parser};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -19,6 +19,7 @@ fn prompt(input: &mut String) -> bool {
 }
 
 fn repl(config: &AppConfig) {
+    let mut env = Env::new();
     let mut debugger = Debug::new(config);
     let mut input = String::new();
     while prompt(&mut input) {
@@ -30,8 +31,7 @@ fn repl(config: &AppConfig) {
                 match p.parse() {
                     Ok(expr) => {
                         debugger.set_expr(expr.clone());
-                        let interpreter = Interpreter::new();
-                        match interpreter.eval(&expr) {
+                        match evaluate(&mut env, &expr) {
                             Ok(x) => {
                                 debugger.set_eval(x.clone());
                                 debugger.debug_print();
@@ -51,7 +51,7 @@ fn repl(config: &AppConfig) {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let config = AppConfig::new(true);
+    let config = AppConfig::new(false);
 
     if args.len() <= 1 {
         repl(&config);
