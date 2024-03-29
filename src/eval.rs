@@ -47,7 +47,12 @@ pub fn exec_binary_op(
                     CompareType::Greater,
                 )))
             }
-            _ => return Ok(Obj::Bool(false)),
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Operands must be numbers.".to_string(),
+                    code_loc_l,
+                ))
+            }
         },
         Token::GreaterEqual => match (lhs, rhs) {
             (Obj::Num(n1), Obj::Num(n2)) => {
@@ -57,13 +62,23 @@ pub fn exec_binary_op(
                     CompareType::GreaterEqual,
                 )))
             }
-            _ => return Ok(Obj::Bool(false)),
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Operands must be numbers.".to_string(),
+                    code_loc_l,
+                ))
+            }
         },
         Token::Less => match (lhs, rhs) {
             (Obj::Num(n1), Obj::Num(n2)) => {
                 return Ok(Obj::Bool(LNum::compare_lnums(&n1, &n2, CompareType::Less)))
             }
-            _ => return Ok(Obj::Bool(false)),
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Operands must be numbers.".to_string(),
+                    code_loc_l,
+                ))
+            }
         },
         Token::LessEqual => match (lhs, rhs) {
             (Obj::Num(n1), Obj::Num(n2)) => {
@@ -73,7 +88,12 @@ pub fn exec_binary_op(
                     CompareType::LessEqual,
                 )))
             }
-            _ => return Ok(Obj::Bool(false)),
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Operands must be numbers.".to_string(),
+                    code_loc_l,
+                ))
+            }
         },
         _ => return Ok(Obj::Null),
     };
