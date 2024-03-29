@@ -98,7 +98,7 @@ impl Parser {
     }
 
     fn is_at_end(&self) -> bool {
-        false
+        self.i == self.tokens.len()
     }
 
     fn advance(&mut self) -> Option<LocToken> {
@@ -495,8 +495,7 @@ impl Parser {
                 end: expr.end,
                 expr: Expr::Print(Box::new(expr)),
             });
-        }
-        if self.matcher(&[Token::Let]) {
+        } else if self.matcher(&[Token::Let]) {
             let loc_token = self.peek();
             let variable_name = match loc_token {
                 Some(t) => match t.token {
@@ -535,10 +534,15 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<LumiExpr, LErr> {
-        let expr = vec![Box::new(self.statement()?)];
+        let mut expr = vec![Box::new(self.statement()?)];
 
         let start = self.peek_loc();
         let end = start;
+
+        while !self.is_at_end() {
+            let e = self.statement()?;
+            expr.push(Box::new(e));
+        }
 
         Ok(LumiExpr {
             start,

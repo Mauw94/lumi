@@ -10,17 +10,26 @@ use crate::{
 
 pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
     match &expr.expr {
+        // TODO: add all results of expressions to a Vec trace
+        // and print this in main
         Expr::Sequence(xs) => {
-            // Sequence is nested
-            evaluate(env, xs.last().unwrap())
+            // this if is a hack, needs fixing
+            // FIXME
+            if xs.len() == 1 {
+                return evaluate(env, xs.last().unwrap());
+            } else {
+                for expr in xs {
+                    let o = evaluate(env, expr)?;
+                    o.print_value();
+                }
+            }
+
+            Ok(Obj::Null)
         }
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
-        Expr::Identifier(v) => {
-            env.lookup_variable(v, expr.start)
-            // Ok(Obj::Seq(Seq::String(Rc::new(v.to_string()))))
-        }
+        Expr::Identifier(v) => env.lookup_variable(v, expr.start),
         Expr::Literal(literal) => match literal {
             LiteralValue::True => Ok(Obj::Bool(true)),
             LiteralValue::False => Ok(Obj::Bool(false)),
@@ -86,7 +95,9 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
                 ))
             }
         },
-        Expr::Print(expr) => Ok(evaluate(env, expr)?),
+        Expr::Print(expr) => {
+            return Ok(evaluate(env, expr)?);
+        }
         Expr::Declare(var_name, expr) => {
             // TODO: be able to give variables a type.
             let value = evaluate(env, expr)?;

@@ -53,3 +53,6 @@ fn and() {
         b(false)
     );
 }
+
+// TODO:
+// test print and declaration
