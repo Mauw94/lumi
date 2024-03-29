@@ -73,6 +73,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
         }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
+            // TODO: cannot re-assign a variable to a different type.
             Expr::Identifier(var_name) => {
                 let rhs = evaluate(env, r_expr)?;
                 env.define(var_name.to_string(), rhs);
@@ -87,6 +88,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         },
         Expr::Print(expr) => Ok(evaluate(env, expr)?),
         Expr::Declare(var_name, expr) => {
+            // TODO: be able to give variables a type.
             let value = evaluate(env, expr)?;
             env.define(var_name.to_string(), value);
             Ok(Obj::Null)
