@@ -1,5 +1,5 @@
 use crate::{
-    core::{LErr, LNum, LRes, Obj},
+    core::{CompareType, LErr, LNum, LRes, Obj},
     lexer::{CodeLoc, Token},
 };
 
@@ -39,6 +39,42 @@ pub fn exec_binary_op(
 
             return Ok(Obj::Bool(lhs.is_same_value(&rhs)));
         }
+        Token::Greater => match (lhs, rhs) {
+            (Obj::Num(n1), Obj::Num(n2)) => {
+                return Ok(Obj::Bool(LNum::compare_lnums(
+                    &n1,
+                    &n2,
+                    CompareType::Greater,
+                )))
+            }
+            _ => return Ok(Obj::Bool(false)),
+        },
+        Token::GreaterEqual => match (lhs, rhs) {
+            (Obj::Num(n1), Obj::Num(n2)) => {
+                return Ok(Obj::Bool(LNum::compare_lnums(
+                    &n1,
+                    &n2,
+                    CompareType::GreaterEqual,
+                )))
+            }
+            _ => return Ok(Obj::Bool(false)),
+        },
+        Token::Less => match (lhs, rhs) {
+            (Obj::Num(n1), Obj::Num(n2)) => {
+                return Ok(Obj::Bool(LNum::compare_lnums(&n1, &n2, CompareType::Less)))
+            }
+            _ => return Ok(Obj::Bool(false)),
+        },
+        Token::LessEqual => match (lhs, rhs) {
+            (Obj::Num(n1), Obj::Num(n2)) => {
+                return Ok(Obj::Bool(LNum::compare_lnums(
+                    &n1,
+                    &n2,
+                    CompareType::LessEqual,
+                )))
+            }
+            _ => return Ok(Obj::Bool(false)),
+        },
         _ => return Ok(Obj::Null),
     };
 }

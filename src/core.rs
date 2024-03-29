@@ -51,10 +51,12 @@ pub enum LNum {
 }
 
 #[allow(dead_code)]
-enum CompareType {
+pub enum CompareType {
     Equal,
     Greater,
+    GreaterEqual,
     Less,
+    LessEqual,
 }
 
 impl Obj {
@@ -94,7 +96,7 @@ impl Obj {
 }
 
 impl LNum {
-    fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
+    pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
             LNum::Float(f) => *f,
             LNum::Int(i) => *i as f64,
@@ -107,7 +109,9 @@ impl LNum {
         match compare_type {
             CompareType::Equal => f1 == f2,
             CompareType::Greater => f1 > f2,
+            CompareType::GreaterEqual => f1 >= f2,
             CompareType::Less => f1 < f2,
+            CompareType::LessEqual => f1 <= f2,
         }
     }
 }
