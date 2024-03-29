@@ -521,6 +521,3 @@ impl Parser {
     when we find a Plus token we need to find the right side of the expression, starting from a certain point of order of precedence again.
     this next token could be a ( defining a new term.
 */
-
-#[cfg(test)]
-mod tests {}
