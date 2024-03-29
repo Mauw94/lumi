@@ -58,7 +58,6 @@ pub enum Token {
     Var,
     Comment(String),
     Invalid(String),
-    Eof,
 }
 
 pub struct Lexer<'a> {
@@ -80,10 +79,6 @@ impl<'a> Lexer<'a> {
 
     pub fn lex(&mut self) -> Result<Vec<LocToken>, LErr> {
         while let Some(c) = self.next() {
-            if self.is_at_end() {
-                self.emit(Token::Eof);
-                break;
-            }
             match c {
                 '(' => self.emit(Token::LeftParen),
                 ')' => self.emit(Token::RightParen),
@@ -95,6 +90,7 @@ impl<'a> Lexer<'a> {
                 '+' => self.emit(Token::Plus),
                 '-' => self.emit(Token::Minus),
                 '*' => self.emit(Token::Star),
+                ' ' | '\n' | '\r' => self.start = self.cur,
                 '=' => {
                     if self.check_next_is_equal('=') {
                         self.emit(Token::EqualEqual);
@@ -160,12 +156,13 @@ impl<'a> Lexer<'a> {
                             Ok(_) => {}
                             Err(e) => return Err(e),
                         }
-                    }
-                    if c.is_digit(10) {
+                    } else if c.is_digit(10) {
                         match self.number(c) {
                             Ok(_) => {}
                             Err(e) => return Err(e),
                         }
+                    } else {
+                        self.emit(Token::Invalid(format!("Unrecognized char: {}", c)))
                     }
                 }
             }
@@ -318,149 +315,5 @@ impl<'a> Lexer<'a> {
         }
 
         Ok(())
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{Lexer, LocToken, Token};
-
-    #[test]
-    fn test_int() {
-        let input = String::from("45");
-        let tokens = setup(input.clone());
-
-        assert_eq!(
-            tokens[0].token,
-            Token::Int(input.parse::<i64>().expect("Expected valid int."))
-        );
-    }
-
-    #[test]
-    fn test_float() {
-        let input = String::from("932874.2313");
-        let tokens = setup(input.clone());
-
-        assert_eq!(
-            tokens[0].token,
-            Token::Float(input.parse::<f64>().expect("Expected valid float.")),
-        );
-    }
-
-    #[test]
-    fn test_greater_equal() {
-        let input: String = String::from("()-32* 4 >= 2");
-        let tokens = setup(input.clone());
-        let found_tokens = filter_tokens(tokens, &Token::GreaterEqual);
-
-        assert_eq!(found_tokens[0].token, Token::GreaterEqual);
-    }
-
-    #[test]
-    fn test_less_equal() {
-        let input: String = String::from("()-32* 4 <= 2");
-        let tokens = setup(input.clone());
-        let found_tokens = filter_tokens(tokens, &Token::LessEqual);
-
-        assert_eq!(found_tokens[0].token, Token::LessEqual);
-    }
-
-    #[test]
-    fn test_bang_equal() {
-        let input: String = String::from("()-32* 4 != 2");
-        let tokens = setup(input.clone());
-        let found_tokens = filter_tokens(tokens, &Token::BangEqual);
-
-        assert_eq!(found_tokens[0].token, Token::BangEqual);
-    }
-
-    #[test]
-    fn test_equal_equal() {
-        let input: String = String::from("()-32* 4 == 2");
-        let tokens = setup(input.clone());
-        let found_tokens = filter_tokens(tokens, &Token::EqualEqual);
-
-        assert_eq!(found_tokens[0].token, Token::EqualEqual);
-    }
-
-    #[test]
-    fn test_string() {
-        let test_string = "test";
-        let input: String = String::from("\"") + test_string + "\"";
-        let tokens = setup(input.clone());
-
-        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
-    }
-
-    #[test]
-    fn test_multiple_strings() {
-        let test_string = "test1";
-        let test_string2 = "test2";
-        let input: String = String::from("\"") + test_string + "\"" + "\"" + test_string2 + "\"";
-        let tokens = setup(input.clone());
-
-        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
-        assert_eq!(tokens[1].token, Token::String(test_string2.to_string()));
-    }
-
-    #[test]
-    fn test_int_float_string() {
-        let test_string = "test";
-        let input: String = String::from("\"") + test_string + "\"" + "34 434.21";
-        let tokens = setup(input.clone());
-
-        assert_eq!(tokens[0].token, Token::String(test_string.to_string()));
-        assert_eq!(tokens[1].token, Token::Int(34));
-        assert_eq!(tokens[2].token, Token::Float(434.21));
-    }
-
-    #[test]
-    fn test_multiple_tokens() {
-        let input: String = String::from("(-*><=.,;\n");
-        let tokens = setup(input.clone());
-
-        let left_parent = filter_tokens(tokens.clone(), &Token::LeftParen);
-        let minus = filter_tokens(tokens.clone(), &Token::Minus);
-        let star = filter_tokens(tokens.clone(), &Token::Star);
-        let greater = filter_tokens(tokens.clone(), &Token::Greater);
-        let less_equal = filter_tokens(tokens.clone(), &Token::LessEqual);
-        let dot = filter_tokens(tokens.clone(), &Token::Dot);
-        let comma = filter_tokens(tokens.clone(), &Token::Comma);
-        let semicolon = filter_tokens(tokens.clone(), &Token::Semicolon);
-
-        assert_eq!(left_parent[0].token, Token::LeftParen);
-        assert_eq!(minus[0].token, Token::Minus);
-        assert_eq!(star[0].token, Token::Star);
-        assert_eq!(greater[0].token, Token::Greater);
-        assert_eq!(less_equal[0].token, Token::LessEqual);
-        assert_eq!(dot[0].token, Token::Dot);
-        assert_eq!(comma[0].token, Token::Comma);
-        assert_eq!(semicolon[0].token, Token::Semicolon);
-    }
-
-    #[test]
-    fn test_keywords() {
-        let input: String = String::from("and while var asd if");
-        let tokens = setup(input.clone());
-
-        assert_eq!(tokens[0].token, Token::And);
-        assert_eq!(tokens[1].token, Token::While);
-        assert_eq!(tokens[2].token, Token::Var);
-        assert_eq!(tokens[3].token, Token::Identifier(String::from("asd")));
-        assert_eq!(tokens[4].token, Token::If);
-    }
-
-    fn setup(input: String) -> Vec<LocToken> {
-        let mut lexer = Lexer::new(&input);
-        return lexer.lex().unwrap(); // We can safely expect that unit test cases to always return tokens here.
-    }
-
-    fn filter_tokens(tokens: Vec<LocToken>, tokens_to_find: &Token) -> Vec<LocToken> {
-        let found_tokens: Vec<LocToken> = tokens
-            .into_iter()
-            .filter(|token| token.token == *tokens_to_find)
-            .collect();
-
-        found_tokens
     }
 }

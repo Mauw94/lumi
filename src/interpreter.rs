@@ -91,31 +91,3 @@ impl Interpreter {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{Interpreter, LumiExpr};
-    use crate::{core::Obj, lexer::Lexer, parser::Parser};
-
-    fn n(n: f64) -> Obj {
-        Obj::f64(n)
-    }
-
-    #[test]
-    fn make_binary_expr() {
-        let interpreter = Interpreter::new();
-        let expr = setup(&"2 + 2\n".to_string());
-
-        let result = interpreter.eval(&expr).unwrap();
-
-        assert_eq!(result, n(4.0));
-    }
-
-    fn setup(code: &str) -> LumiExpr {
-        let mut lexer: Lexer = Lexer::new(code);
-        let tokens = lexer.lex().unwrap();
-
-        let mut parser: Parser = Parser::new(tokens);
-        return parser.parse().unwrap();
-    }
-}

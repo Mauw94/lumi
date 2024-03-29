@@ -12,10 +12,6 @@ mod interpreter;
 mod lexer;
 mod parser;
 
-// pub fn simple_eval(code: &str) -> Obj {
-//     let mut parser: Parser = Parser::new();
-// }
-
 pub struct AppConfig {
     debug_print_enabled: bool,
 }
@@ -30,4 +26,14 @@ impl AppConfig {
     pub fn is_debug_print_enabled(&self) -> bool {
         self.debug_print_enabled
     }
+}
+
+pub fn quick_eval(code: &str) -> Obj {
+    let mut lexer = Lexer::new(code);
+    let tokens = lexer.lex().unwrap();
+    println!("{:?}", tokens);
+    let mut parser = Parser::new(lexer.lex().unwrap());
+    let interpret = Interpreter::new();
+
+    interpret.eval(&parser.parse().unwrap()).unwrap()
 }
