@@ -72,8 +72,19 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
 
             eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
         }
-        Expr::Var(_) => todo!(),
-        Expr::Assign(_, _) => todo!(),
+        Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
+            Expr::Identifier(var_name) => {
+                let rhs = evaluate(env, r_expr)?;
+                env.define(var_name.to_string(), rhs);
+                return Ok(Obj::Null);
+            }
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Cannot assign to non-identifier.".to_string(),
+                    l_expr.start,
+                ))
+            }
+        },
         Expr::Print(expr) => Ok(evaluate(env, expr)?),
         Expr::Declare(var_name, expr) => {
             let value = evaluate(env, expr)?;

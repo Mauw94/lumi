@@ -43,7 +43,6 @@ pub enum Expr {
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
-    Var(Token),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
     Print(Box<LumiExpr>),
@@ -65,7 +64,6 @@ impl fmt::Display for Expr {
             Expr::Unary(token, expr) => write!(f, "UNARY {:?}({})", token, expr),
             Expr::Logical(left, op, right) => write!(f, "LOGIXAL ({} {:?} {})", left, op, right),
             Expr::Binary(left, op, right) => write!(f, "BINARY ({} {:?} {})", left, op, right),
-            Expr::Var(token) => write!(f, "VAR {:?}", token),
             Expr::Assign(lhs, rhs) => write!(f, "ASSIGN ({} = {})", lhs, rhs),
             Expr::Sequence(expressions) => {
                 write!(f, "SEQ [")?;

@@ -88,7 +88,7 @@ impl Obj {
                 LNum::Float(f) => println!("{}", f),
             },
             Obj::Seq(v) => match v {
-                Seq::String(s) => println!("{}", s),
+                Seq::String(s) => println!("\"{}\"", s),
             },
             Obj::Output(v) => println!("{}", v),
         }
