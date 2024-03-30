@@ -450,6 +450,7 @@ impl Parser {
         while self.matcher(&[Token::Equal]) {
             match self.previous() {
                 Some(_) => {
+                    println!("Assigning value.");
                     let value = self.assignment()?;
                     expr = LumiExpr {
                         start: start.clone(),

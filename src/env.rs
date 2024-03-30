@@ -24,7 +24,7 @@ impl Env {
         match self.vars.get(var_name) {
             Some(obj) => Ok(obj.borrow_mut().to_owned()),
             None => Err(LErr::runtime_error(
-                format!("Did not find variable with name: {}", var_name),
+                format!("Did not find variable with name: '{}'", var_name),
                 code_loc,
             )),
         }

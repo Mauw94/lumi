@@ -83,6 +83,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
             // TODO: cannot re-assign a variable to a different type.
+            // FIXME atm it's possible to assign a new var without the let keyword
             Expr::Identifier(var_name) => {
                 let rhs = evaluate(env, r_expr)?;
                 env.define(var_name.to_string(), rhs);
