@@ -206,7 +206,7 @@ impl Parser {
             Some(Token::Identifier(value)) => {
                 self.advance();
                 if self.matcher(&[Token::Declare]) {
-                    let expr = self.primary()?;
+                    let expr = self.unary()?;
                     self.consume(
                         Token::Semicolon,
                         "Expect ';' after variable declaration.".to_string(),
@@ -502,7 +502,7 @@ impl Parser {
             let expr = self.expression()?;
             self.consume(
                 Token::Semicolon,
-                "Expect ';' after value.".to_string(),
+                "Expect ';' after print statement.".to_string(),
                 start,
             )?;
             return Ok(LumiExpr {

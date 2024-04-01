@@ -1,0 +1,3 @@
+aString -> "asdfghjkl";
+print aString;
+print aString == "asdfghjkl";
