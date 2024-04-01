@@ -28,6 +28,7 @@ fn repl(config: &AppConfig) {
         match lexer.lex() {
             Ok(tokens) => {
                 debugger.set_tokens(tokens.clone());
+                debugger.debug_print();
                 let mut p = Parser::new(tokens);
                 match p.parse() {
                     Ok(expr) => {

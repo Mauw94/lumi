@@ -55,7 +55,7 @@ pub enum Token {
     False,
     Fun,
     Print,
-    Let,
+    Declare,
     Comment(String),
     Invalid(String),
 }
@@ -88,7 +88,13 @@ impl<'a> Lexer<'a> {
                 '.' => self.emit(Token::Dot),
                 ';' => self.emit(Token::Semicolon),
                 '+' => self.emit(Token::Plus),
-                '-' => self.emit(Token::Minus),
+                '-' => {
+                    if self.check_next_is_equal('>') {
+                        self.emit(Token::Declare);
+                    } else {
+                        self.emit(Token::Minus);
+                    }
+                }
                 '*' => self.emit(Token::Star),
                 ' ' | '\n' | '\r' => self.start = self.cur,
                 '=' => {
@@ -115,14 +121,21 @@ impl<'a> Lexer<'a> {
                         self.emit(Token::Less);
                     }
                 }
-                '>' => {
-                    if self.check_next_is_equal('=') {
-                        self.emit(Token::GreaterEqual);
-                        self.next();
-                    } else {
-                        self.emit(Token::Greater);
+                '>' => match self.tokens.last() {
+                    Some(t) => {
+                        if t.token == Token::Declare {
+                            {};
+                        }
                     }
-                }
+                    None => {
+                        if self.check_next_is_equal('=') {
+                            self.emit(Token::GreaterEqual);
+                            self.next();
+                        } else {
+                            self.emit(Token::Greater);
+                        }
+                    }
+                },
                 '/' => {
                     if self.check_next_is_equal('/') {
                         let mut rest_of_line: String = String::new();
@@ -304,7 +317,6 @@ impl<'a> Lexer<'a> {
         keywords.insert("nil", Token::Nil);
         keywords.insert("print", Token::Print);
         keywords.insert("return", Token::Return);
-        keywords.insert("let", Token::Let);
         keywords.insert("while", Token::While);
         keywords.insert("to", Token::To);
 

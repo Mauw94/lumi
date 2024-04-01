@@ -205,11 +205,25 @@ impl Parser {
             }
             Some(Token::Identifier(value)) => {
                 self.advance();
-                return Ok(LumiExpr {
-                    start,
-                    end: self.peek_loc(),
-                    expr: Expr::Identifier(value),
-                });
+                if self.matcher(&[Token::Declare]) {
+                    let expr = self.primary()?;
+                    self.consume(
+                        Token::Semicolon,
+                        "Expect ';' after variable declaration.".to_string(),
+                        start,
+                    )?;
+                    return Ok(LumiExpr {
+                        start,
+                        end: expr.end,
+                        expr: Expr::Declare(value, Box::new(expr)),
+                    });
+                } else {
+                    return Ok(LumiExpr {
+                        start,
+                        end: self.peek_loc(),
+                        expr: Expr::Identifier(value),
+                    });
+                }
             }
             Some(Token::True) => {
                 self.advance();
@@ -496,39 +510,6 @@ impl Parser {
                 end: expr.end,
                 expr: Expr::Print(Box::new(expr)),
             });
-        } else if self.matcher(&[Token::Let]) {
-            let loc_token = self.peek();
-            let variable_name = match loc_token {
-                Some(t) => match t.token {
-                    Token::Identifier(s) => s,
-                    _ => {
-                        return Err(LErr::parsing_error(
-                            "Expect variable name".to_string(),
-                            self.peek_loc(),
-                        ))
-                    }
-                },
-                None => todo!(),
-            };
-            self.advance();
-            if self.matcher(&[Token::Equal]) {
-                let expr = self.expression()?;
-                self.consume(
-                    Token::Semicolon,
-                    "Expect ';' after variable declaration.".to_string(),
-                    start,
-                )?;
-                return Ok(LumiExpr {
-                    start,
-                    end: expr.end,
-                    expr: Expr::Declare(variable_name, Box::new(expr)),
-                });
-            } else {
-                return Err(LErr::parsing_error(
-                    "Expect '=' after variable.".to_string(),
-                    self.peek_loc(),
-                ));
-            }
         }
 
         self.expression()
