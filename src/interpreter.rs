@@ -88,9 +88,9 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             // When declaring a variable without a type it is always re-assignable.
             // e.g.
             // a: int -> 2
-            // a = "test" will fail with a type mismatch.
+            // a = "test" => will fail with a type mismatch.
             // a -> 5
-            // a = "abc" will NOT fail because a never got a specific type.
+            // a = "abc" => will NOT fail because variable 'a' never got a specific type.
             Expr::Identifier(var_name) => {
                 match env.lookup_variable(var_name, l_expr.start) {
                     Ok(o) => {
