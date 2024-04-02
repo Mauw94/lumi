@@ -1,5 +1,5 @@
-a -> 5;
-c -> 2;
-b -> a;
-print a + b + c;
-print a + b + c == 12;
+a -> 5
+c -> 2
+b -> a
+print a + b + c
+print a + b + c == 12

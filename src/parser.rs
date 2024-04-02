@@ -3,6 +3,7 @@ use std::fmt;
 use crate::{
     core::LErr,
     lexer::{CodeLoc, LocToken, Token},
+    ObjectType,
 };
 
 // Precedence order, can/will be extended.
@@ -38,7 +39,7 @@ pub enum Expr {
     Float(f64),
     String(String),
     Identifier(String),
-    Declare(String, Box<LumiExpr>),
+    Declare(String, ObjectType, Box<LumiExpr>),
     Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -82,7 +83,7 @@ impl fmt::Display for Expr {
                 LiteralValue::Nil => write!(f, "NIL"),
             },
             Expr::Print(expr) => write!(f, "PRINT {}", expr),
-            Expr::Declare(t, expr) => write!(f, "DECLARE {} = {}", t, expr),
+            Expr::Declare(t, _obj_type, expr) => write!(f, "DECLARE {} = {}", t, expr),
         }
     }
 }
@@ -144,6 +145,7 @@ impl Parser {
         }
     }
 
+    #[allow(dead_code)]
     fn consume(&mut self, token: Token, msg: String, code_loc: CodeLoc) -> Result<(), LErr> {
         if self.check(token) {
             self.advance();
@@ -205,17 +207,47 @@ impl Parser {
             }
             Some(Token::Identifier(value)) => {
                 self.advance();
-                if self.matcher(&[Token::Declare]) {
+                if self.matcher(&[Token::Colon]) {
+                    match self.current_token() {
+                        Some(Token::IdentifierType(obj_type)) => {
+                            self.advance();
+                            if self.matcher(&[Token::Declare]) {
+                                let expr = self.unary()?;
+                                // self.consume(
+                                //     Token::Semicolon,
+                                //     "Expect ';' after variable declaration.".to_string(),
+                                //     start,
+                                // )?;
+                                return Ok(LumiExpr {
+                                    start,
+                                    end: expr.end,
+                                    expr: Expr::Declare(value, obj_type, Box::new(expr)),
+                                });
+                            } else {
+                                return Err(LErr::parsing_error(
+                                    "Expect declaration after type definition".to_string(),
+                                    start,
+                                ));
+                            }
+                        }
+                        None | _ => {
+                            return Err(LErr::parsing_error(
+                                "Expect a type after ':'".to_string(),
+                                start,
+                            ))
+                        }
+                    }
+                } else if self.matcher(&[Token::Declare]) {
                     let expr = self.unary()?;
-                    self.consume(
-                        Token::Semicolon,
-                        "Expect ';' after variable declaration.".to_string(),
-                        start,
-                    )?;
+                    // self.consume(
+                    //     Token::Semicolon,
+                    //     "Expect ';' after variable declaration.".to_string(),
+                    //     start,
+                    // )?;
                     return Ok(LumiExpr {
                         start,
                         end: expr.end,
-                        expr: Expr::Declare(value, Box::new(expr)),
+                        expr: Expr::Declare(value, ObjectType::None, Box::new(expr)),
                     });
                 } else {
                     return Ok(LumiExpr {
@@ -466,6 +498,7 @@ impl Parser {
                 Some(_) => {
                     println!("Assigning value.");
                     let value = self.assignment()?;
+                    // self.consume(Token::Semicolon, "Expect ';' after '='".to_string(), start)?;
                     expr = LumiExpr {
                         start: start.clone(),
                         end: expr.end,
@@ -500,11 +533,11 @@ impl Parser {
         let start = self.peek_loc();
         if self.matcher(&[Token::Print]) {
             let expr = self.expression()?;
-            self.consume(
-                Token::Semicolon,
-                "Expect ';' after print statement.".to_string(),
-                start,
-            )?;
+            // self.consume(
+            //     Token::Semicolon,
+            //     "Expect ';' after print statement.".to_string(),
+            //     start,
+            // )?;
             return Ok(LumiExpr {
                 start,
                 end: expr.end,

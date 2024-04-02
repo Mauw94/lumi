@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::core::LErr;
+use crate::{core::LErr, ObjectType};
 
 #[derive(Debug, Clone, PartialEq, Copy)]
 pub struct CodeLoc {
@@ -21,6 +21,7 @@ pub enum Token {
     Int(i64),
     String(String),
     Identifier(String),
+    IdentifierType(ObjectType),
     LeftParen,
     RightParen,
     LeftBrace,
@@ -37,6 +38,7 @@ pub enum Token {
     Bang,
     Comma,
     Dot,
+    Colon,
     Semicolon,
     Plus,
     Minus,
@@ -87,8 +89,10 @@ impl<'a> Lexer<'a> {
                 ',' => self.emit(Token::Comma),
                 '.' => self.emit(Token::Dot),
                 ';' => self.emit(Token::Semicolon),
+                ':' => self.emit(Token::Colon),
                 '+' => self.emit(Token::Plus),
                 '-' => {
+                    // TODO: undeclare statement?
                     if self.check_next_is_equal('>') {
                         self.emit(Token::Declare);
                     } else {
@@ -322,10 +326,22 @@ impl<'a> Lexer<'a> {
 
         if keywords.contains_key(keyword) {
             self.emit(keywords[keyword].clone());
+        } else if self.object_types().contains_key(keyword) {
+            self.emit(self.object_types()[keyword].clone());
         } else {
             self.emit(Token::Identifier(keyword.to_string()));
         }
 
         Ok(())
+    }
+
+    fn object_types(&self) -> HashMap<&'a str, Token> {
+        let mut object_types = HashMap::new();
+        object_types.insert("int", Token::IdentifierType(ObjectType::Int));
+        object_types.insert("float", Token::IdentifierType(ObjectType::Float));
+        object_types.insert("str", Token::IdentifierType(ObjectType::String));
+        object_types.insert("list", Token::IdentifierType(ObjectType::List));
+
+        object_types
     }
 }

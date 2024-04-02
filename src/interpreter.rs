@@ -29,7 +29,10 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
-        Expr::Identifier(v) => env.lookup_variable(v, expr.start),
+        Expr::Identifier(v) => match env.lookup_variable(v, expr.start) {
+            Ok(v) => Ok(v.1),
+            Err(e) => Err(e),
+        },
         Expr::Literal(literal) => match literal {
             LiteralValue::True => Ok(Obj::Bool(true)),
             LiteralValue::False => Ok(Obj::Bool(false)),
@@ -82,11 +85,31 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
         }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
-            // TODO: cannot re-assign a variable to a different type.
-            // FIXME atm it's possible to assign a new var without the let keyword
+            // When declaring a variable without a type it is always re-assignable.
+            // e.g.
+            // a: int -> 2
+            // a = "test" will fail with a type mismatch.
+            // a -> 5
+            // a = "abc" will NOT fail because a never got a specific type.
             Expr::Identifier(var_name) => {
-                let rhs = evaluate(env, r_expr)?;
-                env.define(var_name.to_string(), rhs);
+                match env.lookup_variable(var_name, l_expr.start) {
+                    Ok(o) => {
+                        let rhs = evaluate(env, &r_expr)?;
+                        if rhs.is_type(&o.0) {
+                            env.define(var_name.to_string(), o.0, rhs);
+                        } else {
+                            return Err(LErr::parsing_error(
+                                format!(
+                                    "Type mismatch. Tried to assign a {} value to {}",
+                                    rhs.get_type_name(),
+                                    o.0.get_type_name()
+                                ),
+                                l_expr.start,
+                            ));
+                        }
+                    }
+                    Err(e) => return Err(e),
+                }
                 return Ok(Obj::Null);
             }
             _ => {
@@ -99,10 +122,9 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         Expr::Print(expr) => {
             return Ok(evaluate(env, expr)?);
         }
-        Expr::Declare(var_name, expr) => {
-            // TODO: be able to give variables a type.
+        Expr::Declare(var_name, obj_type, expr) => {
             let value = evaluate(env, expr)?;
-            env.define(var_name.to_string(), value);
+            env.define(var_name.to_string(), obj_type.to_owned(), value);
             Ok(Obj::Null)
         }
     }
