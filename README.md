@@ -10,13 +10,13 @@ lumi> 3 * -5 --2
 ```
 
 ```
-lumi> a -> 2;
-lumi> print a;
+lumi> a -> 2
+lumi> print a
 2
 ```
 
 ```
-lumi> vec -> [1, 2, 3, 4, 5];
+lumi> vec -> [1, 2, 3, 4, 5]
 lumi> vec.sum()
 15
 ```
