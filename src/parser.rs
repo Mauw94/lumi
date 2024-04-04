@@ -219,11 +219,10 @@ impl Parser {
                     match self.current_token() {
                         Some(Token::IdentifierType(obj_type)) => {
                             self.advance();
-                            // BUG
-                            // FIXME declaring a: str = 2 doesn't throw a parsing error.
                             if self.matcher(&[Token::Declare]) {
+                                // FIXME re-assigning a list a = [1,2,3] does not work atm.
                                 if self.matcher(&[Token::LeftBracket]) {
-                                    self.parse_list_expr(value, start)
+                                    self.parse_list_expr(value, start, obj_type)
                                 } else {
                                     let expr = self.unary()?;
                                     return Ok(LumiExpr {
@@ -251,7 +250,7 @@ impl Parser {
                     }
                 } else if self.matcher(&[Token::Declare]) {
                     if self.matcher(&[Token::LeftBracket]) {
-                        self.parse_list_expr(value, start)
+                        self.parse_list_expr(value, start, ObjectType::List)
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
@@ -268,6 +267,7 @@ impl Parser {
                     });
                 }
             }
+            // TODO: if token [ => we're re-assigning a list?
             Some(Token::True) => {
                 self.advance();
                 return Ok(LumiExpr {
@@ -301,7 +301,12 @@ impl Parser {
         }
     }
 
-    fn parse_list_expr(&mut self, value: String, start: CodeLoc) -> Result<LumiExpr, LErr> {
+    fn parse_list_expr(
+        &mut self,
+        value: String,
+        start: CodeLoc,
+        obj_type: ObjectType,
+    ) -> Result<LumiExpr, LErr> {
         let end = self.peek_loc();
         let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
         while !self.matcher(&[Token::RightBracket]) {
@@ -326,7 +331,7 @@ impl Parser {
         return Ok(LumiExpr {
             start,
             end,
-            expr: Expr::Declare(value, ObjectType::None, Box::new(list_expr)),
+            expr: Expr::Declare(value, obj_type, Box::new(list_expr)),
         });
     }
 
@@ -536,9 +541,7 @@ impl Parser {
         while self.matcher(&[Token::Equal]) {
             match self.previous() {
                 Some(_) => {
-                    println!("Assigning value.");
                     let value = self.assignment()?;
-                    // self.consume(Token::Semicolon, "Expect ';' after '='".to_string(), start)?;
                     expr = LumiExpr {
                         start: start.clone(),
                         end: expr.end,
@@ -573,11 +576,6 @@ impl Parser {
         let start = self.peek_loc();
         if self.matcher(&[Token::Print]) {
             let expr = self.expression()?;
-            // self.consume(
-            //     Token::Semicolon,
-            //     "Expect ';' after print statement.".to_string(),
-            //     start,
-            // )?;
             return Ok(LumiExpr {
                 start,
                 end: expr.end,

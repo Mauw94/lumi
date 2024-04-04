@@ -137,10 +137,10 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             }
         },
         Expr::List(exprs) => {
-            let mut objs: Vec<Obj> = Vec::new();
-            for expr in exprs {
-                objs.push(evaluate(env, expr)?);
-            }
+            let objs: Vec<Obj> = exprs
+                .into_iter()
+                .map(|e| evaluate(env, &e))
+                .collect::<Result<Vec<Obj>, LErr>>()?;
 
             Ok(Obj::Seq(Seq::List(Rc::new(objs))))
         }

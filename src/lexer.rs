@@ -57,6 +57,7 @@ pub enum Token {
     False,
     Fun,
     Print,
+    Every,
     Declare,
     Comment(String),
     Invalid(String),
@@ -325,6 +326,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("return", Token::Return);
         keywords.insert("while", Token::While);
         keywords.insert("to", Token::To);
+        keywords.insert("every", Token::Every);
 
         if keywords.contains_key(keyword) {
             self.emit(keywords[keyword].clone());
