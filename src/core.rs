@@ -99,7 +99,7 @@ impl Obj {
             ObjectType::Float => self.is_float(),
             ObjectType::String => self.is_string(),
             ObjectType::Bool => self.is_bool(),
-            ObjectType::List => todo!(),
+            ObjectType::List => self.is_list(),
             ObjectType::None => true,
         }
     }
@@ -161,6 +161,16 @@ impl Obj {
     fn is_bool(&self) -> bool {
         match self {
             Obj::Bool(_) => true,
+            _ => false,
+        }
+    }
+
+    fn is_list(&self) -> bool {
+        match &self {
+            Obj::Seq(sq) => match sq {
+                Seq::List(_) => true,
+                _ => false,
+            },
             _ => false,
         }
     }

@@ -1,4 +1,4 @@
-use std::fmt;
+use std::fmt::{self};
 
 use crate::{
     core::LErr,
@@ -85,7 +85,13 @@ impl fmt::Display for Expr {
             },
             Expr::Print(expr) => write!(f, "PRINT {}", expr),
             Expr::Declare(t, _obj_type, expr) => write!(f, "DECLARE {} = {}", t, expr),
-            Expr::List(exprs) => write!(f, "LIST {:?}", exprs),
+            Expr::List(exprs) => {
+                write!(f, "LIST: ")?;
+                for expr in exprs {
+                    write!(f, "{}", expr)?;
+                }
+                Ok(())
+            }
         }
     }
 }
@@ -301,7 +307,6 @@ impl Parser {
         while !self.matcher(&[Token::RightBracket]) {
             match self.current_token() {
                 Some(t) => {
-                    println!("{:?}", t);
                     if t != Token::Comma {
                         let e = self.primary()?;
                         // TODO: check if types are correct, we can't mix ints and strings in a list.

@@ -86,7 +86,19 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Declare(var_name, obj_type, expr) => {
             let value = evaluate(env, expr)?;
-            env.define(var_name.to_string(), obj_type.to_owned(), value);
+            if !value.is_type(obj_type) {
+                return Err(LErr::runtime_error(
+                    // TODO: move common error messages to global file
+                    format!(
+                        "Type mismatch. Tried to assign a {} value to {}",
+                        value.get_type_name(),
+                        obj_type.get_type_name()
+                    ),
+                    expr.start,
+                ));
+            } else {
+                env.define(var_name.to_string(), obj_type.to_owned(), value);
+            }
             Ok(Obj::Null)
         }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
