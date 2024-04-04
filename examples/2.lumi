@@ -1,3 +1,6 @@
-a -> 2
-b -> 3
-print a + b
+aString -> "asdfghjkl"
+print aString
+print aString == "asdfghjkl"
+var -> 5
+b -> var
+print var and b == 5

@@ -151,6 +151,9 @@ impl<'a> Lexer<'a> {
                             self.next();
                         }
                         while let Some(c) = self.next() {
+                            if c == '\n' {
+                                break;
+                            }
                             rest_of_line.push(c);
                         }
                         let comment_no_specials = self.remove_r_n(&rest_of_line);

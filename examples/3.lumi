@@ -1,5 +1,4 @@
-a -> 5
-c -> 2
-b -> a
-print a + b + c
-print a + b + c == 12
+// This should print 3
+a: list -> [1, 2, 3, 4]
+b -> a[2]
+print b

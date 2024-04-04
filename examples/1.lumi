@@ -1,1 +1,6 @@
-print "test"
+a: int -> 2
+print a
+a = 7
+print a
+b: float -> 7.0
+print a + b == 14

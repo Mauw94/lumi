@@ -604,6 +604,13 @@ impl Parser {
     }
 
     pub fn parse(&mut self) -> Result<LumiExpr, LErr> {
+        self.remove_comments();
+        if self.tokens.len() == 0 {
+            return Err(LErr::parsing_error(
+                "No tokens found.".to_string(),
+                CodeLoc { line: 1, index: 0 },
+            ));
+        }
         let mut expr = vec![Box::new(self.statement()?)];
 
         let start = self.peek_loc();
@@ -619,5 +626,15 @@ impl Parser {
             end,
             expr: Expr::Sequence(expr),
         })
+    }
+
+    fn remove_comments(&mut self) {
+        self.tokens.retain_mut(|c| match &mut c.token {
+            Token::Comment(_s) => {
+                // do something with the comments here?
+                false
+            }
+            _ => true,
+        });
     }
 }
