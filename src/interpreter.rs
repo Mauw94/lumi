@@ -128,7 +128,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
                                     Ok(o) => match o.1 {
                                         Obj::Seq(sq) => match sq {
                                             Seq::List(list) => {
-                                                if list.len() >= index - 1 {
+                                                if list.len() > index {
                                                     let cloned_rc_list = Rc::clone(&list);
                                                     if let Some(obj) = cloned_rc_list.get(index) {
                                                         return Ok(obj.clone());
