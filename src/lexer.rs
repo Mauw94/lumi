@@ -234,7 +234,7 @@ impl<'a> Lexer<'a> {
         match c {
             Some('\n') => {
                 self.cur.line += 1;
-                self.cur.index += 1;
+                self.cur.index = 0;
             }
             Some(_) => {
                 self.cur.index += 1;
