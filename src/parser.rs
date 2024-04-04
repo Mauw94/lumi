@@ -265,7 +265,7 @@ impl Parser {
                     let e = self.primary()?;
                     match self.consume(
                         Token::RightBracket,
-                        "Expect ']' after index search?..".to_string(),
+                        "Expect ']' after index.".to_string(),
                         self.peek_loc(),
                     ) {
                         Ok(_) => {
