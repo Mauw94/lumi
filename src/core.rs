@@ -223,4 +223,11 @@ impl LNum {
             CompareType::LessEqual => f1 <= f2,
         }
     }
+
+    pub fn get_num_val_usize(&self) -> usize {
+        match &self {
+            LNum::Int(i) => *i as usize,
+            LNum::Float(f) => *f as usize,
+        }
+    }
 }

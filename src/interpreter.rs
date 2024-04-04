@@ -111,18 +111,68 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             Expr::Identifier(var_name) => {
                 match env.lookup_variable(var_name, l_expr.start) {
                     Ok(o) => {
-                        let rhs = evaluate(env, &r_expr)?;
-                        if rhs.is_type(&o.0) {
-                            env.define(var_name.to_string(), o.0, rhs);
-                        } else {
-                            return Err(LErr::parsing_error(
-                                format!(
-                                    "Type mismatch. Tried to assign a {} value to {}",
-                                    rhs.get_type_name(),
-                                    o.0.get_type_name()
-                                ),
-                                l_expr.start,
-                            ));
+                        match &r_expr.expr {
+                            Expr::Index(var, i) => {
+                                let index_obj = evaluate(env, i)?;
+                                let index: usize = match index_obj {
+                                    Obj::Num(lnum) => lnum.get_num_val_usize(),
+                                    _ => {
+                                        return Err(LErr::runtime_error(
+                                            "Index is not a numeric value.".to_string(),
+                                            r_expr.start,
+                                        ))
+                                    }
+                                };
+                                // now find value in list with index
+                                match env.lookup_variable(var, r_expr.start) {
+                                    Ok(o) => match o.1 {
+                                        Obj::Seq(sq) => match sq {
+                                            Seq::List(list) => {
+                                                if list.len() >= index - 1 {
+                                                    let cloned_rc_list = Rc::clone(&list);
+                                                    if let Some(obj) = cloned_rc_list.get(index) {
+                                                        return Ok(obj.clone());
+                                                    }
+                                                } else {
+                                                    return Err(LErr::runtime_error(
+                                                        "Index out of bounds".to_string(),
+                                                        r_expr.start,
+                                                    ));
+                                                }
+                                            }
+                                            _ => {
+                                                return Err(LErr::runtime_error(
+                                                    "Can not find index in none list type."
+                                                        .to_string(),
+                                                    r_expr.start,
+                                                ))
+                                            }
+                                        },
+                                        _ => {
+                                            return Err(LErr::runtime_error(
+                                                "Can not find index in none list type.".to_string(),
+                                                r_expr.start,
+                                            ))
+                                        }
+                                    },
+                                    Err(e) => return Err(e),
+                                }
+                            }
+                            _ => {
+                                let rhs = evaluate(env, &r_expr)?;
+                                if rhs.is_type(&o.0) {
+                                    env.define(var_name.to_string(), o.0, rhs);
+                                } else {
+                                    return Err(LErr::parsing_error(
+                                        format!(
+                                            "Type mismatch. Tried to assign a {} value to {}",
+                                            rhs.get_type_name(),
+                                            o.0.get_type_name()
+                                        ),
+                                        l_expr.start,
+                                    ));
+                                }
+                            }
                         }
                     }
                     Err(e) => return Err(e),
@@ -144,6 +194,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
 
             Ok(Obj::Seq(Seq::List(Rc::new(objs))))
         }
+        Expr::Index(_, expr) => return Ok(evaluate(env, expr)?),
         Expr::Print(expr) => {
             return Ok(evaluate(env, expr)?);
         }

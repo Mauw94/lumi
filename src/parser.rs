@@ -47,6 +47,7 @@ pub enum Expr {
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
+    Index(String, Box<LumiExpr>),
     Print(Box<LumiExpr>),
 }
 
@@ -92,6 +93,7 @@ impl fmt::Display for Expr {
                 }
                 Ok(())
             }
+            Expr::Index(var_name, expr) => write!(f, "VAR {} INDEX {}", var_name, expr),
         }
     }
 }
@@ -259,6 +261,22 @@ impl Parser {
                             expr: Expr::Declare(value, ObjectType::None, Box::new(expr)),
                         });
                     }
+                } else if self.matcher(&[Token::LeftBracket]) {
+                    let e = self.primary()?;
+                    match self.consume(
+                        Token::RightBracket,
+                        "Expect ']' after index search?..".to_string(),
+                        self.peek_loc(),
+                    ) {
+                        Ok(_) => {
+                            return Ok(LumiExpr {
+                                start,
+                                end: e.end,
+                                expr: Expr::Index(value, Box::new(e)),
+                            })
+                        }
+                        Err(e) => Err(e),
+                    }
                 } else {
                     return Ok(LumiExpr {
                         start,
@@ -267,7 +285,6 @@ impl Parser {
                     });
                 }
             }
-            // TODO: if token [ => we're re-assigning a list?
             Some(Token::True) => {
                 self.advance();
                 return Ok(LumiExpr {
