@@ -46,6 +46,7 @@ pub enum Expr {
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
+    List(Vec<Box<LumiExpr>>),
     Print(Box<LumiExpr>),
 }
 
@@ -84,6 +85,7 @@ impl fmt::Display for Expr {
             },
             Expr::Print(expr) => write!(f, "PRINT {}", expr),
             Expr::Declare(t, _obj_type, expr) => write!(f, "DECLARE {} = {}", t, expr),
+            Expr::List(exprs) => write!(f, "LIST {:?}", exprs),
         }
     }
 }
@@ -211,21 +213,25 @@ impl Parser {
                     match self.current_token() {
                         Some(Token::IdentifierType(obj_type)) => {
                             self.advance();
+                            // BUG
+                            // FIXME declaring a: str = 2 doesn't throw a parsing error.
                             if self.matcher(&[Token::Declare]) {
-                                let expr = self.unary()?;
-                                // self.consume(
-                                //     Token::Semicolon,
-                                //     "Expect ';' after variable declaration.".to_string(),
-                                //     start,
-                                // )?;
-                                return Ok(LumiExpr {
-                                    start,
-                                    end: expr.end,
-                                    expr: Expr::Declare(value, obj_type, Box::new(expr)),
-                                });
+                                if self.matcher(&[Token::LeftBracket]) {
+                                    self.parse_list_expr(value, start)
+                                } else {
+                                    let expr = self.unary()?;
+                                    return Ok(LumiExpr {
+                                        start,
+                                        end: expr.end,
+                                        expr: Expr::Declare(value, obj_type, Box::new(expr)),
+                                    });
+                                }
                             } else {
                                 return Err(LErr::parsing_error(
-                                    "Expect declaration after type definition".to_string(),
+                                    format!(
+                                        "Expect '{}' declaration after type definition",
+                                        obj_type.get_type_name(),
+                                    ),
                                     start,
                                 ));
                             }
@@ -238,17 +244,16 @@ impl Parser {
                         }
                     }
                 } else if self.matcher(&[Token::Declare]) {
-                    let expr = self.unary()?;
-                    // self.consume(
-                    //     Token::Semicolon,
-                    //     "Expect ';' after variable declaration.".to_string(),
-                    //     start,
-                    // )?;
-                    return Ok(LumiExpr {
-                        start,
-                        end: expr.end,
-                        expr: Expr::Declare(value, ObjectType::None, Box::new(expr)),
-                    });
+                    if self.matcher(&[Token::LeftBracket]) {
+                        self.parse_list_expr(value, start)
+                    } else {
+                        let expr = self.unary()?;
+                        return Ok(LumiExpr {
+                            start,
+                            end: expr.end,
+                            expr: Expr::Declare(value, ObjectType::None, Box::new(expr)),
+                        });
+                    }
                 } else {
                     return Ok(LumiExpr {
                         start,
@@ -288,6 +293,36 @@ impl Parser {
                 ))
             }
         }
+    }
+
+    fn parse_list_expr(&mut self, value: String, start: CodeLoc) -> Result<LumiExpr, LErr> {
+        let end = self.peek_loc();
+        let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
+        while !self.matcher(&[Token::RightBracket]) {
+            match self.current_token() {
+                Some(t) => {
+                    println!("{:?}", t);
+                    if t != Token::Comma {
+                        let e = self.primary()?;
+                        // TODO: check if types are correct, we can't mix ints and strings in a list.
+                        exprs.push(Box::new(e));
+                    } else {
+                        self.advance();
+                    }
+                }
+                None => {}
+            };
+        }
+        let list_expr = LumiExpr {
+            start,
+            end,
+            expr: Expr::List(exprs),
+        };
+        return Ok(LumiExpr {
+            start,
+            end,
+            expr: Expr::Declare(value, ObjectType::None, Box::new(list_expr)),
+        });
     }
 
     fn call(&mut self) -> Result<LumiExpr, LErr> {

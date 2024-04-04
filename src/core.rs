@@ -40,6 +40,7 @@ pub enum Obj {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Seq {
     String(Rc<String>),
+    List(Rc<Vec<Obj>>),
 }
 
 pub type LRes<T> = Result<T, LErr>;
@@ -122,6 +123,7 @@ impl Obj {
             },
             Obj::Seq(sq) => match sq {
                 Seq::String(_) => "str",
+                Seq::List(_) => "list",
             },
             Obj::Output(_) => "nil",
         }
@@ -150,6 +152,7 @@ impl Obj {
         match self {
             Obj::Seq(sq) => match sq {
                 Seq::String(_) => true,
+                _ => false,
             },
             _ => false,
         }
@@ -172,6 +175,7 @@ impl Obj {
             },
             Obj::Seq(v) => match v {
                 Seq::String(s) => println!("\"{}\"", s),
+                Seq::List(objs) => println!("{:?}", objs),
             },
             Obj::Output(v) => println!("{}", v),
         }

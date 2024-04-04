@@ -84,6 +84,11 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
 
             eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
         }
+        Expr::Declare(var_name, obj_type, expr) => {
+            let value = evaluate(env, expr)?;
+            env.define(var_name.to_string(), obj_type.to_owned(), value);
+            Ok(Obj::Null)
+        }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
             // When declaring a variable without a type it is always re-assignable.
             // e.g.
@@ -119,13 +124,16 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
                 ))
             }
         },
+        Expr::List(exprs) => {
+            let mut objs: Vec<Obj> = Vec::new();
+            for expr in exprs {
+                objs.push(evaluate(env, expr)?);
+            }
+
+            Ok(Obj::Seq(Seq::List(Rc::new(objs))))
+        }
         Expr::Print(expr) => {
             return Ok(evaluate(env, expr)?);
-        }
-        Expr::Declare(var_name, obj_type, expr) => {
-            let value = evaluate(env, expr)?;
-            env.define(var_name.to_string(), obj_type.to_owned(), value);
-            Ok(Obj::Null)
         }
     }
 }

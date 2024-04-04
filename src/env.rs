@@ -17,6 +17,7 @@ impl Env {
     }
 
     pub fn define(&mut self, var_name: String, obj_type: ObjectType, obj: Obj) {
+        println!("defining: {}", var_name);
         self.vars
             .insert(var_name, (obj_type, Box::new(RefCell::new(obj))));
     }
@@ -28,6 +29,7 @@ impl Env {
     ) -> LRes<(ObjectType, Obj)> {
         match self.vars.get(var_name) {
             Some(obj) => {
+                println!("retrieving value for: {}", var_name);
                 let object_type = obj.0.to_owned();
                 let object = obj.1.borrow_mut().to_owned();
                 return Ok((object_type, object));

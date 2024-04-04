@@ -86,6 +86,8 @@ impl<'a> Lexer<'a> {
                 ')' => self.emit(Token::RightParen),
                 '{' => self.emit(Token::LeftBrace),
                 '}' => self.emit(Token::RightBrace),
+                '[' => self.emit(Token::LeftBracket),
+                ']' => self.emit(Token::RightBracket),
                 ',' => self.emit(Token::Comma),
                 '.' => self.emit(Token::Dot),
                 ';' => self.emit(Token::Semicolon),
