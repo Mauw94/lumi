@@ -185,7 +185,11 @@ impl Obj {
             },
             Obj::Seq(v) => match v {
                 Seq::String(s) => println!("\"{}\"", s),
-                Seq::List(objs) => println!("{:?}", objs),
+                Seq::List(objs) => {
+                    for obj in objs.clone().iter() {
+                        obj.print_value();
+                    }
+                }
             },
             Obj::Output(v) => println!("{}", v),
         }
