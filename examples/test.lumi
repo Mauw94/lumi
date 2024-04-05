@@ -1,1 +1,5 @@
-time()
+a: int -> 55
+b: float -> 13.23
+string(a)
+print "asdas"
+string(b)

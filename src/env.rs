@@ -1,6 +1,8 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{try_borrow, try_borrow_mut, Builtin, Func, LErr, LRes, Obj, ObjectType, Time};
+use crate::{
+    try_borrow, try_borrow_mut, Builtin, Func, LErr, LRes, Obj, ObjectType, Stringify, Time,
+};
 
 #[derive(Debug)]
 pub struct Env {
@@ -34,6 +36,9 @@ impl Env {
 
 pub fn initialize(env: &mut Env) {
     env.insert_builtint(Time);
+    env.insert_builtint(Stringify {
+        name: "string".to_string(),
+    });
 }
 
 pub fn define(

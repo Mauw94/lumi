@@ -62,3 +62,29 @@ impl Builtin for Time {
         "time"
     }
 }
+
+#[derive(Debug)]
+struct Stringify {
+    name: String,
+}
+
+impl Builtin for Stringify {
+    fn run(&self, _env: &Rc<RefCell<Env>>, args: Vec<Obj>) -> LRes<Obj> {
+        let a = args.first().unwrap();
+        match a {
+            Obj::Num(n) => match n {
+                LNum::Int(i) => Ok(Obj::Seq(Seq::String(Rc::new(i.to_string())))),
+                LNum::Float(f) => Ok(Obj::Seq(Seq::String(Rc::new(f.to_string())))),
+            },
+            // TODO: be able to stringify other types
+            _ => Err(LErr::runtime_error(
+                "wrong type?".to_string(),
+                CodeLoc { line: 0, index: 0 },
+            )),
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        &self.name
+    }
+}
