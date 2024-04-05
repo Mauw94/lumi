@@ -1,0 +1,21 @@
+height: float -> 1.695
+weight: float -> 56.0
+
+fn printBMI(w, h) {
+    bmi: float -> 0.0
+    hSquared: float -> 0.0
+    hSquared = h * h
+    bmi = w / hSquared
+    print bmi
+
+    if (bmi < 18) {
+        print "Underweight" 
+    }
+    else if (bmi < 25) {
+        print "Normal weight"
+    } else {
+        print "Overweight" 
+    }
+}
+
+printBMI(weight, height)
