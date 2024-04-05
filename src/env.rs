@@ -37,8 +37,8 @@ pub fn lookup_variable(
     let r = try_borrow(env)?;
     match r.vars.get(var_name) {
         Some(obj) => {
-            let object_type = obj.0.to_owned();
-            let object = obj.1.borrow_mut().to_owned();
+            let object_type = obj.0.clone();
+            let object = obj.1.borrow().clone();
             return Ok((object_type, object));
         }
         None => Err(LErr::runtime_error(

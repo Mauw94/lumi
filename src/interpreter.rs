@@ -171,16 +171,46 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             return Ok(evaluate(env, expr)?);
         }
         Expr::Fn(fn_name, parameters, expressions) => {
-            // println!("{:?}", fn_name);
-            // println!("{:?}", parameters);
-            // println!("{:?}", expressions);
             let func = Obj::Func(Func::Closure(Closure {
                 body: Rc::clone(expressions),
                 params: Rc::clone(parameters),
-                env: Rc::clone(env),
             }));
             define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
             return Ok(func);
+        }
+        Expr::Call(callee, args) => {
+            let func = evaluate(env, callee)?;
+            match func {
+                Obj::Func(f) => match f {
+                    Func::Closure(c) => {
+                        let arguments = args
+                            .into_iter()
+                            .map(|a| evaluate(env, &a))
+                            .collect::<Result<Vec<Obj>, LErr>>()?;
+                        if arguments.len() != c.params.len() {
+                            return Err(LErr::runtime_error(
+                                format!(
+                                    "Expected {} arguments, but got {}.",
+                                    c.params.len(),
+                                    arguments.len()
+                                ),
+                                callee.end,
+                            ));
+                        }
+                        return Ok(c.call(arguments, env, callee.end)?);
+                    }
+                },
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Callee is not a function.".to_string(),
+                        callee.start,
+                    ))
+                }
+            };
+            // println!("Callee {:?}", callee);
+            // println!("arguments {:?}", args);
+            // TODO: every parameter's nme needs to be mapped to argument identifier values
+            // in a new inv only usable by the function
         }
     }
 }

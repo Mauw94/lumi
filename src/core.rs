@@ -3,7 +3,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{lexer::CodeLoc, Env, LumiExpr};
+use crate::{define, evaluate, lexer::CodeLoc, Env, LumiExpr};
 
 // TODO: extend this later to not only show on which line number, but also which position and which expression went wrong while parsing.
 #[derive(Debug)]
@@ -108,7 +108,34 @@ pub enum Func {
 pub struct Closure {
     pub params: Rc<Vec<Box<String>>>,
     pub body: Rc<LumiExpr>,
-    pub env: Rc<RefCell<Env>>,
+    // pub env: Rc<RefCell<Env>>,
+}
+
+impl Closure {
+    pub fn call(
+        &self,
+        args: Vec<Obj>,
+        _closure: &Rc<RefCell<Env>>,
+        code_loc: CodeLoc,
+    ) -> Result<Obj, LErr> {
+        // FIXME: add top env (closure)
+        let env = Rc::new(RefCell::new(Env::new())); // atm new env has no knowledge of top env
+
+        for (i, p) in self.params.iter().enumerate() {
+            let obj = match args.get(i) {
+                Some(o) => o,
+                None => {
+                    return Err(LErr::runtime_error(
+                        "Did not find argument value.".to_string(),
+                        code_loc,
+                    ))
+                }
+            };
+            define(&env, p.to_string(), ObjectType::None, obj.clone())?;
+        }
+
+        return Ok(evaluate(&env, &self.body)?);
+    }
 }
 
 impl ObjectType {
@@ -248,10 +275,10 @@ impl Obj {
             },
             Obj::Output(v) => println!("{}", v),
             Obj::Func(f) => match f {
-                Func::Closure(c) => {
-                    for p in c.params.iter() {
-                        println!("param: {}", p);
-                    }
+                Func::Closure(_c) => {
+                    // for p in c.params.iter() {
+                    //     println!("param: {}", p);
+                    // }
                     // print!("body {:?}", c.body);
                 }
             },

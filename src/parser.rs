@@ -1,4 +1,7 @@
-use std::{fmt, rc::Rc};
+use std::{
+    fmt::{self},
+    rc::Rc,
+};
 
 use crate::{
     core::LErr,
@@ -45,6 +48,7 @@ pub enum Expr {
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
     Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
+    Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -101,6 +105,9 @@ impl fmt::Display for Expr {
                 None => write!(f, "CONDITION {} BODY {}", condition, body),
             },
             Expr::Fn(fn_name, _parameters, _expressions) => write!(f, "FN NAME {}", fn_name),
+            Expr::Call(callee, arguments) => {
+                write!(f, "callee {:?} arguments {:?}", callee, arguments)
+            }
         }
     }
 }
@@ -359,10 +366,11 @@ impl Parser {
     }
 
     fn call(&mut self) -> Result<LumiExpr, LErr> {
-        let expr = self.primary()?;
+        let mut expr = self.primary()?;
 
         loop {
             if self.matcher(&[Token::LeftParen]) {
+                expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
             } else {
                 break;
@@ -370,6 +378,29 @@ impl Parser {
         }
 
         Ok(expr)
+    }
+
+    fn finish_call(&mut self, callee: LumiExpr) -> Result<LumiExpr, LErr> {
+        let mut arguments: Vec<Box<LumiExpr>> = Vec::new();
+        let start = self.peek_loc();
+        if !self.check(Token::RightParen) {
+            loop {
+                if self.matcher(&[Token::Comma]) {
+                    continue;
+                }
+                // TODO: check for max arguments
+                arguments.push(Box::new(self.expression()?));
+                if self.matcher(&[Token::RightParen]) {
+                    break;
+                }
+            }
+        }
+
+        return Ok(LumiExpr {
+            start,
+            end: self.peek_loc(),
+            expr: Expr::Call(Box::new(callee), arguments),
+        });
     }
 
     fn unary(&mut self) -> Result<LumiExpr, LErr> {
@@ -631,6 +662,7 @@ impl Parser {
                             ))
                         }
                     };
+                    // TODO: check for max parameters
                     parameters.push(Box::new(param_name));
                     self.advance();
                     // here we also "consume" the right parentheses
