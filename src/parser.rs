@@ -595,6 +595,7 @@ impl Parser {
 
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
+        // if statement.
         if self.matcher(&[Token::If]) {
             self.consume(Token::LeftParen, "Expect '(' after if.".to_string(), start)?;
             let condition = self.expression()?;
@@ -615,7 +616,9 @@ impl Parser {
                 end: self.peek_loc(),
                 expr: Expr::If(Box::new(condition), Box::new(body), else_branch),
             });
-        } else if self.matcher(&[Token::Print]) {
+        }
+        // print statement.
+        if self.matcher(&[Token::Print]) {
             let expr = self.expression()?;
             return Ok(LumiExpr {
                 start,
@@ -623,7 +626,25 @@ impl Parser {
                 expr: Expr::Print(Box::new(expr)),
             });
         }
+        // block statement (wrapped by '{ }' ).
+        if self.matcher(&[Token::LeftBrace]) {
+            let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
+            let start = self.peek_loc();
+            while !self.check(Token::RightBrace) && !self.is_at_end() {
+                exprs.push(Box::new(self.statement()?));
+            }
+            self.consume(
+                Token::RightBrace,
+                "Expect '}' after block.".to_string(),
+                self.peek_loc(),
+            )?;
 
+            return Ok(LumiExpr {
+                start,
+                end: self.peek_loc(),
+                expr: Expr::Sequence(exprs),
+            });
+        }
         self.expression()
     }
 
