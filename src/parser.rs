@@ -388,6 +388,7 @@ impl Parser {
                 if self.matcher(&[Token::Comma]) {
                     continue;
                 }
+
                 // TODO: check for max arguments
                 arguments.push(Box::new(self.expression()?));
                 if self.matcher(&[Token::RightParen]) {
@@ -395,6 +396,7 @@ impl Parser {
                 }
             }
         }
+        self.advance();
 
         return Ok(LumiExpr {
             start,

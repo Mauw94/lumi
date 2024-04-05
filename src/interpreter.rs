@@ -14,8 +14,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         // TODO: add all results of expressions to a Vec trace
         // and print this in main
         Expr::Sequence(xs) => {
-            // this if is a hack, needs fixing
-            // FIXME
             if xs.len() == 1 {
                 return evaluate(env, xs.last().unwrap());
             } else {

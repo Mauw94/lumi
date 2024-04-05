@@ -1,6 +1,3 @@
-// FIXME
-a: list -> [2, 3, 4, 5]
-b: int -> a[0]
-c: int -> 0
-// c = 5 + b // ERROR: tried to assign float to int
-print c
+test -> [14, 23, 58, 7, 18]
+b: int -> test[2]
+print b

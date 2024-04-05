@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use lumi::{evaluate, AppConfig, Debug, Env, Lexer, Parser};
+use lumi::{evaluate, initialize, AppConfig, Debug, Env, Lexer, Parser};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -22,7 +22,8 @@ fn prompt(input: &mut String) -> bool {
 }
 
 fn repl(config: &AppConfig) {
-    let env = Rc::new(RefCell::new(Env::new()));
+    let env = setup_env();
+
     let mut debugger = Debug::new(config);
     let mut input = String::new();
     while prompt(&mut input) {
@@ -53,8 +54,9 @@ fn repl(config: &AppConfig) {
 }
 
 fn run_code(config: &AppConfig, code: &str) {
+    let env = setup_env();
+
     let mut debugger = Debug::new(config);
-    let env = Rc::new(RefCell::new(Env::new()));
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
         Ok(tokens) => {
@@ -77,6 +79,12 @@ fn run_code(config: &AppConfig, code: &str) {
         }
         Err(e) => e.render(),
     };
+}
+
+fn setup_env() -> Rc<RefCell<Env>> {
+    let mut e = Env::new();
+    initialize(&mut e);
+    Rc::new(RefCell::new(e))
 }
 
 fn main() {
