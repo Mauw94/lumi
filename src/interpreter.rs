@@ -169,7 +169,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             return Ok(evaluate(env, expr)?);
         }
         Expr::Fn(fn_name, parameters, expressions) => {
-            // TODO: add built-in functions on the top env
             // TODO: add types to parameters and check if argument has correct type
             let func = Obj::Func(Func::Closure(Closure {
                 body: Rc::clone(expressions),
@@ -180,9 +179,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Call(callee, args) => {
             let func = evaluate(env, callee)?;
-            // TODO: check if callee identifier equals any builtin functions?
-            // OR
-            // lex tokens with recognized builtint names
             match func {
                 Obj::Func(f) => match f {
                     Func::Closure(c) => {

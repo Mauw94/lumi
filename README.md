@@ -58,10 +58,10 @@ Current time is 2024-03-28 21:14:16
 ```
 
 ## Features?
-* Dynamically typed 
+* Dynamically typed (somewhat, there's some restrictions to keep it clean-ish)
 * Everything is an expression
 * Built-in functions
 * Structs
 * Lists `[a, b, c]`
-* Dictionaries `{a: b, b: c}`
+* Dictionaries `{a: b, c: e}`
 * For loops `1 to 5 step 1`
