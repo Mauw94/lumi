@@ -1,5 +1,6 @@
 use std::{
     cell::{Ref, RefCell, RefMut},
+    fmt::Debug,
     rc::Rc,
 };
 
@@ -101,7 +102,14 @@ pub enum ObjectType {
 
 #[derive(Debug, Clone)]
 pub enum Func {
+    Builtin(Rc<dyn Builtin>),
     Closure(Closure),
+}
+
+pub trait Builtin: Debug {
+    fn run(&self, env: &Rc<RefCell<Env>>, args: Vec<Obj>) -> LRes<Obj>;
+
+    fn builtin_name(&self) -> &str;
 }
 
 #[derive(Debug, Clone)]
@@ -281,6 +289,7 @@ impl Obj {
                     // }
                     // print!("body {:?}", c.body);
                 }
+                Func::Builtin(_) => {}
             },
         }
     }

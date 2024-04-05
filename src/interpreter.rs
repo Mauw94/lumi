@@ -182,6 +182,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Call(callee, args) => {
             let func = evaluate(env, callee)?;
+            // TODO: check if callee identifier equals any builtin functions?
+            // OR
+            // lex tokens with recognized builtint names
             match func {
                 Obj::Func(f) => match f {
                     Func::Closure(c) => {
@@ -200,6 +203,17 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                             ));
                         }
                         return Ok(c.call(arguments, env, callee.end)?);
+                    }
+                    Func::Builtin(b) => {
+                        if args.len() == 0 {
+                            return b.run(env, Vec::new());
+                        } else {
+                            let arguments = args
+                                .into_iter()
+                                .map(|a| evaluate(env, &a))
+                                .collect::<Result<Vec<Obj>, LErr>>()?;
+                            return b.run(env, arguments);
+                        }
                     }
                 },
                 _ => {

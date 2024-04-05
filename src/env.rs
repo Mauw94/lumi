@@ -1,6 +1,6 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
-use crate::{try_borrow, try_borrow_mut, LErr, LRes, Obj, ObjectType};
+use crate::{try_borrow, try_borrow_mut, Builtin, Func, LErr, LRes, Obj, ObjectType, Time};
 
 #[derive(Debug)]
 pub struct Env {
@@ -15,6 +15,25 @@ impl Env {
             parent: None,
         }
     }
+
+    pub fn insert_builtint(&mut self, b: impl Builtin + 'static) {
+        self.insert(
+            b.builtin_name().to_string(),
+            ObjectType::Function,
+            Obj::Func(Func::Builtin(Rc::new(b))),
+        )
+        .unwrap();
+    }
+
+    pub fn insert(&mut self, key: String, obj_type: ObjectType, obj: Obj) -> LRes<()> {
+        self.vars
+            .insert(key, (obj_type, Box::new(RefCell::new(obj))));
+        Ok(())
+    }
+}
+
+pub fn initialize(env: &mut Env) {
+    env.insert_builtint(Time);
 }
 
 pub fn define(

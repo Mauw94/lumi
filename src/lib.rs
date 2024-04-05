@@ -1,6 +1,9 @@
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use chrono::DateTime;
+use chrono::Local;
+
 pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
@@ -41,4 +44,21 @@ pub fn quick_eval(code: &str) -> Obj {
     let mut parser = Parser::new(lexer.lex().unwrap());
 
     evaluate(&env, &parser.parse().unwrap()).unwrap()
+}
+
+#[derive(Debug)]
+struct Time;
+
+impl Builtin for Time {
+    fn run(&self, _env: &Rc<RefCell<Env>>, _args: Vec<Obj>) -> LRes<Obj> {
+        let local: DateTime<Local> = Local::now();
+        Ok(Obj::Output(format!(
+            "Current time is {}",
+            local.format("%Y-%m-%d %H:%M:%S")
+        )))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "time"
+    }
 }
