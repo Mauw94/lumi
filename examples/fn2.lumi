@@ -1,0 +1,7 @@
+a: list -> [1, 2, 3, 4, 5]
+
+fn showFirst(array) {
+    print array[0]
+}
+
+showFirst(a)
