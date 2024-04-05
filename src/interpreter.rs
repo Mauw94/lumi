@@ -1,14 +1,15 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, LRes, Obj, Seq},
-    eval,
+    define, eval,
     lexer::Token,
+    lookup_variable,
     parser::{Expr, LiteralValue, LumiExpr},
-    CodeLoc, Env,
+    Closure, CodeLoc, Env, Func, ObjectType,
 };
 
-pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
+pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
     match &expr.expr {
         // TODO: add all results of expressions to a Vec trace
         // and print this in main
@@ -29,7 +30,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
-        Expr::Identifier(v) => match env.lookup_variable(v, expr.start) {
+        Expr::Identifier(v) => match lookup_variable(env, v, expr.start) {
             Ok(v) => Ok(v.1),
             Err(e) => Err(e),
         },
@@ -106,7 +107,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
                     expr.start,
                 ));
             } else {
-                env.define(var_name.to_string(), obj_type.to_owned(), value);
+                define(env, var_name.to_string(), obj_type.to_owned(), value)?;
             }
             Ok(Obj::Null)
         }
@@ -118,7 +119,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             // a -> 5
             // a = "abc" => will NOT fail because variable 'a' never got a specific type.
             Expr::Identifier(var_name) => {
-                match env.lookup_variable(var_name, l_expr.start) {
+                match lookup_variable(env, var_name, l_expr.start) {
                     Ok(o) => match &r_expr.expr {
                         Expr::Index(var, i) => {
                             let index_obj = evaluate(env, i)?;
@@ -129,7 +130,7 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
                         _ => {
                             let rhs = evaluate(env, &r_expr)?;
                             if rhs.is_type(&o.0) {
-                                env.define(var_name.to_string(), o.0, rhs);
+                                define(env, var_name.to_string(), o.0, rhs)?;
                             } else {
                                 return Err(LErr::parsing_error(
                                     format!(
@@ -170,10 +171,16 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
             return Ok(evaluate(env, expr)?);
         }
         Expr::Fn(fn_name, parameters, expressions) => {
-            println!("{:?}", fn_name);
-            println!("{:?}", parameters);
-            println!("{:?}", expressions);
-            return Ok(Obj::Null);
+            // println!("{:?}", fn_name);
+            // println!("{:?}", parameters);
+            // println!("{:?}", expressions);
+            let func = Obj::Func(Func::Closure(Closure {
+                body: Rc::clone(expressions),
+                params: Rc::clone(parameters),
+                env: Rc::clone(env),
+            }));
+            define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
+            return Ok(func);
         }
     }
 }
@@ -191,12 +198,12 @@ fn get_real_index_num_from_object(index_obj: Obj, code_loc: CodeLoc) -> Result<u
 }
 
 fn get_value_by_index_from_list(
-    env: &mut Env,
+    env: &Rc<RefCell<Env>>,
     var: &String,
     index: usize,
     code_loc: CodeLoc,
 ) -> Result<Obj, LErr> {
-    match env.lookup_variable(var, code_loc) {
+    match lookup_variable(env, var, code_loc) {
         Ok(o) => match o.1 {
             Obj::Seq(sq) => match sq {
                 Seq::List(list) => {

@@ -1,4 +1,4 @@
 a: int -> 2
-fn test(param) {
+fn test(param, abc) {
     print param
 }

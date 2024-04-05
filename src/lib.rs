@@ -1,3 +1,6 @@
+use std::cell::RefCell;
+use std::rc::Rc;
+
 pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
@@ -31,11 +34,11 @@ impl AppConfig {
 }
 
 pub fn quick_eval(code: &str) -> Obj {
-    let mut env = Env::new();
+    let env = Rc::new(RefCell::new(Env::new()));
     let mut lexer = Lexer::new(code);
     let tokens = lexer.lex().unwrap();
     println!("{:?}", tokens);
     let mut parser = Parser::new(lexer.lex().unwrap());
 
-    evaluate(&mut env, &parser.parse().unwrap()).unwrap()
+    evaluate(&env, &parser.parse().unwrap()).unwrap()
 }

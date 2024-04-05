@@ -1,4 +1,4 @@
-use std::fmt::{self};
+use std::{fmt, rc::Rc};
 
 use crate::{
     core::LErr,
@@ -44,7 +44,7 @@ pub enum Expr {
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
-    Fn(String, Vec<String>, Box<LumiExpr>),
+    Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -616,7 +616,7 @@ impl Parser {
                 "Expect '(' after function name".to_string(),
                 self.peek_loc(),
             )?;
-            let mut parameters: Vec<String> = Vec::new();
+            let mut parameters: Vec<Box<String>> = Vec::new();
             if !self.check(Token::RightParen) {
                 loop {
                     if self.matcher(&[Token::Comma]) {
@@ -631,7 +631,7 @@ impl Parser {
                             ))
                         }
                     };
-                    parameters.push(param_name);
+                    parameters.push(Box::new(param_name));
                     self.advance();
                     // here we also "consume" the right parentheses
                     if self.matcher(&[Token::RightParen]) {
@@ -647,7 +647,7 @@ impl Parser {
                 return Ok(LumiExpr {
                     start,
                     end: self.peek_loc(),
-                    expr: Expr::Fn(fn_name, parameters, Box::new(expressions)),
+                    expr: Expr::Fn(fn_name, Rc::new(parameters), Rc::new(expressions)),
                 });
             }
         }

@@ -1,4 +1,7 @@
-use std::rc::Rc;
+use std::{
+    cell::{Ref, RefCell, RefMut},
+    rc::Rc,
+};
 
 use crate::{lexer::CodeLoc, Env, LumiExpr};
 
@@ -18,6 +21,10 @@ impl LErr {
         LErr(message, code_loc)
     }
 
+    pub fn internal_error(message: String) -> Self {
+        LErr(message, CodeLoc { line: 0, index: 0 }) // FIXME variations without codeloc.
+    }
+
     // TODO type of errors
     pub fn render(self: LErr) {
         let LErr(message, code_loc) = self;
@@ -25,6 +32,26 @@ impl LErr {
             "ERROR: at line [{}] index: [{}]: '{}'",
             code_loc.line, code_loc.index, message
         );
+    }
+}
+
+pub fn try_borrow<'a, T>(r: &'a RefCell<T>) -> LRes<Ref<'a, T>> {
+    match r.try_borrow() {
+        Ok(r) => Ok(r),
+        Err(e) => Err(LErr::internal_error(format!(
+            "internal borrow error: {}",
+            e
+        ))),
+    }
+}
+
+pub fn try_borrow_mut<'a, T>(r: &'a RefCell<T>) -> LRes<RefMut<'a, T>> {
+    match r.try_borrow_mut() {
+        Ok(r) => Ok(r),
+        Err(e) => Err(LErr::internal_error(format!(
+            "internal borrow error: {}",
+            e
+        ))),
     }
 }
 
@@ -68,6 +95,7 @@ pub enum ObjectType {
     String,
     Bool,
     List,
+    Function,
     None,
 }
 
@@ -80,7 +108,7 @@ pub enum Func {
 pub struct Closure {
     pub params: Rc<Vec<Box<String>>>,
     pub body: Rc<LumiExpr>,
-    pub env: Rc<Env>,
+    pub env: Rc<RefCell<Env>>,
 }
 
 impl ObjectType {
@@ -90,6 +118,7 @@ impl ObjectType {
             ObjectType::Float => "float",
             ObjectType::String => "str",
             ObjectType::Bool => "bool",
+            ObjectType::Function => "function",
             ObjectType::List => "list",
             ObjectType::None => "none",
         }
@@ -113,6 +142,7 @@ impl Obj {
             ObjectType::String => self.is_string(),
             ObjectType::Bool => self.is_bool(),
             ObjectType::List => self.is_list(),
+            ObjectType::Function => self.is_function(),
             ObjectType::None => true,
         }
     }
@@ -183,6 +213,13 @@ impl Obj {
         }
     }
 
+    fn is_function(&self) -> bool {
+        match &self {
+            Obj::Func(_) => true,
+            _ => false,
+        }
+    }
+
     fn is_list(&self) -> bool {
         match &self {
             Obj::Seq(sq) => match sq {
@@ -210,7 +247,14 @@ impl Obj {
                 }
             },
             Obj::Output(v) => println!("{}", v),
-            Obj::Func(_f) => println!("fn name:  params "), // FIXME
+            Obj::Func(f) => match f {
+                Func::Closure(c) => {
+                    for p in c.params.iter() {
+                        println!("param: {}", p);
+                    }
+                    // print!("body {:?}", c.body);
+                }
+            },
         }
     }
 
