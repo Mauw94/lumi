@@ -171,6 +171,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             return Ok(evaluate(env, expr)?);
         }
         Expr::Fn(fn_name, parameters, expressions) => {
+            // TODO: add built-in functions on the top env
+            // TODO: add types to parameters and check if argument has correct type
             let func = Obj::Func(Func::Closure(Closure {
                 body: Rc::clone(expressions),
                 params: Rc::clone(parameters),
