@@ -1,0 +1,7 @@
+
+a: int -> 6
+print a < 5
+if (a < 5) 
+print "a smaller than 5"
+else
+print "a bigger than 5"

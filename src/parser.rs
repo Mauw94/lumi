@@ -43,6 +43,7 @@ pub enum Expr {
     Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
+    If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -94,6 +95,10 @@ impl fmt::Display for Expr {
                 Ok(())
             }
             Expr::Index(var_name, expr) => write!(f, "VAR {} INDEX {}", var_name, expr),
+            Expr::If(condition, body, else_branch) => match else_branch {
+                Some(end) => write!(f, "CONDITION {} BODY {} ELSE? {}", condition, body, end),
+                None => write!(f, "CONDITION {} BODY {}", condition, body),
+            },
         }
     }
 }
@@ -155,7 +160,6 @@ impl Parser {
         }
     }
 
-    #[allow(dead_code)]
     fn consume(&mut self, token: Token, msg: String, code_loc: CodeLoc) -> Result<(), LErr> {
         if self.check(token) {
             self.advance();
@@ -591,7 +595,27 @@ impl Parser {
 
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
-        if self.matcher(&[Token::Print]) {
+        if self.matcher(&[Token::If]) {
+            self.consume(Token::LeftParen, "Expect '(' after if.".to_string(), start)?;
+            let condition = self.expression()?;
+            self.consume(
+                Token::RightParen,
+                "Expect ')' after if condition".to_string(),
+                condition.start,
+            )?;
+            let body = self.statement()?;
+            let else_branch = if self.matcher(&[Token::Else]) {
+                Some(Box::new(self.statement()?))
+            } else {
+                None
+            };
+
+            return Ok(LumiExpr {
+                start,
+                end: self.peek_loc(),
+                expr: Expr::If(Box::new(condition), Box::new(body), else_branch),
+            });
+        } else if self.matcher(&[Token::Print]) {
             let expr = self.expression()?;
             return Ok(LumiExpr {
                 start,

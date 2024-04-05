@@ -65,7 +65,7 @@ fn run_code(config: &AppConfig, code: &str) {
                         Ok(x) => {
                             debugger.set_eval(x.clone());
                             debugger.debug_print();
-                            // x.print_value();
+                            x.print_value();
                         }
                         Err(e) => e.render(),
                     }

@@ -78,6 +78,16 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
 
             return evaluate(env, &r_expr);
         }
+        Expr::If(condition, body, else_branch) => {
+            if is_truthy(evaluate(env, condition)?) {
+                evaluate(env, &body)?;
+            }
+            match else_branch {
+                Some(end) => evaluate(env, end)?,
+                None => Obj::Null,
+            };
+            return Ok(Obj::Null);
+        }
         Expr::Binary(lv, op, rv) => {
             let lhs = evaluate(env, lv)?;
             let rhs = evaluate(env, rv)?;
