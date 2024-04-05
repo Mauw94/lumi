@@ -209,10 +209,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                     ))
                 }
             };
-            // println!("Callee {:?}", callee);
-            // println!("arguments {:?}", args);
-            // TODO: every parameter's nme needs to be mapped to argument identifier values
-            // in a new inv only usable by the function
         }
     }
 }
