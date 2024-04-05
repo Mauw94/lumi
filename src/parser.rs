@@ -44,6 +44,7 @@ pub enum Expr {
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
+    Fn(String, Vec<String>, Box<LumiExpr>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -99,6 +100,7 @@ impl fmt::Display for Expr {
                 Some(end) => write!(f, "CONDITION {} BODY {} ELSE? {}", condition, body, end),
                 None => write!(f, "CONDITION {} BODY {}", condition, body),
             },
+            Expr::Fn(fn_name, _parameters, _expressions) => write!(f, "FN NAME {}", fn_name),
         }
     }
 }
@@ -595,6 +597,60 @@ impl Parser {
 
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
+
+        // function statement.
+        if self.matcher(&[Token::Fn]) {
+            let start = self.peek_loc();
+            let fn_name = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect function name".to_string(),
+                        self.peek_loc(),
+                    ))
+                }
+            };
+            self.advance();
+            self.consume(
+                Token::LeftParen,
+                "Expect '(' after function name".to_string(),
+                self.peek_loc(),
+            )?;
+            let mut parameters: Vec<String> = Vec::new();
+            if !self.check(Token::RightParen) {
+                loop {
+                    if self.matcher(&[Token::Comma]) {
+                        continue;
+                    }
+                    let param_name = match self.current_token() {
+                        Some(Token::Identifier(name)) => name,
+                        _ => {
+                            return Err(LErr::parsing_error(
+                                "Expect parameter name.".to_string(),
+                                self.peek_loc(),
+                            ))
+                        }
+                    };
+                    parameters.push(param_name);
+                    self.advance();
+                    // here we also "consume" the right parentheses
+                    if self.matcher(&[Token::RightParen]) {
+                        break;
+                    }
+                }
+                self.consume(
+                    Token::LeftBrace,
+                    "Expect '{' before function body.".to_string(),
+                    self.peek_loc(),
+                )?;
+                let expressions = self.block()?;
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Fn(fn_name, parameters, Box::new(expressions)),
+                });
+            }
+        }
         // if statement.
         if self.matcher(&[Token::If]) {
             self.consume(Token::LeftParen, "Expect '(' after if.".to_string(), start)?;
@@ -628,22 +684,7 @@ impl Parser {
         }
         // block statement (wrapped by '{ }' ).
         if self.matcher(&[Token::LeftBrace]) {
-            let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
-            let start = self.peek_loc();
-            while !self.check(Token::RightBrace) && !self.is_at_end() {
-                exprs.push(Box::new(self.statement()?));
-            }
-            self.consume(
-                Token::RightBrace,
-                "Expect '}' after block.".to_string(),
-                self.peek_loc(),
-            )?;
-
-            return Ok(LumiExpr {
-                start,
-                end: self.peek_loc(),
-                expr: Expr::Sequence(exprs),
-            });
+            return self.block();
         }
         self.expression()
     }
@@ -680,6 +721,25 @@ impl Parser {
                 false
             }
             _ => true,
+        });
+    }
+
+    fn block(&mut self) -> Result<LumiExpr, LErr> {
+        let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
+        let start = self.peek_loc();
+        while !self.check(Token::RightBrace) && !self.is_at_end() {
+            exprs.push(Box::new(self.statement()?));
+        }
+        self.consume(
+            Token::RightBrace,
+            "Expect '}' after block.".to_string(),
+            self.peek_loc(),
+        )?;
+
+        return Ok(LumiExpr {
+            start,
+            end: self.peek_loc(),
+            expr: Expr::Sequence(exprs),
         });
     }
 }

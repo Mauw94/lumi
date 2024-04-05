@@ -55,7 +55,7 @@ pub enum Token {
     Return,
     True,
     False,
-    Fun,
+    Fn,
     Print,
     Every,
     Declare,
@@ -323,7 +323,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("else", Token::Else);
         keywords.insert("false", Token::False);
         keywords.insert("true", Token::True);
-        keywords.insert("fun", Token::Fun);
+        keywords.insert("fn", Token::Fn);
         keywords.insert("nil", Token::Nil);
         keywords.insert("print", Token::Print);
         keywords.insert("return", Token::Return);

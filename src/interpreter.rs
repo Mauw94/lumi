@@ -169,6 +169,12 @@ pub fn evaluate(env: &mut Env, expr: &LumiExpr) -> LRes<Obj> {
         Expr::Print(expr) => {
             return Ok(evaluate(env, expr)?);
         }
+        Expr::Fn(fn_name, parameters, expressions) => {
+            println!("{:?}", fn_name);
+            println!("{:?}", parameters);
+            println!("{:?}", expressions);
+            return Ok(Obj::Null);
+        }
     }
 }
 
