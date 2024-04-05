@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use crate::lexer::CodeLoc;
+use crate::{lexer::CodeLoc, Env, LumiExpr};
 
 // TODO: extend this later to not only show on which line number, but also which position and which expression went wrong while parsing.
 #[derive(Debug)]
@@ -28,16 +28,17 @@ impl LErr {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Obj {
     Null,
     Bool(bool),
     Num(LNum),
     Seq(Seq),
     Output(String),
+    Func(Func),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum Seq {
     String(Rc<String>),
     List(Rc<Vec<Obj>>),
@@ -68,6 +69,18 @@ pub enum ObjectType {
     Bool,
     List,
     None,
+}
+
+#[derive(Debug, Clone)]
+pub enum Func {
+    Closure(Closure),
+}
+
+#[derive(Debug, Clone)]
+pub struct Closure {
+    pub params: Rc<Vec<Box<String>>>,
+    pub body: Rc<LumiExpr>,
+    pub env: Rc<Env>,
 }
 
 impl ObjectType {
@@ -108,7 +121,11 @@ impl Obj {
         match (self, other) {
             (Obj::Bool(b1), Obj::Bool(b2)) => b1 == b2,
             (Obj::Num(n1), Obj::Num(n2)) => LNum::compare_lnums(n1, n2, CompareType::Equal),
-            (Obj::Seq(s1), Obj::Seq(s2)) => s1 == s2,
+            (Obj::Seq(seq1), Obj::Seq(seq2)) => match (seq1, seq2) {
+                (Seq::String(s1), Seq::String(s2)) => s1 == s2,
+                (Seq::List(_), Seq::List(_)) => todo!(),
+                _ => false,
+            },
             _ => false,
         }
     }
@@ -126,6 +143,7 @@ impl Obj {
                 Seq::List(_) => "list",
             },
             Obj::Output(_) => "nil",
+            Obj::Func(_) => "function",
         }
     }
     fn is_int(&self) -> bool {
@@ -192,6 +210,7 @@ impl Obj {
                 }
             },
             Obj::Output(v) => println!("{}", v),
+            Obj::Func(_f) => println!("fn name:  params "), // FIXME
         }
     }
 
