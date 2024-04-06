@@ -1,5 +1,15 @@
-a: int -> 55
-b: float -> 13.23
-string(a)
-print "asdas"
-string(b)
+fn something(a, b) {
+    if (a < b) {
+        print "a smol"
+    } else {
+        print "b smol"
+    }
+}
+
+a -> 2
+b -> 3
+
+something(a, b)
+something(b, a)
+c -> 2
+print c

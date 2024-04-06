@@ -1,4 +1,5 @@
 use std::cell::RefCell;
+use std::fmt::Debug;
 use std::rc::Rc;
 
 use chrono::DateTime;
@@ -46,11 +47,17 @@ pub fn quick_eval(code: &str) -> Obj {
     evaluate(&env, &parser.parse().unwrap()).unwrap()
 }
 
+pub trait Builtin: Debug {
+    fn run(&self, env: &Rc<RefCell<Env>>, args: Vec<Obj>, code_loc: CodeLoc) -> LRes<Obj>;
+
+    fn builtin_name(&self) -> &str;
+}
+
 #[derive(Debug)]
 struct Time;
 
 impl Builtin for Time {
-    fn run(&self, _env: &Rc<RefCell<Env>>, _args: Vec<Obj>) -> LRes<Obj> {
+    fn run(&self, _env: &Rc<RefCell<Env>>, _args: Vec<Obj>, _code_loc: CodeLoc) -> LRes<Obj> {
         let local: DateTime<Local> = Local::now();
         Ok(Obj::Output(format!(
             "Current time is {}",
@@ -69,22 +76,62 @@ struct Stringify {
 }
 
 impl Builtin for Stringify {
-    fn run(&self, _env: &Rc<RefCell<Env>>, args: Vec<Obj>) -> LRes<Obj> {
+    fn run(&self, _env: &Rc<RefCell<Env>>, args: Vec<Obj>, code_loc: CodeLoc) -> LRes<Obj> {
+        if args.len() > 1 {
+            return Err(LErr::runtime_error(
+                format!("Expected only 1 argument, got {}.", args.len()),
+                code_loc,
+            ));
+        } else if args.len() == 0 {
+            return Err(LErr::runtime_error(
+                format!("Expected at least 1 argument."),
+                code_loc,
+            ));
+        }
         let a = args.first().unwrap();
-        match a {
-            Obj::Num(n) => match n {
-                LNum::Int(i) => Ok(Obj::Seq(Seq::String(Rc::new(i.to_string())))),
-                LNum::Float(f) => Ok(Obj::Seq(Seq::String(Rc::new(f.to_string())))),
-            },
-            // TODO: be able to stringify other types
-            _ => Err(LErr::runtime_error(
-                "wrong type?".to_string(),
-                CodeLoc { line: 0, index: 0 },
-            )),
+        match self.stringify_obj(a, code_loc) {
+            Ok(s) => Ok(Obj::Seq(Seq::String(Rc::new(s)))),
+            Err(e) => Err(e),
         }
     }
 
     fn builtin_name(&self) -> &str {
         &self.name
+    }
+}
+
+impl Stringify {
+    fn stringify_obj(&self, obj: &Obj, code_loc: CodeLoc) -> Result<String, LErr> {
+        match obj {
+            Obj::Num(n) => match n {
+                LNum::Int(i) => Ok(i.to_string()),
+                LNum::Float(f) => Ok(f.to_string()),
+            },
+            Obj::Bool(b) => Ok(b.to_string()),
+            Obj::Seq(seq) => match seq {
+                Seq::String(s) => Ok(s.to_string()),
+                Seq::List(lst) => {
+                    let res = lst
+                        .iter()
+                        .map(|o| self.stringify_obj(o, code_loc))
+                        .collect::<Result<Vec<String>, LErr>>()?;
+                    let mut list_res = String::new();
+                    list_res.push_str("[");
+                    for (i, s) in res.iter().enumerate() {
+                        list_res.push_str(&s);
+                        if i != res.len() - 1 {
+                            list_res.push_str(", ");
+                        }
+                    }
+                    list_res.push_str("]");
+
+                    Ok(list_res)
+                }
+            },
+            _ => Err(LErr::runtime_error(
+                format!("Cannot stringify type {}", obj.get_type_name()),
+                code_loc,
+            )),
+        }
     }
 }

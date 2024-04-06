@@ -200,13 +200,13 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                     }
                     Func::Builtin(b) => {
                         if args.len() == 0 {
-                            return b.run(env, Vec::new());
+                            return b.run(env, Vec::new(), callee.end);
                         } else {
                             let arguments = args
                                 .into_iter()
                                 .map(|a| evaluate(env, &a))
                                 .collect::<Result<Vec<Obj>, LErr>>()?;
-                            return b.run(env, arguments);
+                            return b.run(env, arguments, callee.end);
                         }
                     }
                 },

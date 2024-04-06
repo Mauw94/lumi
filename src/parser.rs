@@ -396,7 +396,6 @@ impl Parser {
                 }
             }
         }
-        self.advance();
 
         return Ok(LumiExpr {
             start,

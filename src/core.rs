@@ -4,7 +4,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{define, evaluate, lexer::CodeLoc, Env, LumiExpr};
+use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LumiExpr};
 
 // TODO: extend this later to not only show on which line number, but also which position and which expression went wrong while parsing.
 #[derive(Debug)]
@@ -106,12 +106,6 @@ pub enum Func {
     Closure(Closure),
 }
 
-pub trait Builtin: Debug {
-    fn run(&self, env: &Rc<RefCell<Env>>, args: Vec<Obj>) -> LRes<Obj>;
-
-    fn builtin_name(&self) -> &str;
-}
-
 #[derive(Debug, Clone)]
 pub struct Closure {
     pub params: Rc<Vec<Box<String>>>,
@@ -127,6 +121,7 @@ impl Closure {
         code_loc: CodeLoc,
     ) -> Result<Obj, LErr> {
         // FIXME: add top env (closure)
+        // when var is not found in func's env we look to the inner env
         let env = Rc::new(RefCell::new(Env::new())); // atm new env has no knowledge of top env
 
         for (i, p) in self.params.iter().enumerate() {

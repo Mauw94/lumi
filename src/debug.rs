@@ -1,13 +1,13 @@
 use crate::{core::Obj, lexer::LocToken, parser::LumiExpr, AppConfig};
 
-pub struct Debug<'a> {
+pub struct LDebug<'a> {
     config: &'a AppConfig,
     tokens: Option<Vec<LocToken>>,
     expr: Option<LumiExpr>,
     eval: Option<Obj>,
 }
 
-impl<'a> Debug<'a> {
+impl<'a> LDebug<'a> {
     pub fn new(config: &'a AppConfig) -> Self {
         Self {
             config,
