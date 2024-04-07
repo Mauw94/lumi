@@ -243,6 +243,7 @@ impl Parser {
                             if self.matcher(&[Token::Declare]) {
                                 // FIXME re-assigning a list a = [1,2,3] does not work atm.
                                 if self.matcher(&[Token::LeftBracket]) {
+                                    // TODO be able to define data type
                                     self.parse_list_expr(value, start, obj_type)
                                 } else {
                                     let expr = self.unary()?;

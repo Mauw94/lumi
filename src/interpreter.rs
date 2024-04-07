@@ -166,6 +166,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 .into_iter()
                 .map(|e| evaluate(env, &e))
                 .collect::<Result<Vec<Obj>, LErr>>()?;
+            // TODO check here that all obj types are correct
 
             Ok(Obj::Seq(Seq::List(Rc::new(objs))))
         }
