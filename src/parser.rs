@@ -150,7 +150,6 @@ impl Parser {
         self.tokens.get(self.i - 1).cloned()
     }
 
-    #[allow(dead_code)]
     fn current(&self) -> Option<LocToken> {
         self.tokens.get(self.i).cloned()
     }
@@ -162,6 +161,13 @@ impl Parser {
         }
     }
 
+    fn end_loc(&self) -> CodeLoc {
+        match self.previous() {
+            Some(t) => t.end,
+            None => CodeLoc { line: 0, index: 0 }, // Should not be possible.
+        }
+    }
+
     fn peek_loc(&self) -> CodeLoc {
         match self.peek() {
             Some(t) => t.start,
@@ -169,13 +175,13 @@ impl Parser {
         }
     }
 
-    fn consume(&mut self, token: Token, msg: String, code_loc: CodeLoc) -> Result<(), LErr> {
+    fn consume(&mut self, token: Token, msg: String, loc_token: LocToken) -> Result<(), LErr> {
         if self.check(token) {
             self.advance();
             return Ok(());
         }
 
-        return Err(LErr::parsing_error(msg, code_loc));
+        return Err(LErr::parsing_error(msg, loc_token));
     }
 
     fn check(&self, token: Token) -> bool {
@@ -208,7 +214,7 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::Int(value),
                 });
             }
@@ -216,7 +222,7 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::Float(value),
                 });
             }
@@ -224,7 +230,7 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::String(value),
                 });
             }
@@ -242,7 +248,7 @@ impl Parser {
                                     let expr = self.unary()?;
                                     return Ok(LumiExpr {
                                         start,
-                                        end: expr.end,
+                                        end: expr.start,
                                         expr: Expr::Declare(value, obj_type, Box::new(expr)),
                                     });
                                 }
@@ -252,14 +258,14 @@ impl Parser {
                                         "Expect '{}' declaration after type definition",
                                         obj_type.get_type_name(),
                                     ),
-                                    start,
+                                    self.previous().unwrap(),
                                 ));
                             }
                         }
                         None | _ => {
                             return Err(LErr::parsing_error(
                                 "Expect a type after ':'".to_string(),
-                                start,
+                                self.previous().unwrap(),
                             ))
                         }
                     }
@@ -279,7 +285,7 @@ impl Parser {
                     match self.consume(
                         Token::RightBracket,
                         "Expect ']' after index.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ) {
                         Ok(_) => {
                             return Ok(LumiExpr {
@@ -293,7 +299,7 @@ impl Parser {
                 } else {
                     return Ok(LumiExpr {
                         start,
-                        end: self.peek_loc(),
+                        end: self.end_loc(),
                         expr: Expr::Identifier(value),
                     });
                 }
@@ -302,7 +308,7 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::Literal(LiteralValue::True),
                 });
             }
@@ -310,7 +316,7 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::Literal(LiteralValue::False),
                 });
             }
@@ -318,14 +324,14 @@ impl Parser {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
-                    end: self.peek_loc(),
+                    end: self.end_loc(),
                     expr: Expr::Literal(LiteralValue::Nil),
                 });
             }
             None | _ => {
                 return Err(LErr::parsing_error(
                     "Expect expression".to_string(),
-                    self.peek_loc(),
+                    self.previous().unwrap(),
                 ))
             }
         }
@@ -419,7 +425,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator was found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -445,7 +451,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator was found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -471,7 +477,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator was found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -502,7 +508,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator token found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -528,7 +534,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator token found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -554,7 +560,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator token found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -580,7 +586,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "No operator token found.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -606,7 +612,7 @@ impl Parser {
                 None => {
                     return Err(LErr::parsing_error(
                         "Invalid assignment target.".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             }
@@ -638,7 +644,7 @@ impl Parser {
                 _ => {
                     return Err(LErr::parsing_error(
                         "Expect function name".to_string(),
-                        self.peek_loc(),
+                        self.previous().unwrap(),
                     ))
                 }
             };
@@ -646,7 +652,7 @@ impl Parser {
             self.consume(
                 Token::LeftParen,
                 "Expect '(' after function name".to_string(),
-                self.peek_loc(),
+                self.previous().unwrap(),
             )?;
             let mut parameters: Vec<Box<String>> = Vec::new();
             if !self.check(Token::RightParen) {
@@ -659,7 +665,7 @@ impl Parser {
                         _ => {
                             return Err(LErr::parsing_error(
                                 "Expect parameter name.".to_string(),
-                                self.peek_loc(),
+                                self.previous().unwrap(),
                             ))
                         }
                     };
@@ -674,7 +680,7 @@ impl Parser {
                 self.consume(
                     Token::LeftBrace,
                     "Expect '{' before function body.".to_string(),
-                    self.peek_loc(),
+                    self.current().unwrap(),
                 )?;
                 let expressions = self.block()?;
                 return Ok(LumiExpr {
@@ -686,12 +692,16 @@ impl Parser {
         }
         // if statement.
         if self.matcher(&[Token::If]) {
-            self.consume(Token::LeftParen, "Expect '(' after if.".to_string(), start)?;
+            self.consume(
+                Token::LeftParen,
+                "Expect '(' after if.".to_string(),
+                self.current().unwrap(),
+            )?;
             let condition = self.expression()?;
             self.consume(
                 Token::RightParen,
                 "Expect ')' after if condition".to_string(),
-                condition.start,
+                self.current().unwrap(),
             )?;
             let body = self.statement()?;
             let else_branch = if self.matcher(&[Token::Else]) {
@@ -727,7 +737,7 @@ impl Parser {
         if self.tokens.len() == 0 {
             return Err(LErr::parsing_error(
                 "No tokens found.".to_string(),
-                CodeLoc { line: 1, index: 0 },
+                self.previous().unwrap(),
             ));
         }
         let mut expr = vec![Box::new(self.statement()?)];
@@ -766,7 +776,7 @@ impl Parser {
         self.consume(
             Token::RightBrace,
             "Expect '}' after block.".to_string(),
-            self.peek_loc(),
+            self.current().unwrap(),
         )?;
 
         return Ok(LumiExpr {

@@ -42,13 +42,13 @@ fn repl(config: &AppConfig) {
                                 debugger.debug_print();
                                 x.print_value();
                             }
-                            Err(e) => e.render(),
+                            Err(e) => println!("{}", e.render(&input)),
                         }
                     }
-                    Err(e) => e.render(),
+                    Err(e) => println!("{}", e.render(&input)),
                 }
             }
-            Err(e) => e.render(),
+            Err(e) => println!("{}", e.render(&input)),
         };
     }
 }
@@ -71,14 +71,14 @@ fn run_code(config: &AppConfig, code: &str) {
                             debugger.debug_print();
                             x.print_value();
                         }
-                        Err(e) => e.render(),
+                        Err(e) => println!("{}", e.render(&code)),
                     }
                 }
-                Err(e) => e.render(),
+                Err(e) => println!("{}", e.render(&code)),
             }
         }
-        Err(e) => e.render(),
-    };
+        Err(e) => println!("{}", e.render(&code)),
+    }
 }
 
 fn setup_env() -> Rc<RefCell<Env>> {

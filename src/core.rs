@@ -4,35 +4,102 @@ use std::{
     rc::Rc,
 };
 
-use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LumiExpr};
+use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr};
 
-// TODO: extend this later to not only show on which line number, but also which position and which expression went wrong while parsing.
 #[derive(Debug)]
-pub struct LErr(String, CodeLoc);
+pub enum ErrorLoc {
+    Lexing(CodeLoc, CodeLoc),
+    Token(LocToken),
+    Expr(CodeLoc, CodeLoc),
+    Internal,
+}
+
+#[derive(Debug)]
+pub struct LErr(String, ErrorLoc);
 impl LErr {
-    pub fn lexing_error(message: String, code_loc: CodeLoc) -> Self {
-        LErr(message, code_loc)
+    pub fn lexing_error(message: String, start: CodeLoc, end: CodeLoc) -> Self {
+        LErr(message, ErrorLoc::Lexing(start, end))
     }
 
-    pub fn parsing_error(message: String, code_loc: CodeLoc) -> Self {
-        LErr(message, code_loc)
+    pub fn parsing_error(message: String, token: LocToken) -> Self {
+        LErr(message, ErrorLoc::Token(token))
     }
 
-    pub fn runtime_error(message: String, code_loc: CodeLoc) -> Self {
-        LErr(message, code_loc)
+    pub fn runtime_error(message: String, start: CodeLoc, end: CodeLoc) -> Self {
+        LErr(message, ErrorLoc::Expr(start, end))
     }
 
     pub fn internal_error(message: String) -> Self {
-        LErr(message, CodeLoc { line: 0, index: 0 }) // FIXME variations without codeloc.
+        LErr(message, ErrorLoc::Internal)
     }
 
-    // TODO type of errors
-    pub fn render(self: LErr) {
-        let LErr(message, code_loc) = self;
-        println!(
-            "ERROR: at line [{}] index: [{}]: '{}'",
-            code_loc.line, code_loc.index, message
-        );
+    pub fn render(self: LErr, src: &str) -> String {
+        let LErr(message, loc) = self;
+        use std::fmt::Write;
+        let mut out = String::new();
+        write!(out, "\x1b[31m").ok();
+        writeln!(out, "{}", message).ok();
+        write!(out, "\x1b[0m").ok();
+        match loc {
+            ErrorLoc::Lexing(start, end) => {
+                write_source_error(&mut out, src, &start, &end);
+                write!(
+                    out,
+                    "\n\t\t(at [line {} index {}])",
+                    start.line, start.index
+                )
+                .ok();
+            }
+            ErrorLoc::Token(token) => {
+                write_source_error(&mut out, src, &token.start, &token.end);
+                write!(
+                    out,
+                    "\n\tat {:?}\t(at [line {} index {}])",
+                    token, token.start.line, token.start.index
+                )
+                .ok();
+            }
+            ErrorLoc::Expr(start, end) => {
+                write_source_error(&mut out, src, &start, &end);
+                write!(out, "\n\t(expr: line {} index {})", start.line, start.index).ok();
+            }
+            ErrorLoc::Internal => {
+                write!(out, "\n").ok();
+            }
+        }
+        out
+    }
+}
+
+pub fn write_source_error(out: &mut String, src: &str, start: &CodeLoc, end: &CodeLoc) {
+    use std::fmt::Write;
+
+    let mut line = 1;
+    let mut ended = false;
+    for (i, c) in src.chars().enumerate() {
+        if c == '\n' {
+            if line >= start.line {
+                write!(out, "{}", c).ok();
+            }
+            line += 1;
+            if line > end.line {
+                break;
+            }
+        } else {
+            if i == start.index {
+                write!(out, "\x1b[33m").ok();
+            }
+            if i == end.index {
+                write!(out, "\x1b[0m").ok();
+                ended = true;
+            }
+            if line >= start.line && line <= end.line {
+                write!(out, "{}", c).ok();
+            }
+        }
+    }
+    if !ended {
+        write!(out, "\x1b[0m").ok();
     }
 }
 
@@ -118,7 +185,8 @@ impl Closure {
         &self,
         args: Vec<Obj>,
         _closure: &Rc<RefCell<Env>>,
-        code_loc: CodeLoc,
+        start: CodeLoc,
+        end: CodeLoc,
     ) -> Result<Obj, LErr> {
         // FIXME: add top env (closure)
         // when var is not found in func's env we look to the inner env
@@ -130,7 +198,8 @@ impl Closure {
                 None => {
                     return Err(LErr::runtime_error(
                         "Did not find argument value.".to_string(),
-                        code_loc,
+                        start,
+                        end,
                     ))
                 }
             };

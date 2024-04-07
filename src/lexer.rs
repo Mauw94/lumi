@@ -98,6 +98,7 @@ impl<'a> Lexer<'a> {
                     // TODO: undeclare statement?
                     if self.check_next_is_equal('>') {
                         self.emit(Token::Declare);
+                        self.next();
                     } else {
                         self.emit(Token::Minus);
                     }
@@ -284,6 +285,7 @@ impl<'a> Lexer<'a> {
                     None | _ => {
                         return Err(LErr::lexing_error(
                             String::from("A digit was expected."),
+                            self.start,
                             self.cur,
                         ));
                     }
@@ -306,6 +308,7 @@ impl<'a> Lexer<'a> {
         if self.is_at_end() {
             return Err(LErr::lexing_error(
                 String::from("Unterminated string."),
+                self.start,
                 self.cur,
             ));
         }

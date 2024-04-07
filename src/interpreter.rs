@@ -28,7 +28,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
-        Expr::Identifier(v) => match lookup_variable(env, v, expr.start) {
+        Expr::Identifier(v) => match lookup_variable(env, v, expr.start, expr.end) {
             Ok(v) => Ok(v.1),
             Err(e) => Err(e),
         },
@@ -53,6 +53,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                         return Err(LErr::runtime_error(
                             "Operand must be a number".to_string(),
                             expr.start,
+                            expr.end,
                         ))
                     }
                 },
@@ -103,6 +104,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                         obj_type.get_type_name()
                     ),
                     expr.start,
+                    expr.end,
                 ));
             } else {
                 define(env, var_name.to_string(), obj_type.to_owned(), value)?;
@@ -117,26 +119,32 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             // a -> 5
             // a = "abc" => will NOT fail because variable 'a' never got a specific type.
             Expr::Identifier(var_name) => {
-                match lookup_variable(env, var_name, l_expr.start) {
+                match lookup_variable(env, var_name, l_expr.start, l_expr.end) {
                     Ok(o) => match &r_expr.expr {
                         Expr::Index(var, i) => {
                             let index_obj = evaluate(env, i)?;
-                            let index: usize =
-                                get_real_index_num_from_object(index_obj, r_expr.start)?;
-                            return get_value_by_index_from_list(env, var, index, expr.start);
+                            let index: usize = get_real_index_num_from_object(
+                                index_obj,
+                                r_expr.start,
+                                r_expr.end,
+                            )?;
+                            return get_value_by_index_from_list(
+                                env, var, index, expr.start, r_expr.end,
+                            );
                         }
                         _ => {
                             let rhs = evaluate(env, &r_expr)?;
                             if rhs.is_type(&o.0) {
                                 define(env, var_name.to_string(), o.0, rhs)?;
                             } else {
-                                return Err(LErr::parsing_error(
+                                return Err(LErr::runtime_error(
                                     format!(
                                         "Type mismatch. Tried to assign a {} value to {}",
                                         rhs.get_type_name(),
                                         o.0.get_type_name()
                                     ),
-                                    l_expr.start,
+                                    r_expr.start,
+                                    r_expr.end,
                                 ));
                             }
                         }
@@ -149,6 +157,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 return Err(LErr::runtime_error(
                     "Cannot assign to non-identifier.".to_string(),
                     l_expr.start,
+                    l_expr.end,
                 ))
             }
         },
@@ -162,8 +171,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Index(var, expr) => {
             let index_obj = evaluate(env, expr)?;
-            let index: usize = get_real_index_num_from_object(index_obj, expr.start)?;
-            get_value_by_index_from_list(env, var, index, expr.start)
+            let index: usize = get_real_index_num_from_object(index_obj, expr.start, expr.end)?;
+            get_value_by_index_from_list(env, var, index, expr.start, expr.end)
         }
         Expr::Print(expr) => {
             return Ok(evaluate(env, expr)?);
@@ -193,27 +202,29 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                                     c.params.len(),
                                     arguments.len()
                                 ),
+                                callee.start,
                                 callee.end,
                             ));
                         }
-                        return Ok(c.call(arguments, env, callee.end)?);
+                        return Ok(c.call(arguments, env, callee.start, callee.end)?);
                     }
                     Func::Builtin(b) => {
                         if args.len() == 0 {
-                            return b.run(env, Vec::new(), callee.end);
+                            return b.run(env, Vec::new(), callee.start, callee.end);
                         } else {
                             let arguments = args
                                 .into_iter()
                                 .map(|a| evaluate(env, &a))
                                 .collect::<Result<Vec<Obj>, LErr>>()?;
-                            return b.run(env, arguments, callee.end);
+                            return b.run(env, arguments, callee.start, callee.end);
                         }
                     }
                 },
                 _ => {
-                    return Err(LErr::parsing_error(
+                    return Err(LErr::runtime_error(
                         "Callee is not a function.".to_string(),
                         callee.start,
+                        callee.end,
                     ))
                 }
             };
@@ -221,13 +232,18 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
     }
 }
 
-fn get_real_index_num_from_object(index_obj: Obj, code_loc: CodeLoc) -> Result<usize, LErr> {
+fn get_real_index_num_from_object(
+    index_obj: Obj,
+    start: CodeLoc,
+    end: CodeLoc,
+) -> Result<usize, LErr> {
     match index_obj {
         Obj::Num(lnum) => return Ok(lnum.get_num_val_usize()),
         _ => {
             return Err(LErr::runtime_error(
                 "Index is not a numeric value.".to_string(),
-                code_loc,
+                start,
+                end,
             ))
         }
     };
@@ -237,9 +253,10 @@ fn get_value_by_index_from_list(
     env: &Rc<RefCell<Env>>,
     var: &String,
     index: usize,
-    code_loc: CodeLoc,
+    start: CodeLoc,
+    end: CodeLoc,
 ) -> Result<Obj, LErr> {
-    match lookup_variable(env, var, code_loc) {
+    match lookup_variable(env, var, start, end) {
         Ok(o) => match o.1 {
             Obj::Seq(sq) => match sq {
                 Seq::List(list) => {
@@ -250,27 +267,31 @@ fn get_value_by_index_from_list(
                         } else {
                             return Err(LErr::runtime_error(
                                 format!("Did not find an object with index {}", index),
-                                code_loc,
+                                start,
+                                end,
                             ));
                         }
                     } else {
                         return Err(LErr::runtime_error(
                             "Index out of bounds".to_string(),
-                            code_loc,
+                            start,
+                            end,
                         ));
                     }
                 }
                 _ => {
                     return Err(LErr::runtime_error(
                         "Can not find index in none list type.".to_string(),
-                        code_loc,
+                        start,
+                        end,
                     ))
                 }
             },
             _ => {
                 return Err(LErr::runtime_error(
                     "Can not find index in none list type.".to_string(),
-                    code_loc,
+                    start,
+                    end,
                 ))
             }
         },

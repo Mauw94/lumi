@@ -11,24 +11,25 @@ pub fn exec_binary_op(
     code_loc_r: CodeLoc,
 ) -> LRes<Obj> {
     match op {
+        // FIXME start and end loc
         Token::Plus => {
-            let lv = get_num_value(lhs, code_loc_l)?;
-            let rv = get_num_value(rhs, code_loc_r)?;
+            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
+            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
             return Ok(Obj::Num(LNum::Float(lv + rv)));
         }
         Token::Minus => {
-            let lv = get_num_value(lhs, code_loc_l)?;
-            let rv = get_num_value(rhs, code_loc_r)?;
+            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
+            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
             return Ok(Obj::Num(LNum::Float(lv - rv)));
         }
         Token::Star => {
-            let lv = get_num_value(lhs, code_loc_l)?;
-            let rv = get_num_value(rhs, code_loc_r)?;
+            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
+            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
             return Ok(Obj::Num(LNum::Float(lv * rv)));
         }
         Token::Slash => {
-            let lv = get_num_value(lhs, code_loc_l)?;
-            let rv = get_num_value(rhs, code_loc_r)?;
+            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
+            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
             return Ok(Obj::Num(LNum::Float(lv / rv)));
         }
         Token::EqualEqual => {
@@ -51,6 +52,7 @@ pub fn exec_binary_op(
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
                     code_loc_l,
+                    code_loc_r,
                 ))
             }
         },
@@ -66,6 +68,7 @@ pub fn exec_binary_op(
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
                     code_loc_l,
+                    code_loc_r,
                 ))
             }
         },
@@ -77,6 +80,7 @@ pub fn exec_binary_op(
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
                     code_loc_l,
+                    code_loc_r,
                 ))
             }
         },
@@ -92,6 +96,7 @@ pub fn exec_binary_op(
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
                     code_loc_l,
+                    code_loc_r,
                 ))
             }
         },
@@ -99,13 +104,14 @@ pub fn exec_binary_op(
     };
 }
 
-fn get_num_value(obj: Obj, code_loc: CodeLoc) -> Result<f64, LErr> {
+fn get_num_value(obj: Obj, start: CodeLoc, end: CodeLoc) -> Result<f64, LErr> {
     match obj {
         Obj::Num(LNum::Int(i)) => Ok(i as f64),
         Obj::Num(LNum::Float(f)) => Ok(f),
         _ => Err(LErr::runtime_error(
             "A number was expected.".to_string(),
-            code_loc,
+            start,
+            end,
         )),
     }
 }

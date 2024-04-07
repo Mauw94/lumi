@@ -5,7 +5,8 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, Func, LErr, LRes, Obj, ObjectType, Stringify, Time,
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify,
+    Time,
 };
 
 #[derive(Debug)]
@@ -60,7 +61,8 @@ pub fn define(
 pub fn lookup_variable(
     env: &Rc<RefCell<Env>>,
     var_name: &String,
-    code_loc: crate::CodeLoc,
+    start: CodeLoc,
+    end: CodeLoc,
 ) -> LRes<(ObjectType, Obj)> {
     let r = try_borrow(env)?;
     match r.vars.get(var_name) {
@@ -78,7 +80,7 @@ pub fn lookup_variable(
                 ),
                 None => format!("Did not find variable with name: '{}'.", var_name,),
             };
-            return Err(LErr::runtime_error(f, code_loc));
+            return Err(LErr::runtime_error(f, start, end));
         }
     }
 }
