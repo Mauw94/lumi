@@ -91,7 +91,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             let lhs = evaluate(env, lv)?;
             let rhs = evaluate(env, rv)?;
 
-            eval::exec_binary_op(op, lhs, rhs, lv.start, rv.start)
+            eval::exec_binary_op(op, lhs, rhs, lv.start, lv.end, rv.start, rv.end)
         }
         Expr::Declare(var_name, obj_type, expr) => {
             let value = evaluate(env, expr)?;

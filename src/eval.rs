@@ -7,29 +7,31 @@ pub fn exec_binary_op(
     op: &Token,
     lhs: Obj,
     rhs: Obj,
-    code_loc_l: CodeLoc,
-    code_loc_r: CodeLoc,
+    l_start: CodeLoc,
+    l_end: CodeLoc,
+    r_start: CodeLoc,
+    r_end: CodeLoc,
 ) -> LRes<Obj> {
     match op {
         // FIXME start and end loc
         Token::Plus => {
-            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
-            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
+            let lv = get_num_value(lhs, l_start, l_end)?;
+            let rv = get_num_value(rhs, r_start, r_end)?;
             return Ok(Obj::Num(LNum::Float(lv + rv)));
         }
         Token::Minus => {
-            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
-            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
+            let lv = get_num_value(lhs, l_start, l_end)?;
+            let rv = get_num_value(rhs, r_start, r_end)?;
             return Ok(Obj::Num(LNum::Float(lv - rv)));
         }
         Token::Star => {
-            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
-            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
+            let lv = get_num_value(lhs, l_start, l_end)?;
+            let rv = get_num_value(rhs, r_start, r_end)?;
             return Ok(Obj::Num(LNum::Float(lv * rv)));
         }
         Token::Slash => {
-            let lv = get_num_value(lhs, code_loc_l, code_loc_r)?;
-            let rv = get_num_value(rhs, code_loc_r, code_loc_r)?;
+            let lv = get_num_value(lhs, l_start, l_end)?;
+            let rv = get_num_value(rhs, r_start, r_end)?;
             return Ok(Obj::Num(LNum::Float(lv / rv)));
         }
         Token::EqualEqual => {
@@ -51,8 +53,8 @@ pub fn exec_binary_op(
             _ => {
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
-                    code_loc_l,
-                    code_loc_r,
+                    l_start,
+                    l_end,
                 ))
             }
         },
@@ -67,8 +69,8 @@ pub fn exec_binary_op(
             _ => {
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
-                    code_loc_l,
-                    code_loc_r,
+                    l_start,
+                    l_end,
                 ))
             }
         },
@@ -79,8 +81,8 @@ pub fn exec_binary_op(
             _ => {
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
-                    code_loc_l,
-                    code_loc_r,
+                    l_start,
+                    l_end,
                 ))
             }
         },
@@ -95,8 +97,8 @@ pub fn exec_binary_op(
             _ => {
                 return Err(LErr::runtime_error(
                     "Operands must be numbers.".to_string(),
-                    code_loc_l,
-                    code_loc_r,
+                    l_start,
+                    l_end,
                 ))
             }
         },
