@@ -1,4 +1,8 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{
+    cell::{Ref, RefCell},
+    collections::HashMap,
+    rc::Rc,
+};
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, Func, LErr, LRes, Obj, ObjectType, Stringify, Time,
@@ -65,9 +69,25 @@ pub fn lookup_variable(
             let object = obj.1.borrow().clone();
             return Ok((object_type, object));
         }
-        None => Err(LErr::runtime_error(
-            format!("Did not find variable with name: '{}'", var_name),
-            code_loc,
-        )),
+        None => {
+            let s_key = find_key_containing_var(r, var_name);
+            let f = match s_key {
+                Some(k) => format!(
+                    "Did not find variable with name: '{}'. Did you mean '{}'?",
+                    var_name, k
+                ),
+                None => format!("Did not find variable with name: '{}'.", var_name,),
+            };
+            return Err(LErr::runtime_error(f, code_loc));
+        }
     }
+}
+
+fn find_key_containing_var(env: Ref<'_, Env>, var_name: &String) -> Option<String> {
+    for (key, _) in env.vars.iter() {
+        if key.contains(var_name) {
+            return Some(key.to_string());
+        }
+    }
+    None
 }
