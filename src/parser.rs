@@ -55,6 +55,7 @@ pub enum Expr {
     Sequence(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
     Index(String, Box<LumiExpr>),
+    Return(Box<LumiExpr>),
     Print(Box<LumiExpr>),
 }
 
@@ -111,6 +112,9 @@ impl fmt::Display for Expr {
             }
             Expr::For(from, to, step, body) => {
                 write!(f, "from {} to {} step {}. body {}", from, to, step, body)
+            }
+            Expr::Return(expr) => {
+                write!(f, "RETURN {:?}", expr)
             }
         }
     }
@@ -704,6 +708,39 @@ impl Parser {
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
 
+        // return statement.
+        if self.matcher(&[Token::Return]) {
+            let start = self.peek_loc();
+            let value = self.statement()?;
+
+            return Ok(LumiExpr {
+                start,
+                end: self.end_loc(),
+                expr: Expr::Return(Box::new(value)),
+            });
+        }
+        // FIXME
+        // struct declaration.
+        if self.matcher(&[Token::Struct]) {
+            println!("Struct starts here.");
+            let _start = self.peek_loc();
+            let struct_name = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect struct name".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+            self.advance();
+            self.consume(
+                Token::LeftParen,
+                "Expect '(' after struct name.".to_string(),
+                self.previous().unwrap(),
+            )?;
+            println!("{}", struct_name);
+        }
         // function statement.
         if self.matcher(&[Token::Fn]) {
             let start = self.peek_loc();
@@ -760,6 +797,19 @@ impl Parser {
                     start,
                     end: self.peek_loc(),
                     expr: Expr::Fn(fn_name, Rc::new(parameters), Rc::new(expressions)),
+                });
+            } else {
+                self.advance();
+                self.consume(
+                    Token::LeftBrace,
+                    "Expect '{' before function body.".to_string(),
+                    self.current().unwrap(),
+                )?;
+                let expressions = self.block()?;
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Fn(fn_name, Rc::new(Vec::new()), Rc::new(expressions)),
                 });
             }
         }

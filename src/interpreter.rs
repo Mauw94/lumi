@@ -192,9 +192,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             let index: usize = get_real_index_num_from_object(index_obj, expr.start, expr.end)?;
             get_value_by_index_from_list(env, var, index, expr.start, expr.end)
         }
-        Expr::Print(expr) => {
-            return Ok(evaluate(env, expr)?);
-        }
+        Expr::Print(expr) => Ok(evaluate(env, expr)?),
+        Expr::Return(expr) => Ok(evaluate(env, expr)?),
         Expr::Fn(fn_name, parameters, expressions) => {
             // TODO: add types to parameters and check if argument has correct type
             let func = Obj::Func(Func::Closure(Closure {
