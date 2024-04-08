@@ -438,7 +438,6 @@ impl Parser {
 
         loop {
             if self.matcher(&[Token::LeftParen]) {
-                println!("parentheses found.");
                 expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
             } else {
