@@ -1,7 +1,9 @@
+abc: str -> "this is a test"
+
 fn something() {
-    return "abcdef"
+    print abc
 }
 
-a: str -> something()
-
 print a
+
+something()

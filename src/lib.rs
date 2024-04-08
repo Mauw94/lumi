@@ -38,7 +38,7 @@ impl AppConfig {
 }
 
 pub fn quick_eval(code: &str) -> Obj {
-    let env = Rc::new(RefCell::new(Env::new()));
+    let env = Rc::new(RefCell::new(Env::new(None)));
     let mut lexer = Lexer::new(code);
     let tokens = lexer.lex().unwrap();
     println!("{:?}", tokens);

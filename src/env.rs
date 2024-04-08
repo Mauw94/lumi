@@ -16,10 +16,10 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new() -> Env {
+    pub fn new(closure: Option<Rc<RefCell<Env>>>) -> Env {
         Env {
             vars: HashMap::new(),
-            parent: None,
+            parent: closure,
         }
     }
 
@@ -36,6 +36,10 @@ impl Env {
         self.vars
             .insert(key, (obj_type, Box::new(RefCell::new(obj))));
         Ok(())
+    }
+
+    pub fn add_closure(&mut self, env: Rc<RefCell<Env>>) {
+        self.parent = Some(env);
     }
 }
 
@@ -64,24 +68,27 @@ pub fn lookup_variable(
     start: CodeLoc,
     end: CodeLoc,
 ) -> LRes<(ObjectType, Obj)> {
-    let r = try_borrow(env)?;
-    match r.vars.get(var_name) {
+    let cur_env = try_borrow(env)?;
+    match cur_env.vars.get(var_name) {
         Some(obj) => {
             let object_type = obj.0.clone();
             let object = obj.1.borrow().clone();
             return Ok((object_type, object));
         }
-        None => {
-            let s_key = find_key_containing_var(r, var_name);
-            let f = match s_key {
-                Some(k) => format!(
-                    "Did not find variable with name: '{}'. Did you mean '{}'?",
-                    var_name, k
-                ),
-                None => format!("Did not find variable with name: '{}'.", var_name,),
-            };
-            return Err(LErr::runtime_error(f, start, end));
-        }
+        None => match &cur_env.parent {
+            Some(p) => return lookup_variable(&p, var_name, start, end),
+            None => {
+                let s_key = find_key_containing_var(cur_env, var_name);
+                let f = match s_key {
+                    Some(k) => format!(
+                        "Did not find variable with name: '{}'. Did you mean '{}'?",
+                        var_name, k
+                    ),
+                    None => format!("Did not find variable with name: '{}'.", var_name,),
+                };
+                return Err(LErr::runtime_error(f, start, end));
+            }
+        },
     }
 }
 

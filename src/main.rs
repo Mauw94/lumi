@@ -82,7 +82,7 @@ fn run_code(config: &AppConfig, code: &str) {
 }
 
 fn setup_env() -> Rc<RefCell<Env>> {
-    let mut e = Env::new();
+    let mut e = Env::new(None);
     initialize(&mut e);
     Rc::new(RefCell::new(e))
 }

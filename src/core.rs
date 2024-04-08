@@ -184,13 +184,11 @@ impl Closure {
     pub fn call(
         &self,
         args: Vec<Obj>,
-        _closure: &Rc<RefCell<Env>>,
+        closure: &Rc<RefCell<Env>>,
         start: CodeLoc,
         end: CodeLoc,
     ) -> Result<Obj, LErr> {
-        // FIXME: add top env (closure)
-        // when var is not found in func's env we look to the inner env
-        let env = Rc::new(RefCell::new(Env::new())); // atm new env has no knowledge of top env
+        let env = Rc::new(RefCell::new(Env::new(Some(closure.clone())))); // atm new env has no knowledge of top env
 
         for (i, p) in self.params.iter().enumerate() {
             let obj = match args.get(i) {
