@@ -456,8 +456,12 @@ impl Parser {
                 if self.matcher(&[Token::Comma]) {
                     continue;
                 }
-
-                // TODO: check for max arguments
+                if arguments.len() >= 255 {
+                    return Err(LErr::parsing_error(
+                        "Can't have more than 255 arguments.".to_string(),
+                        self.previous().unwrap(),
+                    ));
+                }
                 arguments.push(Box::new(self.expression()?));
                 if self.matcher(&[Token::RightParen]) {
                     break;
@@ -733,7 +737,12 @@ impl Parser {
                             ))
                         }
                     };
-                    // TODO: check for max parameters
+                    if parameters.len() >= 255 {
+                        return Err(LErr::parsing_error(
+                            "Can't have more than 255 parameters.".to_string(),
+                            self.previous().unwrap(),
+                        ));
+                    }
                     parameters.push(Box::new(param_name));
                     self.advance();
                     // here we also "consume" the right parentheses
