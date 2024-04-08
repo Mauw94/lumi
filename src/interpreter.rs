@@ -166,8 +166,25 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 .into_iter()
                 .map(|e| evaluate(env, &e))
                 .collect::<Result<Vec<Obj>, LErr>>()?;
-            // TODO check here that all obj types are correct
 
+            if objs.is_empty() {
+                return Ok(Obj::Seq(Seq::List(Rc::new(objs))));
+            } else {
+                let first_type = objs.first().unwrap(); // We expect the first value to be available
+                for (i, o) in objs.iter().enumerate() {
+                    if !o.is_same_type(first_type) {
+                        return Err(LErr::runtime_error(
+                            format!(
+                                "Value in list is not of the same type ({}), expected type {}",
+                                o.get_type_name(),
+                                first_type.get_type_name()
+                            ),
+                            exprs.get(i).unwrap().start,
+                            exprs.get(i).unwrap().end,
+                        ));
+                    }
+                }
+            }
             Ok(Obj::Seq(Seq::List(Rc::new(objs))))
         }
         Expr::Index(var, expr) => {

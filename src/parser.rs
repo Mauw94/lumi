@@ -351,7 +351,6 @@ impl Parser {
                 Some(t) => {
                     if t != Token::Comma {
                         let e = self.primary()?;
-                        // TODO: check if types are correct, we can't mix ints and strings in a list.
                         exprs.push(Box::new(e));
                     } else {
                         self.advance();
