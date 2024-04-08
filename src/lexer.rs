@@ -48,6 +48,7 @@ pub enum Token {
     And,
     Or,
     For,
+    Step,
     While,
     If,
     Else,
@@ -333,6 +334,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("while", Token::While);
         keywords.insert("to", Token::To);
         keywords.insert("every", Token::Every);
+        keywords.insert("step", Token::Step);
 
         if keywords.contains_key(keyword) {
             self.emit(keywords[keyword].clone());

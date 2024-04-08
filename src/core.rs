@@ -275,6 +275,21 @@ impl Obj {
             Obj::Func(_) => "function",
         }
     }
+
+    pub fn get_int_val(&self) -> Result<i64, LErr> {
+        match self {
+            Obj::Num(lnum) => match lnum {
+                LNum::Int(i) => Ok(*i),
+                _ => Err(LErr::internal_error(
+                    "Expected Num to be of type LNum::int".to_string(),
+                )),
+            },
+            _ => Err(LErr::internal_error(
+                "Expected obj to be of type Num".to_string(),
+            )),
+        }
+    }
+
     fn is_int(&self) -> bool {
         match self {
             Obj::Num(n) => match n {

@@ -47,8 +47,10 @@ lumi> test("hehexd")
 ```
 
 ```
-lumi> 1 to 5 every (*2)
-[2, 4, 6, 8, 10]
+lumi> 1 to 3 step 1 { print "a" }
+"a"
+"a"
+"a"
 ```
 
 ### Or use built-in functions such as:

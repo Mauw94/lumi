@@ -47,6 +47,7 @@ pub enum Expr {
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
+    For(Box<LumiExpr>, Box<LumiExpr>, Box<LumiExpr>, Box<LumiExpr>),
     Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -107,6 +108,9 @@ impl fmt::Display for Expr {
             Expr::Fn(fn_name, _parameters, _expressions) => write!(f, "FN NAME {}", fn_name),
             Expr::Call(callee, arguments) => {
                 write!(f, "callee {:?} arguments {:?}", callee, arguments)
+            }
+            Expr::For(from, to, step, body) => {
+                write!(f, "from {} to {} step {}. body {}", from, to, step, body)
             }
         }
     }
@@ -212,6 +216,64 @@ impl Parser {
         match self.current_token() {
             Some(Token::Int(value)) => {
                 self.advance();
+                while self.matcher(&[Token::To]) {
+                    let from = LumiExpr {
+                        start,
+                        end: self.end_loc(),
+                        expr: Expr::Int(value),
+                    };
+                    let to = match self.primary() {
+                        Ok(expr) => match expr.expr {
+                            Expr::Int(_) => expr,
+                            _ => {
+                                return Err(LErr::parsing_error(
+                                    "Expected int value after 'to' keyword".to_string(),
+                                    self.previous().unwrap(),
+                                ))
+                            }
+                        },
+                        Err(e) => return Err(e),
+                    };
+                    self.consume(
+                        Token::Step,
+                        "Expect 'step' keyword after for declaration".to_string(),
+                        self.previous().unwrap(),
+                    )?;
+                    let step = match self.primary() {
+                        Ok(expr) => match expr.expr {
+                            Expr::Int(_) => expr,
+                            _ => {
+                                return Err(LErr::parsing_error(
+                                    "Expected int value after 'step' keyword".to_string(),
+                                    self.previous().unwrap(),
+                                ))
+                            }
+                        },
+                        Err(e) => return Err(e),
+                    };
+                    self.consume(
+                        Token::LeftBrace,
+                        "Expect '{' before for body".to_string(),
+                        self.previous().unwrap(),
+                    )?;
+                    let body = self.statement()?;
+                    self.consume(
+                        Token::RightBrace,
+                        "Expect '}' after for body.".to_string(),
+                        self.previous().unwrap(),
+                    )?;
+
+                    return Ok(LumiExpr {
+                        start,
+                        end: to.end,
+                        expr: Expr::For(
+                            Box::new(from),
+                            Box::new(to),
+                            Box::new(step),
+                            Box::new(body),
+                        ),
+                    });
+                }
                 return Ok(LumiExpr {
                     start,
                     end: self.end_loc(),

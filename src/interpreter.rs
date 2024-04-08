@@ -247,6 +247,38 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 }
             };
         }
+        Expr::For(to_expr, from_expr, step_expr, body) => {
+            let mut objects: Vec<Obj> = Vec::new();
+
+            let mut to = match evaluate(env, to_expr) {
+                Ok(o) => match o.get_int_val() {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
+                },
+                Err(e) => return Err(e),
+            };
+            let from = match evaluate(env, from_expr) {
+                Ok(o) => match o.get_int_val() {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
+                },
+                Err(e) => return Err(e),
+            };
+            let step = match evaluate(env, step_expr) {
+                Ok(o) => match o.get_int_val() {
+                    Ok(v) => v,
+                    Err(e) => return Err(e),
+                },
+                Err(e) => return Err(e),
+            };
+
+            while to <= from {
+                objects.push(evaluate(env, body)?);
+                to += step;
+            }
+
+            Ok(Obj::Seq(Seq::List(Rc::new(objects))))
+        }
     }
 }
 
