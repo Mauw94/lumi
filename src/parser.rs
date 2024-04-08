@@ -438,6 +438,7 @@ impl Parser {
 
         loop {
             if self.matcher(&[Token::LeftParen]) {
+                println!("parentheses found.");
                 expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
             } else {
@@ -464,7 +465,9 @@ impl Parser {
                 }
             }
         }
-
+        if arguments.is_empty() {
+            self.advance();
+        }
         return Ok(LumiExpr {
             start,
             end: self.peek_loc(),
