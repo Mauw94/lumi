@@ -1,9 +1,9 @@
-abc: str -> "this is a test"
-
-fn something() {
-    print abc
+fn add(a, b) {
+    return a + b
 }
 
-print a
+result: float -> add(5, 6.2)
+print result
 
-something()
+res: int -> add(5, 6)
+print res

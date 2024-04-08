@@ -13,26 +13,45 @@ pub fn exec_binary_op(
     r_end: CodeLoc,
 ) -> LRes<Obj> {
     match op {
-        // FIXME start and end loc
         Token::Plus => {
             let lv = get_num_value(lhs, l_start, l_end)?;
             let rv = get_num_value(rhs, r_start, r_end)?;
-            return Ok(Obj::Num(LNum::Float(lv + rv)));
+            let res = lv + rv;
+            if res.fract() == 0.0 {
+                return Ok(Obj::Num(LNum::Int(res as i64)));
+            } else {
+                return Ok(Obj::Num(LNum::Float(res)));
+            }
         }
         Token::Minus => {
             let lv = get_num_value(lhs, l_start, l_end)?;
             let rv = get_num_value(rhs, r_start, r_end)?;
-            return Ok(Obj::Num(LNum::Float(lv - rv)));
+            let res = lv - rv;
+            if res.fract() == 0.0 {
+                return Ok(Obj::Num(LNum::Int(res as i64)));
+            } else {
+                return Ok(Obj::Num(LNum::Float(res)));
+            }
         }
         Token::Star => {
             let lv = get_num_value(lhs, l_start, l_end)?;
             let rv = get_num_value(rhs, r_start, r_end)?;
-            return Ok(Obj::Num(LNum::Float(lv * rv)));
+            let res = lv * rv;
+            if res.fract() == 0.0 {
+                return Ok(Obj::Num(LNum::Int(res as i64)));
+            } else {
+                return Ok(Obj::Num(LNum::Float(res)));
+            }
         }
         Token::Slash => {
             let lv = get_num_value(lhs, l_start, l_end)?;
             let rv = get_num_value(rhs, r_start, r_end)?;
-            return Ok(Obj::Num(LNum::Float(lv / rv)));
+            let res = lv / rv;
+            if res.fract() == 0.0 {
+                return Ok(Obj::Num(LNum::Int(res as i64)));
+            } else {
+                return Ok(Obj::Num(LNum::Float(res)));
+            }
         }
         Token::EqualEqual => {
             let same_type = lhs.is_same_type(&rhs);
