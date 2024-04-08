@@ -355,6 +355,7 @@ impl<'a> Lexer<'a> {
         object_types.insert("float", Token::IdentifierType(ObjectType::Float));
         object_types.insert("str", Token::IdentifierType(ObjectType::String));
         object_types.insert("list", Token::IdentifierType(ObjectType::List));
+        object_types.insert("bool", Token::IdentifierType(ObjectType::Bool));
 
         object_types
     }

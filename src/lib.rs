@@ -156,3 +156,36 @@ impl Stringify {
         }
     }
 }
+
+#[derive(Debug)]
+struct Vars;
+
+impl Builtin for Vars {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        _args: Vec<Obj>,
+        _start: CodeLoc,
+        _end: CodeLoc,
+    ) -> LRes<Obj> {
+        use std::fmt::Write;
+
+        let e = try_borrow(env)?;
+
+        let mut out = String::new();
+        write!(out, "\x1b[33m").ok();
+
+        for v in e.vars.iter() {
+            writeln!(out, "{} ({:?})", v.0, v.1 .0).ok();
+        }
+        write!(out, "\x1b[0m").ok();
+
+        println!("{}", out);
+
+        Ok(Obj::Null)
+    }
+
+    fn builtin_name(&self) -> &str {
+        "vars"
+    }
+}

@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify,
-    Time,
+    Time, Vars,
 };
 
 #[derive(Debug)]
@@ -48,6 +48,7 @@ pub fn initialize(env: &mut Env) {
     env.insert_builtint(Stringify {
         name: "string".to_string(),
     });
+    env.insert_builtint(Vars);
 }
 
 pub fn define(
