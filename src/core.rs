@@ -131,6 +131,7 @@ pub enum Obj {
     Seq(Seq),
     Output(String),
     Func(Func),
+    Struct(Struct),
 }
 
 #[derive(Debug, Clone)]
@@ -164,7 +165,15 @@ pub enum ObjectType {
     Bool,
     List,
     Function,
+    Struct,
     None,
+}
+
+#[derive(Debug, Clone)]
+pub struct Struct {
+    pub env: Rc<RefCell<Env>>,
+    pub params: Rc<Vec<Box<String>>>,
+    pub body: Rc<LumiExpr>,
 }
 
 #[derive(Debug, Clone)]
@@ -216,6 +225,7 @@ impl ObjectType {
             ObjectType::String => "str",
             ObjectType::Bool => "bool",
             ObjectType::Function => "function",
+            ObjectType::Struct => "struct",
             ObjectType::List => "list",
             ObjectType::None => "none",
         }
@@ -240,6 +250,7 @@ impl Obj {
             ObjectType::Bool => self.is_bool(),
             ObjectType::List => self.is_list(),
             ObjectType::Function => self.is_function(),
+            ObjectType::Struct => self.is_struct(),
             ObjectType::None => true,
         }
     }
@@ -271,6 +282,7 @@ impl Obj {
             },
             Obj::Output(_) => "nil",
             Obj::Func(_) => "function",
+            Obj::Struct(_) => "struct",
         }
     }
 
@@ -332,6 +344,13 @@ impl Obj {
         }
     }
 
+    fn is_struct(&self) -> bool {
+        match &self {
+            Obj::Struct(_) => true,
+            _ => false,
+        }
+    }
+
     fn is_list(&self) -> bool {
         match &self {
             Obj::Seq(sq) => match sq {
@@ -368,6 +387,7 @@ impl Obj {
                 }
                 Func::Builtin(_) => {}
             },
+            Obj::Struct(s) => println!("{:?}", s),
         }
     }
 

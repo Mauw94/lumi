@@ -57,6 +57,7 @@ pub enum Expr {
     Index(String, Box<LumiExpr>),
     Return(Box<LumiExpr>),
     Print(Box<LumiExpr>),
+    Struct(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -115,6 +116,9 @@ impl fmt::Display for Expr {
             }
             Expr::Return(expr) => {
                 write!(f, "RETURN {:?}", expr)
+            }
+            Expr::Struct(name, params, body) => {
+                write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
         }
     }
@@ -722,7 +726,6 @@ impl Parser {
         // FIXME
         // struct declaration.
         if self.matcher(&[Token::Struct]) {
-            println!("Struct starts here.");
             let _start = self.peek_loc();
             let struct_name = match self.current_token() {
                 Some(Token::Identifier(name)) => name,
@@ -739,7 +742,53 @@ impl Parser {
                 "Expect '(' after struct name.".to_string(),
                 self.previous().unwrap(),
             )?;
-            println!("{}", struct_name);
+            // TODO: parsing parameters and body is the same as a function, can be moved.
+            let mut parameters: Vec<Box<String>> = Vec::new();
+            if !self.check(Token::RightParen) {
+                loop {
+                    if self.matcher(&[Token::Comma]) {
+                        continue;
+                    }
+                    let param_name = match self.current_token() {
+                        Some(Token::Identifier(name)) => name,
+                        _ => {
+                            return Err(LErr::parsing_error(
+                                "Expect parameter name".to_string(),
+                                self.previous().unwrap(),
+                            ))
+                        }
+                    };
+                    parameters.push(Box::new(param_name));
+                    self.advance();
+                    if self.matcher(&[Token::RightParen]) {
+                        break;
+                    }
+                }
+                self.consume(
+                    Token::LeftBrace,
+                    "Expect '{' before struct body.".to_string(),
+                    self.previous().unwrap(),
+                )?;
+                let body = self.block()?;
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Struct(struct_name, Rc::new(parameters), Rc::new(body)),
+                });
+            } else {
+                self.advance();
+                self.consume(
+                    Token::LeftBrace,
+                    "Expect '{' before struct body.".to_string(),
+                    self.previous().unwrap(),
+                )?;
+                let body = self.block()?;
+                return Ok(LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Struct(struct_name, Rc::new(parameters), Rc::new(body)),
+                });
+            }
         }
         // function statement.
         if self.matcher(&[Token::Fn]) {

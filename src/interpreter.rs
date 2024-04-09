@@ -6,7 +6,7 @@ use crate::{
     lexer::Token,
     lookup_variable,
     parser::{Expr, LiteralValue, LumiExpr},
-    Closure, CodeLoc, Env, Func, ObjectType,
+    Closure, CodeLoc, Env, Func, ObjectType, Struct,
 };
 
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
@@ -194,6 +194,21 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Print(expr) => Ok(evaluate(env, expr)?),
         Expr::Return(expr) => Ok(evaluate(env, expr)?),
+        Expr::Struct(s_name, parameters, body) => {
+            // TODO add fields on struct object containing vars
+            // methods are defined in the body
+            // FIXME
+            println!("{:?}", s_name);
+            println!("{:?}", parameters);
+            println!("{:?}", body);
+            let strct = Obj::Struct(Struct {
+                params: Rc::clone(parameters),
+                body: Rc::clone(body),
+                env: Rc::new(RefCell::new(Env::new(None))),
+            });
+            define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
+            Ok(strct)
+        }
         Expr::Fn(fn_name, parameters, expressions) => {
             // TODO: add types to parameters and check if argument has correct type
             let func = Obj::Func(Func::Closure(Closure {

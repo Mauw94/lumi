@@ -1,4 +1,7 @@
 ### TODOS
+# structs
+pre-defined structs with (static?) methods
+
 # standard library
 String Manipulation Functions: Functions for manipulating strings, such as concatenation, substring extraction, searching, replacing, and formatting.
 
