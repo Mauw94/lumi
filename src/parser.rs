@@ -47,7 +47,13 @@ pub enum Expr {
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
     If(Box<LumiExpr>, Box<LumiExpr>, Option<Box<LumiExpr>>),
-    For(Box<LumiExpr>, Box<LumiExpr>, Box<LumiExpr>, Box<LumiExpr>),
+    For(
+        String,
+        Box<LumiExpr>,
+        Box<LumiExpr>,
+        Box<LumiExpr>,
+        Box<LumiExpr>,
+    ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -111,8 +117,12 @@ impl fmt::Display for Expr {
             Expr::Call(callee, arguments) => {
                 write!(f, "callee {:?} arguments {:?}", callee, arguments)
             }
-            Expr::For(from, to, step, body) => {
-                write!(f, "from {} to {} step {}. body {}", from, to, step, body)
+            Expr::For(index, from, to, step, body) => {
+                write!(
+                    f,
+                    "from {} to {} step {}. body {}, indexer {}",
+                    from, to, step, body, index
+                )
             }
             Expr::Return(expr) => {
                 write!(f, "RETURN {:?}", expr)
@@ -224,64 +234,6 @@ impl Parser {
         match self.current_token() {
             Some(Token::Int(value)) => {
                 self.advance();
-                while self.matcher(&[Token::To]) {
-                    let from = LumiExpr {
-                        start,
-                        end: self.end_loc(),
-                        expr: Expr::Int(value),
-                    };
-                    let to = match self.primary() {
-                        Ok(expr) => match expr.expr {
-                            Expr::Int(_) => expr,
-                            _ => {
-                                return Err(LErr::parsing_error(
-                                    "Expected int value after 'to' keyword".to_string(),
-                                    self.previous().unwrap(),
-                                ))
-                            }
-                        },
-                        Err(e) => return Err(e),
-                    };
-                    self.consume(
-                        Token::Step,
-                        "Expect 'step' keyword after for declaration".to_string(),
-                        self.previous().unwrap(),
-                    )?;
-                    let step = match self.primary() {
-                        Ok(expr) => match expr.expr {
-                            Expr::Int(_) => expr,
-                            _ => {
-                                return Err(LErr::parsing_error(
-                                    "Expected int value after 'step' keyword".to_string(),
-                                    self.previous().unwrap(),
-                                ))
-                            }
-                        },
-                        Err(e) => return Err(e),
-                    };
-                    self.consume(
-                        Token::LeftBrace,
-                        "Expect '{' before for body".to_string(),
-                        self.previous().unwrap(),
-                    )?;
-                    let body = self.statement()?;
-                    self.consume(
-                        Token::RightBrace,
-                        "Expect '}' after for body.".to_string(),
-                        self.previous().unwrap(),
-                    )?;
-
-                    return Ok(LumiExpr {
-                        start,
-                        end: to.end,
-                        expr: Expr::For(
-                            Box::new(from),
-                            Box::new(to),
-                            Box::new(step),
-                            Box::new(body),
-                        ),
-                    });
-                }
                 return Ok(LumiExpr {
                     start,
                     end: self.end_loc(),
@@ -304,36 +256,113 @@ impl Parser {
                     expr: Expr::String(value),
                 });
             }
-            Some(Token::Identifier(value)) => {
+            Some(Token::Identifier(ident)) => {
                 self.advance();
                 if self.matcher(&[Token::Colon]) {
                     match self.current_token() {
-                        Some(Token::IdentifierType(obj_type)) => {
-                            self.advance();
-                            if self.matcher(&[Token::Declare]) {
-                                // FIXME re-assigning a list a = [1,2,3] does not work atm.
-                                if self.matcher(&[Token::LeftBracket]) {
-                                    // TODO be able to define data type
-                                    self.parse_list_expr(value, start, obj_type)
+                        Some(t) => match t {
+                            Token::IdentifierType(obj_type) => {
+                                self.advance();
+                                if self.matcher(&[Token::Declare]) {
+                                    // FIXME re-assigning a list a = [1,2,3] does not work atm.
+                                    if self.matcher(&[Token::LeftBracket]) {
+                                        // TODO be able to define data type
+                                        self.parse_list_expr(ident, start, obj_type)
+                                    } else {
+                                        let expr = self.unary()?;
+                                        return Ok(LumiExpr {
+                                            start,
+                                            end: expr.start,
+                                            expr: Expr::Declare(ident, obj_type, Box::new(expr)),
+                                        });
+                                    }
                                 } else {
-                                    let expr = self.unary()?;
+                                    return Err(LErr::parsing_error(
+                                        format!(
+                                            "Expect '{}' declaration after type definition",
+                                            obj_type.get_type_name(),
+                                        ),
+                                        self.previous().unwrap(),
+                                    ));
+                                }
+                            }
+                            Token::Int(i) => {
+                                self.advance();
+                                while self.matcher(&[Token::To]) {
+                                    let from = LumiExpr {
+                                        start,
+                                        end: self.end_loc(),
+                                        expr: Expr::Int(i),
+                                    };
+                                    let to = match self.primary() {
+                                        Ok(expr) => match expr.expr {
+                                            Expr::Int(_) => expr,
+                                            _ => {
+                                                return Err(LErr::parsing_error(
+                                                    "Expected int value after 'to' keyword"
+                                                        .to_string(),
+                                                    self.previous().unwrap(),
+                                                ))
+                                            }
+                                        },
+                                        Err(e) => return Err(e),
+                                    };
+                                    self.consume(
+                                        Token::Step,
+                                        "Expect 'step' keyword after for declaration".to_string(),
+                                        self.previous().unwrap(),
+                                    )?;
+                                    let step = match self.primary() {
+                                        Ok(expr) => match expr.expr {
+                                            Expr::Int(_) => expr,
+                                            _ => {
+                                                return Err(LErr::parsing_error(
+                                                    "Expected int value after 'step' keyword"
+                                                        .to_string(),
+                                                    self.previous().unwrap(),
+                                                ))
+                                            }
+                                        },
+                                        Err(e) => return Err(e),
+                                    };
+                                    self.consume(
+                                        Token::LeftBrace,
+                                        "Expect '{' before for body".to_string(),
+                                        self.previous().unwrap(),
+                                    )?;
+                                    let body = self.statement()?;
+                                    self.consume(
+                                        Token::RightBrace,
+                                        "Expect '}' after for body.".to_string(),
+                                        self.previous().unwrap(),
+                                    )?;
+
                                     return Ok(LumiExpr {
                                         start,
-                                        end: expr.start,
-                                        expr: Expr::Declare(value, obj_type, Box::new(expr)),
+                                        end: to.end,
+                                        expr: Expr::For(
+                                            ident,
+                                            Box::new(from),
+                                            Box::new(to),
+                                            Box::new(step),
+                                            Box::new(body),
+                                        ),
                                     });
                                 }
-                            } else {
                                 return Err(LErr::parsing_error(
-                                    format!(
-                                        "Expect '{}' declaration after type definition",
-                                        obj_type.get_type_name(),
-                                    ),
+                                    "expected start of for?".to_string(),
                                     self.previous().unwrap(),
                                 ));
                             }
-                        }
-                        None | _ => {
+                            _ => {
+                                return Err(LErr::parsing_error(
+                                    "something something".to_string(),
+                                    self.previous().unwrap(),
+                                ))
+                            }
+                        },
+
+                        None => {
                             return Err(LErr::parsing_error(
                                 "Expect a type after ':'".to_string(),
                                 self.previous().unwrap(),
@@ -342,13 +371,13 @@ impl Parser {
                     }
                 } else if self.matcher(&[Token::Declare]) {
                     if self.matcher(&[Token::LeftBracket]) {
-                        self.parse_list_expr(value, start, ObjectType::List)
+                        self.parse_list_expr(ident, start, ObjectType::List)
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
                             start,
                             end: expr.end,
-                            expr: Expr::Declare(value, ObjectType::None, Box::new(expr)),
+                            expr: Expr::Declare(ident, ObjectType::None, Box::new(expr)),
                         });
                     }
                 } else if self.matcher(&[Token::LeftBracket]) {
@@ -362,7 +391,7 @@ impl Parser {
                             return Ok(LumiExpr {
                                 start,
                                 end: e.end,
-                                expr: Expr::Index(value, Box::new(e)),
+                                expr: Expr::Index(ident, Box::new(e)),
                             })
                         }
                         Err(e) => Err(e),
@@ -371,7 +400,7 @@ impl Parser {
                     return Ok(LumiExpr {
                         start,
                         end: self.end_loc(),
-                        expr: Expr::Identifier(value),
+                        expr: Expr::Identifier(ident),
                     });
                 }
             }
@@ -443,7 +472,6 @@ impl Parser {
 
     fn call(&mut self) -> Result<LumiExpr, LErr> {
         let mut expr = self.primary()?;
-
         loop {
             if self.matcher(&[Token::LeftParen]) {
                 expr = self.finish_call(expr)?;
@@ -891,6 +919,7 @@ impl Parser {
         // print statement.
         if self.matcher(&[Token::Print]) {
             let expr = self.expression()?;
+
             return Ok(LumiExpr {
                 start,
                 end: expr.end,

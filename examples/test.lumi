@@ -1,9 +1,5 @@
-fn add(a, b) {
-    return a + b
+fn func(b) {
+    print b * 2
 }
 
-result: float -> add(5, 6.2)
-print result
-
-res: int -> add(5, 6)
-print res
+func(5)

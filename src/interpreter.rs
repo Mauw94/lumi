@@ -261,7 +261,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 }
             };
         }
-        Expr::For(to_expr, from_expr, step_expr, body) => {
+        Expr::For(index, to_expr, from_expr, step_expr, body) => {
             let mut objects: Vec<Obj> = Vec::new();
 
             let mut to = match evaluate(env, to_expr) {
@@ -286,11 +286,24 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 Err(e) => return Err(e),
             };
 
+            define(
+                env,
+                index.to_string(),
+                ObjectType::Int,
+                Obj::Num(LNum::Int(to)),
+            )?;
             while to <= from {
                 objects.push(evaluate(env, body)?);
                 to += step;
+                define(
+                    env,
+                    index.to_string(),
+                    ObjectType::Int,
+                    Obj::Num(LNum::Int(to)),
+                )?;
             }
 
+            // TODO un_define var afterwards?
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
         }
     }
