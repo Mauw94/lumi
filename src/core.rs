@@ -400,6 +400,23 @@ impl Obj {
     }
 }
 
+impl PartialEq for Obj {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
+            (Self::Num(l0), Self::Num(r0)) => l0 == r0,
+            (Self::Seq(l0), Self::Seq(r0)) => match (l0, r0) {
+                (Seq::String(s1), Seq::String(s2)) => s1 == s2,
+                (Seq::List(_), Seq::List(_)) => todo!(),
+                _ => todo!(),
+            },
+            (Self::Output(l0), Self::Output(r0)) => l0 == r0,
+            // (Self::Func(l0), Self::Func(r0)) => l0 == r0,
+            // (Self::Struct(l0), Self::Struct(r0)) => l0 == r0,
+            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        }
+    }
+}
 impl LNum {
     pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
