@@ -332,12 +332,19 @@ impl Parser {
                                     )?;
 
                                     let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
-                                    while !self.check(Token::RightBrace) {
-                                        exprs.push(Box::new(self.statement()?));
 
-                                        if self.check(Token::RightBrace) {
-                                            self.advance();
-                                            break;
+                                    while !self.matcher(&[Token::RightBrace]) {
+                                        match self.current_token() {
+                                            Some(_) => {
+                                                exprs.push(Box::new(self.statement()?));
+                                            }
+                                            None => {
+                                                self.consume(
+                                                    self.previous().unwrap().token,
+                                                    "Expect '}' after for body.".to_string(),
+                                                    self.previous().unwrap(),
+                                                )?;
+                                            }
                                         }
                                     }
 
@@ -459,7 +466,13 @@ impl Parser {
                         self.advance();
                     }
                 }
-                None => {}
+                None => {
+                    self.consume(
+                        self.previous().unwrap().token,
+                        "Expect ']' after list declaration".to_string(),
+                        self.previous().unwrap(),
+                    )?;
+                }
             };
         }
         let list_expr = LumiExpr {

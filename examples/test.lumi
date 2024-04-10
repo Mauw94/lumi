@@ -1,7 +1,9 @@
-a: list -> [1, 2, 3, 4, 5]
+a: int -> 5
 
-i: 1 to 5 step 1 {
-    index -> 0
-    index = i - 1
-    print a[index] * 2
+fn multiply(arg) {
+    print arg * 5
+}
+
+i: 1 to 10 step 1 {
+    multiply(a)
 }
