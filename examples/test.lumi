@@ -1,9 +1,5 @@
-a: int -> 5
+a: list -> [1, 2, 3, 4]
 
-fn multiply(arg) {
-    print arg * 5
-}
-
-i: 1 to 10 step 1 {
-    multiply(a)
+i: 1 to 4 step 1 {
+    print a[i - 1] * 2
 }

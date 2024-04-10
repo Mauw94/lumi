@@ -394,7 +394,7 @@ impl Parser {
                         });
                     }
                 } else if self.matcher(&[Token::LeftBracket]) {
-                    let e = self.primary()?;
+                    let e = self.expression()?;
                     match self.consume(
                         Token::RightBracket,
                         "Expect ']' after index.".to_string(),
