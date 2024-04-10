@@ -94,21 +94,26 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             eval::exec_binary_op(op, lhs, rhs, lv.start, lv.end, rv.start, rv.end)
         }
         Expr::Declare(var_name, obj_type, expr) => {
-            let value = evaluate(env, expr)?;
-            if !value.is_type(obj_type) {
-                return Err(LErr::runtime_error(
-                    // TODO: move common error messages to global file
-                    format!(
-                        "Type mismatch. Tried to assign a {} value to {}",
-                        value.get_type_name(),
-                        obj_type.get_type_name()
-                    ),
-                    expr.start,
-                    expr.end,
-                ));
-            } else {
-                define(env, var_name.to_string(), obj_type.to_owned(), value)?;
+            match expr {
+                Some(e) => {
+                    let value = evaluate(env, e)?;
+                    if !value.is_type(obj_type) {
+                        return Err(LErr::runtime_error(
+                            format!(
+                                "Type mismatch. Tried to assign a {} value to {}",
+                                value.get_type_name(),
+                                obj_type.get_type_name()
+                            ),
+                            e.start,
+                            e.end,
+                        ));
+                    } else {
+                        define(env, var_name.to_string(), obj_type.to_owned(), value)?;
+                    }
+                }
+                None => define(env, var_name.to_string(), obj_type.to_owned(), Obj::Null)?, // FIXME give var default value based on obj type
             }
+
             Ok(Obj::Null)
         }
         Expr::Assign(l_expr, r_expr) => match &l_expr.expr {

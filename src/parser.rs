@@ -42,7 +42,7 @@ pub enum Expr {
     Float(f64),
     String(String),
     Identifier(String),
-    Declare(String, ObjectType, Box<LumiExpr>),
+    Declare(String, ObjectType, Option<Box<LumiExpr>>),
     Literal(LiteralValue),
     Unary(Token, Box<LumiExpr>),
     Logical(Box<LumiExpr>, Token, Box<LumiExpr>),
@@ -100,7 +100,7 @@ impl fmt::Display for Expr {
                 LiteralValue::Nil => write!(f, "NIL"),
             },
             Expr::Print(expr) => write!(f, "PRINT {}", expr),
-            Expr::Declare(t, _obj_type, expr) => write!(f, "DECLARE {} = {}", t, expr),
+            Expr::Declare(t, _obj_type, expr) => write!(f, "DECLARE {} = {:?}", t, expr),
             Expr::List(exprs) => {
                 write!(f, "LIST: ")?;
                 for expr in exprs {
@@ -273,17 +273,19 @@ impl Parser {
                                         return Ok(LumiExpr {
                                             start,
                                             end: expr.start,
-                                            expr: Expr::Declare(ident, obj_type, Box::new(expr)),
+                                            expr: Expr::Declare(
+                                                ident,
+                                                obj_type,
+                                                Some(Box::new(expr)),
+                                            ),
                                         });
                                     }
                                 } else {
-                                    return Err(LErr::parsing_error(
-                                        format!(
-                                            "Expect '{}' declaration after type definition",
-                                            obj_type.get_type_name(),
-                                        ),
-                                        self.previous().unwrap(),
-                                    ));
+                                    return Ok(LumiExpr {
+                                        start,
+                                        end: self.end_loc(),
+                                        expr: Expr::Declare(ident, obj_type, None),
+                                    });
                                 }
                             }
                             Token::Int(i) => {
@@ -388,7 +390,7 @@ impl Parser {
                         return Ok(LumiExpr {
                             start,
                             end: expr.end,
-                            expr: Expr::Declare(ident, ObjectType::None, Box::new(expr)),
+                            expr: Expr::Declare(ident, ObjectType::None, Some(Box::new(expr))),
                         });
                     }
                 } else if self.matcher(&[Token::LeftBracket]) {
@@ -483,7 +485,7 @@ impl Parser {
         return Ok(LumiExpr {
             start,
             end,
-            expr: Expr::Declare(value, obj_type, Box::new(list_expr)),
+            expr: Expr::Declare(value, obj_type, Some(Box::new(list_expr))),
         });
     }
 
