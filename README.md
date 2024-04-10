@@ -1,6 +1,28 @@
 README will be edited upon as we plow through this adventure.
 We shall see where this will bring us : )
 
+## What's in it?
+a: int
+a: int -> 2
+a = 4
+
+b: list -> [1, 2, 3, 4, 5]
+print b[1]
+
+fn test(arr) {
+    print arr[2] * 2
+}
+
+i: 1 to 5 step 1 {
+    print i
+}
+
+array: list -> [1,2,3,4]
+result: int
+
+result = test(array)
+print result
+
 ## Examples
 
 ```
