@@ -197,7 +197,7 @@ impl Closure {
         start: CodeLoc,
         end: CodeLoc,
     ) -> Result<Obj, LErr> {
-        let env = Rc::new(RefCell::new(Env::new(Some(closure.clone())))); // atm new env has no knowledge of top env
+        let env = Rc::new(RefCell::new(Env::new(Some(closure.clone()))));
 
         for (i, p) in self.params.iter().enumerate() {
             let obj = match args.get(i) {
