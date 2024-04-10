@@ -63,6 +63,13 @@ pub fn define(
     Ok(())
 }
 
+pub fn undefine(env: &Rc<RefCell<Env>>, key: &str) -> Result<(), LErr> {
+    let mut r = try_borrow_mut(env)?;
+    r.vars.remove(key);
+
+    Ok(())
+}
+
 pub fn lookup_variable(
     env: &Rc<RefCell<Env>>,
     var_name: &String,

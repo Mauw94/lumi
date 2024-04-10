@@ -6,7 +6,7 @@ use crate::{
     lexer::Token,
     lookup_variable,
     parser::{Expr, LiteralValue, LumiExpr},
-    Closure, CodeLoc, Env, Func, ObjectType, Struct,
+    undefine, Closure, CodeLoc, Env, Func, ObjectType, Struct,
 };
 
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
@@ -303,7 +303,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 )?;
             }
 
-            // TODO un_define var afterwards?
+            undefine(env, &index)?; // Remove index var
+
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
         }
     }
