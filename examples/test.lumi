@@ -1,5 +1,6 @@
-fn func(b) {
-    print b * 2
-}
+a: list -> [1, 2, 3, 4, 5]
 
-func(5)
+i: 1 to 5 step 1 {
+    print "asdd"
+    print "dsd"
+}

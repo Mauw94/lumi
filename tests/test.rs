@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use lumi::{quick_eval, Obj, Seq};
+use lumi::{execute_examples, quick_eval, Obj, Seq};
 
 extern crate lumi;
 
@@ -18,6 +18,12 @@ fn b(x: bool) -> Obj {
 
 fn s(str: String) -> Obj {
     Obj::Seq(Seq::String(Rc::new(str)))
+}
+
+// cargo test examples -- --nocapture
+#[test]
+fn examples() {
+    assert!(execute_examples().is_ok());
 }
 
 #[test]

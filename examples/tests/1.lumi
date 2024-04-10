@@ -1,0 +1,9 @@
+a: int -> 5
+
+fn multiply(arg) {
+    print arg * 5
+}
+
+i: 1 to 10 step 1 {
+    multiply(a)
+}

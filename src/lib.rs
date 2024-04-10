@@ -1,5 +1,7 @@
 use std::cell::RefCell;
 use std::fmt::Debug;
+use std::fs;
+use std::path::Path;
 use std::rc::Rc;
 
 use chrono::DateTime;
@@ -43,6 +45,33 @@ pub fn quick_eval(code: &str) -> Obj {
     let mut parser = Parser::new(lexer.lex().unwrap());
 
     evaluate(&env, &parser.parse().unwrap()).unwrap()
+}
+
+pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
+    let mut results: Vec<Obj> = Vec::new();
+    let input_folder = Path::new("examples/tests");
+    if let Ok(entries) = fs::read_dir(input_folder) {
+        for entry in entries {
+            if let Ok(entry) = entry {
+                if let Some(file_name) = entry.file_name().to_str() {
+                    let file_path = input_folder.join(file_name);
+                    match fs::read_to_string(&file_path) {
+                        Ok(content) => results.push(quick_eval(&content)),
+                        Err(err) => {
+                            return Err(LErr::internal_error(format!(
+                                "Error reading file: {}",
+                                err
+                            )));
+                        }
+                    }
+                }
+            }
+        }
+    } else {
+        println!("Failed to read folder contents.");
+    }
+
+    Ok(results)
 }
 
 pub trait Builtin: Debug {
