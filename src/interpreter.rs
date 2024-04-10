@@ -293,7 +293,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                 Obj::Num(LNum::Int(to)),
             )?;
             while to <= from {
-                objects.push(evaluate(env, body)?);
+                for expr in body {
+                    objects.push(evaluate(env, expr)?);
+                }
                 to += step;
                 define(
                     env,

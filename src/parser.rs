@@ -52,7 +52,7 @@ pub enum Expr {
         Box<LumiExpr>,
         Box<LumiExpr>,
         Box<LumiExpr>,
-        Box<LumiExpr>,
+        Vec<Box<LumiExpr>>,
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
@@ -120,7 +120,7 @@ impl fmt::Display for Expr {
             Expr::For(index, from, to, step, body) => {
                 write!(
                     f,
-                    "from {} to {} step {}. body {}, indexer {}",
+                    "from {} to {} step {}. body {:?}, indexer {}",
                     from, to, step, body, index
                 )
             }
@@ -330,12 +330,16 @@ impl Parser {
                                         "Expect '{' before for body".to_string(),
                                         self.previous().unwrap(),
                                     )?;
-                                    let body = self.statement()?;
-                                    self.consume(
-                                        Token::RightBrace,
-                                        "Expect '}' after for body.".to_string(),
-                                        self.previous().unwrap(),
-                                    )?;
+
+                                    let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
+                                    while !self.check(Token::RightBrace) {
+                                        exprs.push(Box::new(self.statement()?));
+
+                                        if self.check(Token::RightBrace) {
+                                            self.advance();
+                                            break;
+                                        }
+                                    }
 
                                     return Ok(LumiExpr {
                                         start,
@@ -345,7 +349,7 @@ impl Parser {
                                             Box::new(from),
                                             Box::new(to),
                                             Box::new(step),
-                                            Box::new(body),
+                                            exprs,
                                         ),
                                     });
                                 }
