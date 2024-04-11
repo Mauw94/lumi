@@ -1,6 +1,4 @@
-use std::rc::Rc;
-
-use lumi::{execute_examples, quick_eval, Obj, Seq};
+use lumi::{execute_examples, quick_eval, Obj};
 
 extern crate lumi;
 
@@ -16,9 +14,9 @@ fn b(x: bool) -> Obj {
     Obj::Bool(x)
 }
 
-fn s(str: String) -> Obj {
-    Obj::Seq(Seq::String(Rc::new(str)))
-}
+// fn s(str: String) -> Obj {
+//     Obj::Seq(Seq::String(Rc::new(str)))
+// }
 
 // cargo test examples -- --nocapture
 #[test]
