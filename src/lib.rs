@@ -44,7 +44,13 @@ pub fn quick_eval(code: &str) -> Obj {
     let mut lexer = Lexer::new(code);
     let mut parser = Parser::new(lexer.lex().unwrap());
 
-    evaluate(&env, &parser.parse().unwrap()).unwrap()
+    match evaluate(&env, &parser.parse().unwrap()) {
+        Ok(obj) => obj,
+        Err(e) => match e {
+            LErr::Throw(_, _) => todo!(),
+            LErr::Return(o) => o,
+        },
+    }
 }
 
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {

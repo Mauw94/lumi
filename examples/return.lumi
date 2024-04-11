@@ -1,7 +1,0 @@
-fn something() {
-    return "abcdef"
-}
-
-a: str -> something()
-
-print a

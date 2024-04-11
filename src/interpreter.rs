@@ -198,7 +198,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             get_value_by_index_from_list(env, var, index, expr.start, expr.end)
         }
         Expr::Print(expr) => Ok(evaluate(env, expr)?),
-        Expr::Return(expr) => Ok(evaluate(env, expr)?),
+        Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
+        Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
             // TODO add fields on struct object containing vars
             // methods are defined in the body

@@ -61,7 +61,7 @@ pub enum Expr {
     Sequence(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
     Index(String, Box<LumiExpr>),
-    Return(Box<LumiExpr>),
+    Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
     Print(Box<LumiExpr>),
     Struct(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
 }
@@ -767,7 +767,7 @@ impl Parser {
             return Ok(LumiExpr {
                 start,
                 end: self.end_loc(),
-                expr: Expr::Return(Box::new(value)),
+                expr: Expr::Return(Some(Box::new(value))),
             });
         }
         // FIXME

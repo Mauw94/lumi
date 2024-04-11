@@ -1,5 +1,7 @@
-a: list -> [1, 2, 3, 4]
-
-i: 1 to 4 step 1 {
-    print a[i - 1] * 2
+fn test(a) {
+    print a
 }
+
+b: str
+b = test("something")
+print b

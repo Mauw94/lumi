@@ -15,59 +15,67 @@ pub enum ErrorLoc {
 }
 
 #[derive(Debug)]
-pub struct LErr(String, ErrorLoc);
+pub enum LErr {
+    Throw(String, ErrorLoc),
+    Return(Obj),
+}
+
 impl LErr {
     pub fn lexing_error(message: String, start: CodeLoc, end: CodeLoc) -> Self {
-        LErr(message, ErrorLoc::Lexing(start, end))
+        LErr::Throw(message, ErrorLoc::Lexing(start, end))
     }
 
     pub fn parsing_error(message: String, token: LocToken) -> Self {
-        LErr(message, ErrorLoc::Token(token))
+        LErr::Throw(message, ErrorLoc::Token(token))
     }
 
     pub fn runtime_error(message: String, start: CodeLoc, end: CodeLoc) -> Self {
-        LErr(message, ErrorLoc::Expr(start, end))
+        LErr::Throw(message, ErrorLoc::Expr(start, end))
     }
 
     pub fn internal_error(message: String) -> Self {
-        LErr(message, ErrorLoc::Internal)
+        LErr::Throw(message, ErrorLoc::Internal)
     }
 
     pub fn render(self: LErr, src: &str) -> String {
-        let LErr(message, loc) = self;
-        use std::fmt::Write;
-        let mut out = String::new();
-        write!(out, "\x1b[31m").ok();
-        writeln!(out, "{}", message).ok();
-        write!(out, "\x1b[0m").ok();
-        match loc {
-            ErrorLoc::Lexing(start, end) => {
-                write_source_error(&mut out, src, &start, &end);
-                write!(
-                    out,
-                    "\n\t\t(at [line {} index {}])",
-                    start.line, start.index
-                )
-                .ok();
+        match self {
+            LErr::Throw(message, loc) => {
+                use std::fmt::Write;
+                let mut out = String::new();
+                write!(out, "\x1b[31m").ok();
+                writeln!(out, "{}", message).ok();
+                write!(out, "\x1b[0m").ok();
+                match loc {
+                    ErrorLoc::Lexing(start, end) => {
+                        write_source_error(&mut out, src, &start, &end);
+                        write!(
+                            out,
+                            "\n\t\t(at [line {} index {}])",
+                            start.line, start.index
+                        )
+                        .ok();
+                    }
+                    ErrorLoc::Token(token) => {
+                        write_source_error(&mut out, src, &token.start, &token.end);
+                        write!(
+                            out,
+                            "\n\tat {:?}\t(at [line {} index {}])",
+                            token, token.start.line, token.start.index
+                        )
+                        .ok();
+                    }
+                    ErrorLoc::Expr(start, end) => {
+                        write_source_error(&mut out, src, &start, &end);
+                        write!(out, "\n\t(expr: line {} index {})", start.line, start.index).ok();
+                    }
+                    ErrorLoc::Internal => {
+                        write!(out, "\n").ok();
+                    }
+                }
+                out
             }
-            ErrorLoc::Token(token) => {
-                write_source_error(&mut out, src, &token.start, &token.end);
-                write!(
-                    out,
-                    "\n\tat {:?}\t(at [line {} index {}])",
-                    token, token.start.line, token.start.index
-                )
-                .ok();
-            }
-            ErrorLoc::Expr(start, end) => {
-                write_source_error(&mut out, src, &start, &end);
-                write!(out, "\n\t(expr: line {} index {})", start.line, start.index).ok();
-            }
-            ErrorLoc::Internal => {
-                write!(out, "\n").ok();
-            }
+            LErr::Return(e) => format!("break {:?}", e),
         }
-        out
     }
 }
 
