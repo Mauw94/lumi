@@ -128,19 +128,7 @@ impl Builtin for Stringify {
         start: CodeLoc,
         end: CodeLoc,
     ) -> LRes<Obj> {
-        if args.len() > 1 {
-            return Err(LErr::runtime_error(
-                format!("Expected only 1 argument, got {}.", args.len()),
-                start,
-                end,
-            ));
-        } else if args.len() == 0 {
-            return Err(LErr::runtime_error(
-                format!("Expected at least 1 argument."),
-                start,
-                end,
-            ));
-        }
+        check_args(1, 1, &args, start, end)?;
         let a = args.first().unwrap();
         match self.stringify_obj(a, start, end) {
             Ok(s) => Ok(Obj::Seq(Seq::String(Rc::new(s)))),
@@ -221,4 +209,65 @@ impl Builtin for Vars {
     fn builtin_name(&self) -> &str {
         "vars"
     }
+}
+
+#[derive(Debug)]
+struct Typeof;
+
+impl Builtin for Typeof {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        use std::fmt::Write;
+
+        let mut out = String::new();
+        write!(out, "\x1b[33m").ok();
+
+        let var = args.first().unwrap();
+        write!(out, "{}", var.get_type_name()).ok();
+        write!(out, "\x1b[0m").ok();
+
+        println!("{}", out);
+
+        Ok(Obj::Null)
+    }
+
+    fn builtin_name(&self) -> &str {
+        "typeof"
+    }
+}
+
+fn check_args(
+    min: usize,
+    max: usize,
+    args: &Vec<Obj>,
+    start: CodeLoc,
+    end: CodeLoc,
+) -> Result<(), LErr> {
+    // FIXME
+    // a: int
+    // typeof(a) returns nill
+    // should return int
+
+    if args.len() > max {
+        return Err(LErr::runtime_error(
+            format!("Expected only 1 argument, got {}.", args.len()),
+            start,
+            end,
+        ));
+    } else if args.len() < min {
+        return Err(LErr::runtime_error(
+            format!("Expected at least 1 argument."),
+            start,
+            end,
+        ));
+    }
+
+    Ok(())
 }

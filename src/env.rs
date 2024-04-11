@@ -5,8 +5,7 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify,
-    Time, Vars,
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify, Time, Typeof, Vars
 };
 
 #[derive(Debug)]
@@ -49,6 +48,7 @@ pub fn initialize(env: &mut Env) {
         name: "string".to_string(),
     });
     env.insert_builtint(Vars);
+    env.insert_builtint(Typeof);
 }
 
 pub fn define(

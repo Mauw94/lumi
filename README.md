@@ -77,6 +77,9 @@ lumi> 1 to 3 step 1 { print "a" }
 "a"
 ```
 
+### Known bugs and/or shortcomings
+The return statement inside an IF statement inside a function will not work properly. (yet)
+
 ### Or use built-in functions such as:
 ```
 lumi> time()
