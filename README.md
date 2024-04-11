@@ -23,6 +23,8 @@ result: int
 result = test(array)
 print result
 
+return; breaks current loop/fn
+
 ## Examples
 
 ```
