@@ -6,7 +6,7 @@ use std::{
     rc::Rc,
 };
 
-use lumi::{evaluate, initialize, AppConfig, Env, LDebug, Lexer, Parser};
+use lumi::{evaluate, initialize, AppConfig, Env, LDebug, LErr, Lexer, Parser};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -66,12 +66,13 @@ fn run_code(config: &AppConfig, code: &str) {
                 Ok(expr) => {
                     debugger.set_expr(expr.clone());
                     match evaluate(&env, &expr) {
-                        Ok(x) => {
+                        Ok(x) | Err(LErr::Return(x)) => {
                             debugger.set_eval(x.clone());
                             debugger.debug_print();
-                            x.print_value();
                         }
-                        Err(e) => println!("{}", e.render(&code)),
+                        Err(e) => {
+                            println!("{}", e.render(&code));
+                        }
                     }
                 }
                 Err(e) => println!("{}", e.render(&code)),

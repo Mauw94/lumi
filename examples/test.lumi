@@ -1,7 +1,10 @@
 fn test(a) {
-    print a
+    return a
+
+    print "still in function"
 }
 
 b: str
 b = test("something")
 print b
+print "asd" 

@@ -54,7 +54,7 @@ pub enum Expr {
         Box<LumiExpr>,
         Vec<Box<LumiExpr>>,
     ),
-    Fn(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
+    Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
@@ -63,7 +63,7 @@ pub enum Expr {
     Index(String, Box<LumiExpr>),
     Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
     Print(Box<LumiExpr>),
-    Struct(String, Rc<Vec<Box<String>>>, Rc<LumiExpr>),
+    Struct(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -947,7 +947,21 @@ impl Parser {
         }
         // block statement (wrapped by '{ }' ).
         if self.matcher(&[Token::LeftBrace]) {
-            return self.block();
+            let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
+            let start = self.peek_loc();
+            while !self.check(Token::RightBrace) && !self.is_at_end() {
+                exprs.push(Box::new(self.statement()?));
+            }
+            self.consume(
+                Token::RightBrace,
+                "Expect '}' after block.".to_string(),
+                self.current().unwrap(),
+            )?;
+            return Ok(LumiExpr {
+                start,
+                end: self.peek_loc(),
+                expr: Expr::Sequence(exprs),
+            });
         }
         self.expression()
     }
@@ -987,9 +1001,9 @@ impl Parser {
         });
     }
 
-    fn block(&mut self) -> Result<LumiExpr, LErr> {
+    fn block(&mut self) -> Result<Vec<Box<LumiExpr>>, LErr> {
         let mut exprs: Vec<Box<LumiExpr>> = Vec::new();
-        let start = self.peek_loc();
+        // let start = self.peek_loc();
         while !self.check(Token::RightBrace) && !self.is_at_end() {
             exprs.push(Box::new(self.statement()?));
         }
@@ -999,10 +1013,6 @@ impl Parser {
             self.current().unwrap(),
         )?;
 
-        return Ok(LumiExpr {
-            start,
-            end: self.peek_loc(),
-            expr: Expr::Sequence(exprs),
-        });
+        return Ok(exprs);
     }
 }

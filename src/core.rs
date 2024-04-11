@@ -181,7 +181,7 @@ pub enum ObjectType {
 pub struct Struct {
     pub env: Rc<RefCell<Env>>,
     pub params: Rc<Vec<Box<String>>>,
-    pub body: Rc<LumiExpr>,
+    pub body: Rc<Vec<Box<LumiExpr>>>,
 }
 
 #[derive(Debug, Clone)]
@@ -193,7 +193,7 @@ pub enum Func {
 #[derive(Debug, Clone)]
 pub struct Closure {
     pub params: Rc<Vec<Box<String>>>,
-    pub body: Rc<LumiExpr>,
+    pub body: Rc<Vec<Box<LumiExpr>>>,
     // pub env: Rc<RefCell<Env>>,
 }
 
@@ -221,7 +221,19 @@ impl Closure {
             define(&env, p.to_string(), ObjectType::None, obj.clone())?;
         }
 
-        return Ok(evaluate(&env, &self.body)?);
+        for expr in self.body.iter() {
+            match &expr.expr {
+                crate::Expr::Return(Some(x)) => {
+                    return Ok(evaluate(&env, &x)?);
+                }
+                _ => {
+                    evaluate(&env, expr)?;
+                    return Ok(Obj::Null);
+                }
+            }
+        }
+
+        Ok(Obj::Null)
     }
 }
 
