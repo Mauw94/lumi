@@ -762,13 +762,23 @@ impl Parser {
         // return statement.
         if self.matcher(&[Token::Return]) {
             let start = self.peek_loc();
-            let value = self.statement()?;
 
-            return Ok(LumiExpr {
-                start,
-                end: self.end_loc(),
-                expr: Expr::Return(Some(Box::new(value))),
-            });
+            if self.check(Token::Semicolon) {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.end_loc(),
+                    expr: Expr::Return(None),
+                });
+            } else {
+                let value = self.statement()?;
+
+                return Ok(LumiExpr {
+                    start,
+                    end: self.end_loc(),
+                    expr: Expr::Return(Some(Box::new(value))),
+                });
+            }
         }
         // FIXME
         // struct declaration.
