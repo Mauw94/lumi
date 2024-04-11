@@ -111,7 +111,12 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                         define(env, var_name.to_string(), obj_type.to_owned(), value)?;
                     }
                 }
-                None => define(env, var_name.to_string(), obj_type.to_owned(), Obj::Null)?, // FIXME give var default value based on obj type
+                None => define(
+                    env,
+                    var_name.to_string(),
+                    obj_type.to_owned(),
+                    Obj::get_default_value(&obj_type)?,
+                )?,
             }
 
             Ok(Obj::Null)

@@ -323,6 +323,20 @@ impl Obj {
         }
     }
 
+    pub fn get_default_value(object_type: &ObjectType) -> Result<Obj, LErr> {
+        match object_type {
+            ObjectType::Int => Ok(Obj::Num(LNum::default_int())),
+            ObjectType::Float => Ok(Obj::Num(LNum::default_float())),
+            ObjectType::String => Ok(Obj::Seq(Seq::String(Rc::new("".to_string())))),
+            ObjectType::Bool => Ok(Obj::Bool(false)),
+            ObjectType::List => Ok(Obj::Seq(Seq::List(Rc::new(Vec::new())))),
+            _ => Err(LErr::internal_error(format!(
+                "Object type {} does not have a defautl value.",
+                object_type.get_type_name()
+            ))),
+        }
+    }
+
     fn is_int(&self) -> bool {
         match self {
             Obj::Num(n) => match n {
@@ -465,5 +479,13 @@ impl LNum {
             LNum::Int(i) => *i as usize,
             LNum::Float(f) => *f as usize,
         }
+    }
+
+    pub fn default_int() -> LNum {
+        LNum::Int(0)
+    }
+
+    pub fn default_float() -> LNum {
+        LNum::Float(0.0)
     }
 }
