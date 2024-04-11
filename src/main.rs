@@ -4,6 +4,7 @@ use std::{
     io::{stdin, stdout, Write},
     path::Path,
     rc::Rc,
+    time::Instant,
 };
 
 use lumi::{evaluate, initialize, AppConfig, Env, LDebug, LErr, Lexer, Parser};
@@ -96,6 +97,8 @@ fn main() {
     if args.len() <= 1 {
         repl(&config);
     } else {
+        let start = Instant::now();
+
         let filename = &args[1];
         let input_folder = Path::new("examples");
         let file_path = input_folder.join(filename);
@@ -104,5 +107,8 @@ fn main() {
             Ok(content) => run_code(&config, &content),
             Err(err) => eprintln!("Error reading file: {}", err),
         }
+
+        let duration = start.elapsed();
+        print!("                                    Execution time: {:?}", duration);
     }
 }
