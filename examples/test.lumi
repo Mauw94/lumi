@@ -1,10 +1,14 @@
-fn test(a) {
-    return a
+fn test(a, b) {
+    returnVar: str
+    if (b < 10) {
+        returnVar = a
+    }
 
+    return returnVar
     print "still in function"
 }
 
 b: str
-b = test("something")
+b = test("something", 8)
 print b
 print "asd" 
