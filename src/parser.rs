@@ -290,6 +290,7 @@ impl Parser {
                             }
                             Token::Int(i) => {
                                 self.advance();
+                                // for loop
                                 while self.matcher(&[Token::To]) {
                                     let from = LumiExpr {
                                         start,
@@ -299,6 +300,7 @@ impl Parser {
                                     let to = match self.primary() {
                                         Ok(expr) => match expr.expr {
                                             Expr::Int(_) => expr,
+                                            Expr::Identifier(_) => expr,
                                             _ => {
                                                 return Err(LErr::parsing_error(
                                                     "Expected int value after 'to' keyword"
