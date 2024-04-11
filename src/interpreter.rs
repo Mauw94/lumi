@@ -197,7 +197,11 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             let index: usize = get_real_index_num_from_object(index_obj, expr.start, expr.end)?;
             get_value_by_index_from_list(env, var, index, expr.start, expr.end)
         }
-        Expr::Print(expr) => Ok(evaluate(env, expr)?),
+        Expr::Print(expr) => {
+            let prt = evaluate(env, expr)?;
+            prt.print_value();
+            Ok(Obj::Null)
+        }
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {

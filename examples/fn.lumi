@@ -2,8 +2,8 @@ a: int -> 2
 b: int -> 3
 
 fn test(param, another) {
-    print "asdasd"
     print param + another
+    print "dsd"
 }
 
 test(a, b)

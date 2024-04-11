@@ -71,13 +71,6 @@ fn and() {
 }
 
 #[test]
-fn print() {
-    assert_eq!(quick_eval("print \"test\""), s("test".to_string()));
-    assert_eq!(quick_eval("print 5"), i(5));
-    assert_eq!(quick_eval("print 5.0"), f(5.0));
-}
-
-#[test]
 fn declare() {
     assert_eq!(quick_eval("a -> 2"), Obj::Null);
     assert_eq!(quick_eval("b-> 5"), Obj::Null);

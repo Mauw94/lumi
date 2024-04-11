@@ -226,9 +226,12 @@ impl Closure {
                 crate::Expr::Return(Some(x)) => {
                     return Ok(evaluate(&env, &x)?);
                 }
+                crate::Expr::Print(x) => {
+                    let pr = evaluate(&env, x)?;
+                    pr.print_value();
+                }
                 _ => {
                     evaluate(&env, expr)?;
-                    return Ok(Obj::Null);
                 }
             }
         }
