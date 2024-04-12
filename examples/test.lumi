@@ -1,12 +1,8 @@
-fn something(a) {
-    if (a == 5) {
-        return a
-    }
+fn add(a, b) {
+    c: int
+    c = a + b + 10
 
-    a = a + 1
-    something(a)
+    return c
 }
 
-c: int
-c = something(1)
-print c
+print add(5, 7)
