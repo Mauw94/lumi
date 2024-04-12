@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    core::{LErr, LNum, LRes, Obj, Seq},
+    core::{LErr, LNum, Obj, Seq},
     define, eval,
     lexer::Token,
     lookup_variable,
@@ -9,7 +9,7 @@ use crate::{
     undefine, Closure, CodeLoc, Env, Func, ObjectType, Struct,
 };
 
-pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
+pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
     match &expr.expr {
         // TODO: add all results of expressions to a Vec trace
         // and print this in main
@@ -27,16 +27,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Block(xs) => {
             for expr in xs {
-                match &expr.expr {
-                    Expr::Return(Some(x)) => {
-                        evaluate(env, x)?;
-                        break;
-                    }
-                    _ => {
-                        let o = evaluate(env, expr)?;
-                        o.print_value();
-                    }
-                }
+                let o = evaluate(env, expr)?;
+                o.print_value();
             }
 
             Ok(Obj::Null)
@@ -96,16 +88,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::If(condition, body, else_branch) => {
             if is_truthy(evaluate(env, condition)?) {
-                match &body.expr {
-                    Expr::Return(Some(x)) => {
-                        println!("found a return.");
-                        evaluate(env, &x)?;
-                    }
-                    _ => {
-                        println!("is this a return..");
-                        println!("{:?}", body);
-                    }
-                }
                 return Ok(evaluate(env, &body)?);
             }
             return match else_branch {
@@ -233,10 +215,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             prt.print_value();
             Ok(Obj::Null)
         }
-        Expr::Return(Some(expr)) => {
-            Ok(evaluate(env, expr)?)
-            // return Err(LErr::Return(evaluate(env, expr)?));
-        }
+        Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
             // TODO add fields on struct object containing vars
@@ -255,18 +234,20 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::Fn(fn_name, parameters, expressions) => {
             // TODO: add types to parameters and check if argument has correct type
-            let func = Obj::Func(Func::Closure(Closure {
+            let func = Obj::Func(Box::new(Func::Closure(Box::new(Closure {
                 body: Rc::clone(expressions),
                 params: Rc::clone(parameters),
-            }));
+            }))));
             define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
-            return Ok(func);
+            Ok(func)
         }
         Expr::Call(callee, args) => {
             let func = evaluate(env, callee)?;
+            // seems like func(closures) are being put on the stack (LIFO)
+            // and thus when we evaluate and reach a return value it still evaluates "older" calls afterwards
             match func {
-                Obj::Func(f) => match f {
-                    Func::Closure(c) => {
+                Obj::Func(f) => match *f {
+                    Func::Closure(mut c) => {
                         let arguments = args
                             .into_iter()
                             .map(|a| evaluate(env, &a))
@@ -282,7 +263,15 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
                                 callee.end,
                             ));
                         }
-                        return Ok(c.call(arguments, env, callee.start, callee.end)?);
+
+                        // FIXME
+                        // call stops evaluating after RETURN but still emits some NULL values..?
+                        match c.call(arguments, env, callee.start, callee.end) {
+                            Ok(o) => {
+                                return Ok(o);
+                            }
+                            Err(e) => return Err(e),
+                        }
                     }
                     Func::Builtin(b) => {
                         if args.len() == 0 {

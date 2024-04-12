@@ -1,5 +1,4 @@
 fn something(a) {
-    print a
     if (a == 5) {
         return a
     }
@@ -8,4 +7,6 @@ fn something(a) {
     something(a)
 }
 
-something(1)
+c: int
+c = something(1)
+print c

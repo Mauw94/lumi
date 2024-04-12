@@ -5,7 +5,8 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify, Time, Typeof, Vars
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, Func, LErr, LRes, Obj, ObjectType, Stringify,
+    Time, Typeof, Vars,
 };
 
 #[derive(Debug)]
@@ -26,7 +27,7 @@ impl Env {
         self.insert(
             b.builtin_name().to_string(),
             ObjectType::Function,
-            Obj::Func(Func::Builtin(Rc::new(b))),
+            Obj::Func(Box::new(Func::Builtin(Rc::new(b)))),
         )
         .unwrap();
     }

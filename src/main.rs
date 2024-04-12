@@ -109,6 +109,9 @@ fn main() {
         }
 
         let duration = start.elapsed();
-        print!("                                    Execution time: {:?}", duration);
+        print!(
+            "                                    Execution time: {:?}",
+            duration
+        );
     }
 }

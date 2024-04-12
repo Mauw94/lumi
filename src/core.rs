@@ -138,7 +138,7 @@ pub enum Obj {
     Num(LNum),
     Seq(Seq),
     Output(String),
-    Func(Func),
+    Func(Box<Func>),
     Struct(Struct),
 }
 
@@ -187,19 +187,18 @@ pub struct Struct {
 #[derive(Debug, Clone)]
 pub enum Func {
     Builtin(Rc<dyn Builtin>),
-    Closure(Closure),
+    Closure(Box<Closure>),
 }
 
 #[derive(Debug, Clone)]
 pub struct Closure {
     pub params: Rc<Vec<Box<String>>>,
     pub body: Rc<Vec<Box<LumiExpr>>>,
-    // pub env: Rc<RefCell<Env>>,
 }
 
 impl Closure {
     pub fn call(
-        &self,
+        &mut self,
         args: Vec<Obj>,
         closure: &Rc<RefCell<Env>>,
         start: CodeLoc,
@@ -222,19 +221,14 @@ impl Closure {
         }
 
         for expr in self.body.iter() {
-            match &expr.expr {
-                crate::Expr::Return(Some(x)) => {
-                    evaluate(&env, &x)?;
-                    println!("we ever get here?");
-                    break;
-                }
-                crate::Expr::Print(x) => {
-                    let pr = evaluate(&env, x)?;
-                    pr.print_value();
-                }
-                _ => {
-                    evaluate(&env, expr)?;
-                }
+            match evaluate(&env, expr) {
+                Ok(_) => {} // just continue evaluating
+                Err(err) => match err {
+                    LErr::Throw(_, _) => return Err(err),
+                    LErr::Return(x) => {
+                        return Ok(x);
+                    }
+                },
             }
         }
 
@@ -417,7 +411,7 @@ impl Obj {
                 }
             },
             Obj::Output(v) => println!("{}", v),
-            Obj::Func(f) => match f {
+            Obj::Func(f) => match &**f {
                 Func::Closure(_c) => {
                     // for p in c.params.iter() {
                     //     println!("param: {}", p);
