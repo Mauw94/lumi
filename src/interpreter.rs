@@ -25,6 +25,22 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
 
             Ok(Obj::Null)
         }
+        Expr::Block(xs) => {
+            for expr in xs {
+                match &expr.expr {
+                    Expr::Return(Some(x)) => {
+                        evaluate(env, x)?;
+                        break;
+                    }
+                    _ => {
+                        let o = evaluate(env, expr)?;
+                        o.print_value();
+                    }
+                }
+            }
+
+            Ok(Obj::Null)
+        }
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
@@ -80,6 +96,16 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
         }
         Expr::If(condition, body, else_branch) => {
             if is_truthy(evaluate(env, condition)?) {
+                match &body.expr {
+                    Expr::Return(Some(x)) => {
+                        println!("found a return.");
+                        evaluate(env, &x)?;
+                    }
+                    _ => {
+                        println!("is this a return..");
+                        println!("{:?}", body);
+                    }
+                }
                 return Ok(evaluate(env, &body)?);
             }
             return match else_branch {
@@ -207,7 +233,10 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> LRes<Obj> {
             prt.print_value();
             Ok(Obj::Null)
         }
-        Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
+        Expr::Return(Some(expr)) => {
+            Ok(evaluate(env, expr)?)
+            // return Err(LErr::Return(evaluate(env, expr)?));
+        }
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
             // TODO add fields on struct object containing vars

@@ -59,6 +59,7 @@ pub enum Expr {
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
+    Block(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
     Index(String, Box<LumiExpr>),
     Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
@@ -85,6 +86,17 @@ impl fmt::Display for Expr {
             Expr::Assign(lhs, rhs) => write!(f, "ASSIGN ({} = {})", lhs, rhs),
             Expr::Sequence(expressions) => {
                 write!(f, "SEQ [")?;
+                let mut iter = expressions.iter();
+                if let Some(expr) = iter.next() {
+                    write!(f, "{}", expr)?;
+                    for expr in iter {
+                        write!(f, ", {}", expr)?;
+                    }
+                }
+                write!(f, "]")
+            }
+            Expr::Block(expressions) => {
+                write!(f, "BLOCK [")?;
                 let mut iter = expressions.iter();
                 if let Some(expr) = iter.next() {
                     write!(f, "{}", expr)?;
@@ -396,7 +408,7 @@ impl Parser {
                         });
                     }
                 } else if self.matcher(&[Token::LeftBracket]) {
-                    let e = self.expression()?;
+                    let e = self.assignment()?;
                     match self.consume(
                         Token::RightBracket,
                         "Expect ']' after index.".to_string(),
@@ -519,7 +531,7 @@ impl Parser {
                         self.previous().unwrap(),
                     ));
                 }
-                arguments.push(Box::new(self.expression()?));
+                arguments.push(Box::new(self.assignment()?));
                 if self.matcher(&[Token::RightParen]) {
                     break;
                 }
@@ -745,18 +757,14 @@ impl Parser {
         Ok(expr)
     }
 
-    fn expression(&mut self) -> Result<LumiExpr, LErr> {
-        let expr = self.assignment()?;
+    // fn expression(&mut self) -> Result<LumiExpr, LErr> {
+    //     let expr = self.assignment()?;
 
-        let start = self.peek_loc();
-        let end = start;
+    //     let start = self.peek_loc();
+    //     // let end = start;
 
-        Ok(LumiExpr {
-            start,
-            end,
-            expr: Expr::Sequence(vec![Box::new(expr)]),
-        })
-    }
+    //     Ok(expr)
+    // }
 
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
@@ -928,7 +936,7 @@ impl Parser {
                 "Expect '(' after if.".to_string(),
                 self.current().unwrap(),
             )?;
-            let condition = self.expression()?;
+            let condition = self.assignment()?;
             self.consume(
                 Token::RightParen,
                 "Expect ')' after if condition".to_string(),
@@ -949,7 +957,7 @@ impl Parser {
         }
         // print statement.
         if self.matcher(&[Token::Print]) {
-            let expr = self.expression()?;
+            let expr = self.assignment()?;
 
             return Ok(LumiExpr {
                 start,
@@ -972,10 +980,10 @@ impl Parser {
             return Ok(LumiExpr {
                 start,
                 end: self.peek_loc(),
-                expr: Expr::Sequence(exprs),
+                expr: Expr::Block(exprs),
             });
         }
-        self.expression()
+        self.assignment()
     }
 
     pub fn parse(&mut self) -> Result<LumiExpr, LErr> {

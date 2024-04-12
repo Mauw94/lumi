@@ -1,16 +1,11 @@
-fn weirdPara(n) {    
-    i: 1 to n step 1 {
-        // print i
-        doRandomStuff(i, i - 1)
+fn something(a) {
+    print a
+    if (a == 5) {
+        return a
     }
-    print "done :) "
+
+    a = a + 1
+    something(a)
 }
 
-fn doRandomStuff(a, b) {
-    c: int
-    c = a * b + 2
-    // print c
-}
-
-n: int -> 1000000
-weirdPara(n - 1)
+something(1)

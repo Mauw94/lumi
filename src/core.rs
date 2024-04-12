@@ -224,7 +224,9 @@ impl Closure {
         for expr in self.body.iter() {
             match &expr.expr {
                 crate::Expr::Return(Some(x)) => {
-                    return Ok(evaluate(&env, &x)?);
+                    evaluate(&env, &x)?;
+                    println!("we ever get here?");
+                    break;
                 }
                 crate::Expr::Print(x) => {
                     let pr = evaluate(&env, x)?;
