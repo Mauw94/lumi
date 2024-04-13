@@ -1,6 +1,5 @@
 ### TODOS
 # structs
-function parameters can be expressions such as fib(n-1) + fib(n-2)
 pre-defined structs with (static?) methods
 
 # standard library

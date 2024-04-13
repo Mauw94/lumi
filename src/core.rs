@@ -319,6 +319,20 @@ impl Obj {
         }
     }
 
+    pub fn get_str_value(&self) -> Result<String, LErr> {
+        match self {
+            Obj::Seq(seq) => match seq {
+                Seq::String(s) => Ok(s.to_string()),
+                _ => Err(LErr::internal_error(
+                    "Expect Seq to be of type Str".to_string(),
+                )),
+            },
+            _ => Err(LErr::internal_error(
+                "Expect Seq to be of type Str".to_string(),
+            )),
+        }
+    }
+
     pub fn get_default_value(object_type: &ObjectType) -> Result<Obj, LErr> {
         match object_type {
             ObjectType::Int => Ok(Obj::Num(LNum::default_int())),

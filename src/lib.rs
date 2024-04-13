@@ -250,11 +250,6 @@ fn check_args(
     start: CodeLoc,
     end: CodeLoc,
 ) -> Result<(), LErr> {
-    // FIXME
-    // a: int
-    // typeof(a) returns nill
-    // should return int
-
     if args.len() > max {
         return Err(LErr::runtime_error(
             format!("Expected only 1 argument, got {}.", args.len()),
@@ -270,4 +265,54 @@ fn check_args(
     }
 
     Ok(())
+}
+
+#[derive(Debug)]
+struct ConcatStr;
+
+impl Builtin for ConcatStr {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(2, 2, &args, start, end)?;
+
+        let mut first = match args.get(0) {
+            Some(o) => {
+                if o.is_type(&ObjectType::String) {
+                    Ok(o.get_str_value()?)
+                } else {
+                    Err(LErr::internal_error(format!(
+                        "Argument {:?} is not of type str.",
+                        o
+                    )))
+                }
+            }
+            None => Err(LErr::internal_error(format!("Did not find an argument."))),
+        }?;
+
+        let second = match args.get(1) {
+            Some(o) => {
+                if o.is_type(&ObjectType::String) {
+                    Ok(o.get_str_value()?)
+                } else {
+                    Err(LErr::internal_error(format!(
+                        "Argument {:?} is not of type str.",
+                        o
+                    )))
+                }
+            }
+            None => Err(LErr::internal_error(format!("Did not find an argument."))),
+        }?;
+
+        first.push_str(&second);
+        Ok(Obj::Seq(Seq::String(Rc::new(first))))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "concatstr"
+    }
 }

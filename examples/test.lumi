@@ -1,8 +1,5 @@
-fn add(a, b) {
-    c: int
-    c = a + b + 10
+a: str -> "test"
+b: str -> "something"
 
-    return c
-}
-
-print add(5, 7)
+c: str -> concatstr(a, b)
+print c
