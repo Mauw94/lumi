@@ -1,0 +1,9 @@
+fn checkArr(arr) {
+    i: 1 to 5 step 1 {
+        print arr[i - 1]
+    }
+}
+
+a: list -> [1, 2, 3, 4, 5]
+
+checkArr(a)
