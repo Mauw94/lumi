@@ -280,33 +280,8 @@ impl Builtin for ConcatStr {
     ) -> LRes<Obj> {
         check_args(2, 2, &args, start, end)?;
 
-        let mut first = match args.get(0) {
-            Some(o) => {
-                if o.is_type(&ObjectType::String) {
-                    Ok(o.get_str_value()?)
-                } else {
-                    Err(LErr::internal_error(format!(
-                        "Argument {:?} is not of type str.",
-                        o
-                    )))
-                }
-            }
-            None => Err(LErr::internal_error(format!("Did not find an argument."))),
-        }?;
-
-        let second = match args.get(1) {
-            Some(o) => {
-                if o.is_type(&ObjectType::String) {
-                    Ok(o.get_str_value()?)
-                } else {
-                    Err(LErr::internal_error(format!(
-                        "Argument {:?} is not of type str.",
-                        o
-                    )))
-                }
-            }
-            None => Err(LErr::internal_error(format!("Did not find an argument."))),
-        }?;
+        let mut first = get_str_from_arg_obj(0, &args)?;
+        let second = get_str_from_arg_obj(1, &args)?;
 
         first.push_str(&second);
         Ok(Obj::Seq(Seq::String(Rc::new(first))))
@@ -314,5 +289,78 @@ impl Builtin for ConcatStr {
 
     fn builtin_name(&self) -> &str {
         "concatstr"
+    }
+}
+
+fn get_str_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_type(&ObjectType::String) {
+                Ok(o.get_str_value()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type str.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}
+
+fn get_number_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_type(&ObjectType::Int) {
+                Ok(o.get_int_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type int.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}
+
+#[derive(Debug)]
+struct Substr;
+
+impl Builtin for Substr {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(3, 3, &args, start, end)?;
+
+        let str_o = get_str_from_arg_obj(0, &args)?;
+        let start_index = get_number_from_arg_obj(1, &args)? as usize;
+        let end_index = get_number_from_arg_obj(2, &args)? as usize;
+
+        if start_index > str_o.len() {
+            return Err(LErr::internal_error(format!(
+                "First argument is out of bounds. {}",
+                start_index
+            )));
+        }
+
+        if end_index > str_o.len() {
+            return Err(LErr::internal_error(format!(
+                "Second argument is out of bounds. {}",
+                end_index
+            )));
+        }
+
+        let new_str = &str_o[start_index..end_index];
+
+        Ok(Obj::Seq(Seq::String(Rc::new(new_str.to_string()))))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "substr"
     }
 }
