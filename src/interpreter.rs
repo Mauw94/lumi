@@ -118,7 +118,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     } else {
                         define(env, var_name.to_string(), obj_type.to_owned(), value)?;
                     }
-                }
+                }   
                 None => define(
                     env,
                     var_name.to_string(),
@@ -227,7 +227,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             let strct = Obj::Struct(Struct {
                 params: Rc::clone(parameters),
                 body: Rc::clone(body),
-                env: Rc::new(RefCell::new(Env::new(None))),
+                env: Rc::new(RefCell::new(Env::new(Some(Rc::clone(env))))),
             });
             define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
             Ok(strct)
