@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, Obj, Seq},
@@ -118,7 +118,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     } else {
                         define(env, var_name.to_string(), obj_type.to_owned(), value)?;
                     }
-                }   
+                }
                 None => define(
                     env,
                     var_name.to_string(),
@@ -218,19 +218,28 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
-            // TODO add fields on struct object containing vars
-            // methods are defined in the body
-            // FIXME
-            println!("{:?}", s_name);
-            println!("{:?}", parameters);
-            println!("{:?}", body);
-            let strct = Obj::Struct(Struct {
+            let mut methods: HashMap<String, LumiExpr> = HashMap::new();
+            for m in body.iter() {
+                match &m.expr {
+                    Expr::Fn(n, _p, _e) => {
+                        methods.insert(n.to_string(), *m.clone());
+                    }
+                    // TODO: add properties as well
+                    _ => todo!(), // _ => Err(LErr::runtime_error(
+                                  //     "Expected a function".to_string(),
+                                  //     m.start,
+                                  //     m.end,
+                                  // )),
+                }
+            }
+
+            let s = Struct {
                 params: Rc::clone(parameters),
-                body: Rc::clone(body),
-                env: Rc::new(RefCell::new(Env::new(Some(Rc::clone(env))))),
-            });
+                methods,
+            };
+            let strct = Obj::Struct(s);
             define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
-            Ok(strct)
+            Ok(Obj::Null)
         }
         Expr::Fn(fn_name, parameters, expressions) => {
             // TODO: add types to parameters and check if argument has correct type
@@ -240,6 +249,21 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             }))));
             define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
             Ok(func)
+        }
+        Expr::Get(strct, method) => {
+            let res = evaluate(env, strct)?;
+            match res {
+                Obj::Struct(mut s) => {
+                    return Ok(s.find_method(method, env, strct.start, strct.end))?
+                }
+                _ => {
+                    return Err(LErr::runtime_error(
+                        "Expected a struct here.".to_string(),
+                        strct.start,
+                        strct.end,
+                    ));
+                }
+            }
         }
         Expr::Call(callee, args) => {
             let func = evaluate(env, callee)?;

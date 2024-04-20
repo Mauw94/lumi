@@ -56,6 +56,7 @@ pub enum Expr {
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
+    Get(Box<LumiExpr>, String),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -142,6 +143,7 @@ impl fmt::Display for Expr {
             Expr::Struct(name, params, body) => {
                 write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
+            Expr::Get(_, _) => todo!(),
         }
     }
 }
@@ -505,10 +507,31 @@ impl Parser {
 
     fn call(&mut self) -> Result<LumiExpr, LErr> {
         let mut expr = self.primary()?;
+        let start = self.peek_loc();
+
         loop {
             if self.matcher(&[Token::LeftParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
+                let name = match self.current_token() {
+                    Some(Token::Identifier(n)) => n,
+                    _ => {
+                        return Err(LErr::parsing_error(
+                            "Expect property name after '.'".to_string(),
+                            self.previous().unwrap(),
+                        ))
+                    }
+                };
+                println!("got here. prop name {} \n", name);
+                println!("expr {:?}", expr);
+                println!("????");
+                // TODO: return expr.get or something?
+                // expr is the struct name identifier, other expr is the property or method being called on the struct
+                expr = LumiExpr {
+                    start,
+                    end: self.peek_loc(),
+                    expr: Expr::Get(Box::new(expr), name),
+                }
             } else {
                 break;
             }

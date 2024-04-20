@@ -1,5 +1,6 @@
 use std::{
     cell::{Ref, RefCell, RefMut},
+    collections::HashMap,
     fmt::Debug,
     rc::Rc,
 };
@@ -179,9 +180,10 @@ pub enum ObjectType {
 
 #[derive(Debug, Clone)]
 pub struct Struct {
-    pub env: Rc<RefCell<Env>>,
+    // pub env: Rc<RefCell<Env>>,
     pub params: Rc<Vec<Box<String>>>,
-    pub body: Rc<Vec<Box<LumiExpr>>>,
+    // pub body: Rc<Vec<Box<LumiExpr>>>,
+    pub methods: HashMap<String, LumiExpr>,
 }
 
 #[derive(Debug, Clone)]
@@ -233,6 +235,25 @@ impl Closure {
         }
 
         Ok(Obj::Null)
+    }
+}
+
+impl Struct {
+    pub fn find_method(
+        &mut self,
+        method_name: &String,
+        env: &Rc<RefCell<Env>>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> Result<Obj, LErr> {
+        match self.methods.get(method_name) {
+            Some(m) => Ok(evaluate(env, m)?),
+            None => Err(LErr::runtime_error(
+                format!("Did not find method {}", method_name),
+                start,
+                end,
+            )),
+        }
     }
 }
 

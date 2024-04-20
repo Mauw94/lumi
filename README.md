@@ -25,6 +25,8 @@ print result
 
 return; breaks current loop/fn
 
+struct test(a, b)
+
 ## Examples
 
 ```

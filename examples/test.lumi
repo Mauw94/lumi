@@ -1,11 +1,7 @@
-fn fib(n) {
-    if (n < 2)  {        
-        return n
+struct test(a) {
+    fn do(a) {
+        print a
     }
-
-    return fib(n - 1) + fib(n - 2)
 }
-
-fib(30)
-
-// print "something else" 
+test -> 2
+test.do("test123")
