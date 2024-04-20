@@ -1,0 +1,8 @@
+struct calculateSomething() {
+    b: int -> 5
+    fn do(a) {
+        return a * b
+    }
+}
+
+print calculateSomething.do(8)

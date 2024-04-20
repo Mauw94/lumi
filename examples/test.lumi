@@ -1,6 +1,9 @@
 struct test(a) {
+    b -> 2
     fn do(a) {
+        print b
         print a
     }
 }
+
 test.do("test123")

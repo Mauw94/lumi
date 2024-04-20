@@ -1,4 +1,4 @@
-use std::{cell::RefCell, collections::HashMap, rc::Rc};
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, Obj, Seq},
@@ -218,25 +218,30 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
-            let mut methods: HashMap<String, LumiExpr> = HashMap::new();
-            for m in body.iter() {
-                match &m.expr {
-                    Expr::Fn(n, _p, _e) => {
-                        methods.insert(n.to_string(), *m.clone());
-                    }
-                    // TODO: add properties as well
-                    _ => todo!(), // _ => Err(LErr::runtime_error(
-                                  //     "Expected a function".to_string(),
-                                  //     m.start,
-                                  //     m.end,
-                                  // )),
-                }
-            }
+            // let mut methods: HashMap<String, LumiExpr> = HashMap::new();
+            // for m in body.iter() {
+            //     match &m.expr {
+            //         Expr::Fn(n, _p, _e) => {
+            //             methods.insert(n.to_string(), *m.clone());
+            //         }
+            //         // TODO: add properties as well
+            //         _ => todo!(), // _ => Err(LErr::runtime_error(
+            //                       //     "Expected a function".to_string(),
+            //                       //     m.start,
+            //                       //     m.end,
+            //                       // )),
+            //     }
+            // }
 
             let s = Struct {
                 params: Rc::clone(parameters),
-                methods,
+                env: Rc::clone(env),
             };
+
+            for expr in body.iter() {
+                evaluate(&s.env, expr)?;
+            }
+
             let strct = Obj::Struct(s);
             define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
             Ok(Obj::Null)
@@ -253,8 +258,10 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Get(strct, method) => {
             let res = evaluate(env, strct)?;
             match res {
-                Obj::Struct(mut s) => {
-                    return Ok(s.find_method(method, env, strct.start, strct.end))?
+                Obj::Struct(s) => {
+                    // FIXME check type still maybe?
+                    let res = lookup_variable(&s.env, method, strct.start, strct.end)?;
+                    Ok(res.1)
                 }
                 _ => {
                     return Err(LErr::runtime_error(
