@@ -292,38 +292,6 @@ impl Builtin for ConcatStr {
     }
 }
 
-fn get_str_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
-    match args.get(index) {
-        Some(o) => {
-            if o.is_type(&ObjectType::String) {
-                Ok(o.get_str_value()?)
-            } else {
-                Err(LErr::internal_error(format!(
-                    "Argument {:?} is not of type str.",
-                    o
-                )))
-            }
-        }
-        None => Err(LErr::internal_error(format!("Did not find an argument."))),
-    }
-}
-
-fn get_number_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> {
-    match args.get(index) {
-        Some(o) => {
-            if o.is_type(&ObjectType::Int) {
-                Ok(o.get_int_val()?)
-            } else {
-                Err(LErr::internal_error(format!(
-                    "Argument {:?} is not of type int.",
-                    o
-                )))
-            }
-        }
-        None => Err(LErr::internal_error(format!("Did not find an argument."))),
-    }
-}
-
 #[derive(Debug)]
 struct Substr;
 
@@ -338,8 +306,8 @@ impl Builtin for Substr {
         check_args(3, 3, &args, start, end)?;
 
         let str_o = get_str_from_arg_obj(0, &args)?;
-        let start_index = get_number_from_arg_obj(1, &args)? as usize;
-        let end_index = get_number_from_arg_obj(2, &args)? as usize;
+        let start_index = get_int_from_arg_obj(1, &args)? as usize;
+        let end_index = get_int_from_arg_obj(2, &args)? as usize;
 
         if start_index > str_o.len() {
             return Err(LErr::internal_error(format!(
@@ -362,5 +330,27 @@ impl Builtin for Substr {
 
     fn builtin_name(&self) -> &str {
         "substr"
+    }
+}
+
+#[derive(Debug)]
+struct Len;
+
+impl Builtin for Len {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+        let res = get_list_from_arg_obj(&args)?;
+
+        Ok(Obj::Num(LNum::Int(res.len() as i64)))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "len"
     }
 }

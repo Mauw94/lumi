@@ -2,14 +2,10 @@ fn fib(n) {
     if (n < 2)  {        
         return n
     }
-    nMinOne: int
-    nMinOne = n - 1
-    nMinTwo: int
-    nMinTwo = n - 2
-    return fib(nMinOne) + fib(nMinTwo)
+
+    return fib(n - 1) + fib(n - 2)
 }
 
-fib(5)
+fib(30)
 
-
-print "something else" 
+// print "something else" 

@@ -319,7 +319,21 @@ impl Obj {
         }
     }
 
-    pub fn get_str_value(&self) -> Result<String, LErr> {
+    pub fn get_float_val(&self) -> Result<f64, LErr> {
+        match self {
+            Obj::Num(lnum) => match lnum {
+                LNum::Float(i) => Ok(*i),
+                _ => Err(LErr::internal_error(
+                    "Expected Num to be of type LNum::float".to_string(),
+                )),
+            },
+            _ => Err(LErr::internal_error(
+                "Expected obj to be of type Num".to_string(),
+            )),
+        }
+    }
+
+    pub fn get_str_val(&self) -> Result<String, LErr> {
         match self {
             Obj::Seq(seq) => match seq {
                 Seq::String(s) => Ok(s.to_string()),
@@ -329,6 +343,15 @@ impl Obj {
             },
             _ => Err(LErr::internal_error(
                 "Expect Seq to be of type Str".to_string(),
+            )),
+        }
+    }
+
+    pub fn get_list_val(&self) -> Result<Vec<Obj>, LErr> {
+        match self {
+            Obj::Seq(Seq::List(lst)) => Ok(lst.to_vec()),
+            _ => Err(LErr::internal_error(
+                "Expect Seq to be of type list".to_string(),
             )),
         }
     }
@@ -497,5 +520,69 @@ impl LNum {
 
     pub fn default_float() -> LNum {
         LNum::Float(0.0)
+    }
+}
+
+pub fn get_str_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_type(&ObjectType::String) {
+                Ok(o.get_str_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type str.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}
+
+pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_type(&ObjectType::Int) {
+                Ok(o.get_int_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type int.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}
+
+pub fn get_float_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<f64, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_type(&ObjectType::Float) {
+                Ok(o.get_float_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type float.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}
+
+pub fn get_list_from_arg_obj(args: &Vec<Obj>) -> Result<Vec<Obj>, LErr> {
+    match args.get(0) {
+        Some(o) => {
+            if o.is_type(&ObjectType::List) {
+                Ok(o.get_list_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type list.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
     }
 }

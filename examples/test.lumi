@@ -1,6 +1,11 @@
-a: str -> "test"
+fn fib(n) {
+    if (n < 2)  {        
+        return n
+    }
 
-b -> substr(a, 2, 4)
-c -> concatstr(a, b)
+    return fib(n - 1) + fib(n - 2)
+}
 
-print c
+fib(30)
+
+// print "something else" 
