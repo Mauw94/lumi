@@ -3,5 +3,4 @@ struct test(a) {
         print a
     }
 }
-test -> 2
 test.do("test123")
