@@ -12,5 +12,5 @@ fn doRandomStuff(a, b) {
     // print c
 }
 
-n: int -> 1000000
+n: int -> 100
 weirdPara(n - 1)
