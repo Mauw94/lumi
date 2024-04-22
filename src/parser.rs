@@ -56,7 +56,7 @@ pub enum Expr {
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
-    Get(Box<LumiExpr>, String),
+    Get(Box<LumiExpr>, String, Vec<Box<LumiExpr>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -143,7 +143,7 @@ impl fmt::Display for Expr {
             Expr::Struct(name, params, body) => {
                 write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
-            Expr::Get(_, _) => todo!(),
+            Expr::Get(_, _, _) => todo!(),
         }
     }
 }
@@ -522,10 +522,36 @@ impl Parser {
                         ))
                     }
                 };
+                self.advance();
+                self.consume(
+                    Token::LeftParen,
+                    "Expected '(' after property call.".to_string(),
+                    self.previous().unwrap(),
+                )?;
+
+                let mut arguments: Vec<Box<LumiExpr>> = Vec::new();
+                if !self.check(Token::RightParen) {
+                    loop {
+                        if self.matcher(&[Token::Comma]) {
+                            continue;
+                        }
+                        if arguments.len() >= 255 {
+                            return Err(LErr::parsing_error(
+                                "Can't have more than 255 arguments.".to_string(),
+                                self.previous().unwrap(),
+                            ));
+                        }
+                        arguments.push(Box::new(self.assignment()?));
+                        if self.matcher(&[Token::RightParen]) {
+                            break;
+                        }
+                    }
+                }
+
                 expr = LumiExpr {
                     start,
                     end: self.peek_loc(),
-                    expr: Expr::Get(Box::new(expr), name),
+                    expr: Expr::Get(Box::new(expr), name, arguments),
                 }
             } else {
                 break;

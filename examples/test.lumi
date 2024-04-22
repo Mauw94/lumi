@@ -6,4 +6,10 @@ struct arrayHelper() {
 
 a: list -> [1, 2, 3, 4, 5]
 
-print arrayHelper.getArrLen(a)
+b: int -> arrayHelper.getArrLen(a)
+print b
+if (b == 5) {
+    print "hehe xd"
+} else {
+    print "shouldnt happen"
+}

@@ -1,4 +1,4 @@
-use std::{cell::RefCell, rc::Rc};
+use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, Obj, Seq},
@@ -218,29 +218,30 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
-            // let mut methods: HashMap<String, LumiExpr> = HashMap::new();
-            // for m in body.iter() {
-            //     match &m.expr {
-            //         Expr::Fn(n, _p, _e) => {
-            //             methods.insert(n.to_string(), *m.clone());
-            //         }
-            //         // TODO: add properties as well
-            //         _ => todo!(), // _ => Err(LErr::runtime_error(
-            //                       //     "Expected a function".to_string(),
-            //                       //     m.start,
-            //                       //     m.end,
-            //                       // )),
-            //     }
-            // }
+            let mut methods: HashMap<String, LumiExpr> = HashMap::new();
+            for m in body.iter() {
+                match &m.expr {
+                    Expr::Fn(n, _p, _e) => {
+                        methods.insert(n.to_string(), *m.clone());
+                    }
+                    // TODO: add properties as well
+                    _ => todo!(), // _ => Err(LErr::runtime_error(
+                                  //     "Expected a function".to_string(),
+                                  //     m.start,
+                                  //     m.end,
+                                  // )),
+                }
+            }
 
             let s = Struct {
                 params: Rc::clone(parameters),
                 env: Rc::clone(env),
+                methods,
             };
 
-            for expr in body.iter() {
-                evaluate(&s.env, expr)?;
-            }
+            // for expr in body.iter() {
+            //     evaluate(&s.env, expr)?;
+            // }
 
             let strct = Obj::Struct(s);
             define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
@@ -255,13 +256,63 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
             Ok(func)
         }
-        Expr::Get(strct, method) => {
+        Expr::Get(strct, method, args) => {
             let res = evaluate(env, strct)?;
             match res {
-                Obj::Struct(s) => {
+                Obj::Struct(mut s) => {
                     // FIXME check type still maybe?
-                    let res = lookup_variable(&s.env, method, strct.start, strct.end)?;
-                    Ok(res.1)
+                    match s.find_method(method, strct.start, strct.end) {
+                        Ok(m) => {
+                            match evaluate(&s.env, &m)? {
+                                Obj::Func(f) => match *f {
+                                    Func::Closure(mut c) => {
+                                        let arguments = args
+                                            .into_iter()
+                                            .map(|a| evaluate(env, &a))
+                                            .collect::<Result<Vec<Obj>, LErr>>()?;
+                                        if arguments.len() != c.params.len() {
+                                            return Err(LErr::runtime_error(
+                                                format!(
+                                                    "Expected {} arguments, but got {}.",
+                                                    c.params.len(),
+                                                    arguments.len()
+                                                ),
+                                                strct.start,
+                                                strct.end,
+                                            ));
+                                        }
+
+                                        // FIXME
+                                        // call stops evaluating after RETURN but still emits some NULL values..?
+                                        match c.call(arguments, env, strct.start, strct.end) {
+                                            Ok(o) => {
+                                                return Ok(o);
+                                            }
+                                            Err(e) => return Err(e),
+                                        }
+                                    }
+                                    _ => {
+                                        return Err(LErr::runtime_error(
+                                            "Expect closure".to_string(),
+                                            strct.start,
+                                            strct.end,
+                                        ))
+                                    }
+                                },
+                                _ => {
+                                    return Err(LErr::runtime_error(
+                                        "blehg".to_string(),
+                                        strct.start,
+                                        strct.start,
+                                    ))
+                                }
+                            }
+                            // println!("eval result {:?}", res);
+
+                            // Ok(Obj::Null)
+                        }
+                        Err(err) => return Err(err),
+                    }
                 }
                 _ => {
                     return Err(LErr::runtime_error(
