@@ -75,8 +75,8 @@ pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
                         Ok(content) => results.push(quick_eval(&content)),
                         Err(err) => {
                             return Err(LErr::internal_error(format!(
-                                "Error reading file: {}",
-                                err
+                                "Error reading file: {}. File name: {}",
+                                err, &file_name
                             )));
                         }
                     }

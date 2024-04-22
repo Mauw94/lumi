@@ -7,5 +7,3 @@ fn fib(n) {
 }
 
 fib(10)
-
-// print "something else" 
