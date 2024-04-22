@@ -5,4 +5,5 @@ struct calculateSomething() {
     }
 }
 
-print calculateSomething.do(8)
+res -> calculateSomething.do(8)
+print res

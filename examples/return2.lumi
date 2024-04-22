@@ -3,5 +3,6 @@ fn something(a) {
 }
 
 i: 1 to 5 step 1 {
-    print something(i - 1)
+    b: int -> something(i - 1)
+    print b
 }

@@ -40,22 +40,32 @@ impl AppConfig {
 }
 
 pub fn quick_eval(code: &str) -> Obj {
-    let env = Rc::new(RefCell::new(Env::new(None)));
+    let env = setup_env();
     let mut lexer = Lexer::new(code);
     let mut parser = Parser::new(lexer.lex().unwrap());
 
     match evaluate(&env, &parser.parse().unwrap()) {
         Ok(obj) => obj,
         Err(e) => match e {
-            LErr::Throw(_, _) => todo!(),
+            LErr::Throw(s, _) => {
+                eprintln!("Something went wrong.");
+                println!("{}", s);
+                Obj::Null
+            }
             LErr::Return(o) => o,
         },
     }
 }
 
+fn setup_env() -> Rc<RefCell<Env>> {
+    let mut e = Env::new(None);
+    initialize(&mut e);
+    Rc::new(RefCell::new(e))
+}
+
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
     let mut results: Vec<Obj> = Vec::new();
-    let input_folder = Path::new("examples/tests");
+    let input_folder = Path::new("examples");
     if let Ok(entries) = fs::read_dir(input_folder) {
         for entry in entries {
             if let Ok(entry) = entry {

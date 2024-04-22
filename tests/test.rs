@@ -21,7 +21,14 @@ fn b(x: bool) -> Obj {
 // cargo test examples -- --nocapture
 #[test]
 fn examples() {
-    assert!(execute_examples().is_ok());
+    let passed_tests = match execute_examples() {
+        Ok(_) => true,
+        Err(e) => {
+            eprintln!("{:?}", e);
+            false
+        }
+    };
+    assert_eq!(passed_tests, true);
 }
 
 #[test]
