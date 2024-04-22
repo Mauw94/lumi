@@ -218,11 +218,44 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),
         Expr::Struct(s_name, parameters, body) => {
+            let mut s = Struct {
+                params: Rc::clone(parameters),
+                env: Rc::clone(env),
+                methods: HashMap::new(),
+            };
+
             let mut methods: HashMap<String, LumiExpr> = HashMap::new();
             for m in body.iter() {
                 match &m.expr {
                     Expr::Fn(n, _p, _e) => {
                         methods.insert(n.to_string(), *m.clone());
+                    }
+                    Expr::Declare(var_name, obj_type, expr) => {
+                        // FIXME same code as Expr::Declare above
+                        match expr {
+                            Some(e) => {
+                                let value = evaluate(env, e)?;
+                                if !value.is_type(obj_type) {
+                                    return Err(LErr::runtime_error(
+                                        format!(
+                                            "Type mismatch. Tried to assign a {} value to {}",
+                                            value.get_type_name(),
+                                            obj_type.get_type_name()
+                                        ),
+                                        e.start,
+                                        e.end,
+                                    ));
+                                } else {
+                                    define(env, var_name.to_string(), obj_type.to_owned(), value)?;
+                                }
+                            }
+                            None => define(
+                                env,
+                                var_name.to_string(),
+                                obj_type.to_owned(),
+                                Obj::get_default_value(&obj_type)?,
+                            )?,
+                        }
                     }
                     // TODO: add properties as well
                     _ => todo!(), // _ => Err(LErr::runtime_error(
@@ -233,12 +266,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 }
             }
 
-            let s = Struct {
-                params: Rc::clone(parameters),
-                env: Rc::clone(env),
-                methods,
-            };
-
+            s.methods = methods;
             // for expr in body.iter() {
             //     evaluate(&s.env, expr)?;
             // }
@@ -256,12 +284,13 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
             Ok(func)
         }
-        Expr::Get(strct, method, args) => {
+        Expr::Get(strct, value, args) => {
             let res = evaluate(env, strct)?;
             match res {
                 Obj::Struct(mut s) => {
+                    // TODO: check if prop is a method or property
                     // FIXME check type still maybe?
-                    match s.find_method(method, strct.start, strct.end) {
+                    match s.find_method(value, strct.start, strct.end) {
                         Ok(m) => {
                             match evaluate(&s.env, &m)? {
                                 Obj::Func(f) => match *f {
@@ -281,10 +310,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                                                 strct.end,
                                             ));
                                         }
-
                                         // FIXME
                                         // call stops evaluating after RETURN but still emits some NULL values..?
-                                        match c.call(arguments, env, strct.start, strct.end) {
+                                        match c.call(arguments, &s.env, strct.start, strct.end) {
                                             Ok(o) => {
                                                 return Ok(o);
                                             }
@@ -307,9 +335,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                                     ))
                                 }
                             }
-                            // println!("eval result {:?}", res);
-
-                            // Ok(Obj::Null)
                         }
                         Err(err) => return Err(err),
                     }
