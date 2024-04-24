@@ -211,12 +211,13 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                         s.properties.push(var_name.to_string());
                         execute_declare_expr(expr, &s.env, var_name, obj_type)?;
                     }
-                    // TODO: add properties as well
-                    _ => todo!(), // _ => Err(LErr::runtime_error(
-                                  //     "Expected a function".to_string(),
-                                  //     m.start,
-                                  //     m.end,
-                                  // )),
+                    _ => {
+                        return Err(LErr::runtime_error(
+                            "Unexpected expression.".to_string(),
+                            m.start,
+                            m.end,
+                        ))
+                    }
                 }
             }
 
