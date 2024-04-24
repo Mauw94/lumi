@@ -1,15 +1,10 @@
-struct arrayHelper() {
-    fn getArrLen(arr) {
-        return len(arr)
+struct test() {
+    a: int -> 2
+
+    fn do(b) {
+        return b
     }
 }
 
-a: list -> [1, 2, 3, 4, 5]
-
-b: int -> arrayHelper.getArrLen(a)
-print b
-if (b == 5) {
-    print "hehe xd"
-} else {
-    print "shouldnt happen"
-}
+print test.a
+print test.do("sd")

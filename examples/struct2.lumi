@@ -1,12 +1,15 @@
 struct arrayHelper() {
+    b: int -> 2
     fn getArrLen(arr) {
-        return len(arr)
+        return len(arr) + b
     }
 }
 
 a: list -> [1, 2, 3, 4, 5]
 
-b -> arrayHelper.getArrLen(a)
+b: int -> arrayHelper.getArrLen(a)
+
+print b
 
 if (b == 5) {
     print "hehe xd"

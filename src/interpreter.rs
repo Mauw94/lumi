@@ -199,15 +199,16 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 params: Rc::clone(parameters),
                 env: Rc::clone(env),
                 methods: HashMap::new(),
+                properties: Vec::new(),
             };
 
-            let mut methods: HashMap<String, LumiExpr> = HashMap::new();
             for m in body.iter() {
                 match &m.expr {
                     Expr::Fn(n, _p, _e) => {
-                        methods.insert(n.to_string(), *m.clone());
+                        s.methods.insert(n.to_string(), *m.clone());
                     }
                     Expr::Declare(var_name, obj_type, expr) => {
+                        s.properties.push(var_name.to_string());
                         execute_declare_expr(expr, &s.env, var_name, obj_type)?;
                     }
                     // TODO: add properties as well
@@ -219,7 +220,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 }
             }
 
-            s.methods = methods;
             let strct = Obj::Struct(s);
 
             // define struct in env
@@ -239,56 +239,73 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             let res = evaluate(env, strct)?;
             match res {
                 Obj::Struct(mut s) => {
-                    // TODO: check if prop is a method or property
                     // FIXME check type still maybe?
                     // FIXME same code as Expr::Call
-                    match s.find_method(value, strct.start, strct.end) {
-                        Ok(m) => {
-                            match evaluate(&s.env, &m)? {
-                                Obj::Func(f) => match *f {
-                                    Func::Closure(mut c) => {
-                                        let arguments = args
-                                            .into_iter()
-                                            .map(|a| evaluate(&s.env, &a))
-                                            .collect::<Result<Vec<Obj>, LErr>>()?;
-                                        if arguments.len() != c.params.len() {
+                    if s.is_property(value) {
+                        let var_res = lookup_variable(&s.env, value, strct.start, strct.end)?;
+                        Ok(var_res.1)
+                    } else if s.is_method(value) {
+                        match s.find_method(value, strct.start, strct.end) {
+                            Ok(m) => {
+                                match evaluate(&s.env, &m)? {
+                                    Obj::Func(f) => match *f {
+                                        Func::Closure(mut c) => {
+                                            let mut arguments = Vec::new();
+                                            match args {
+                                                Some(args) => {
+                                                    arguments = args
+                                                        .into_iter()
+                                                        .map(|a| evaluate(&s.env, &a))
+                                                        .collect::<Result<Vec<Obj>, LErr>>()?;
+                                                    if arguments.len() != c.params.len() {
+                                                        return Err(LErr::runtime_error(
+                                                            format!(
+                                                            "Expected {} arguments, but got {}.",
+                                                            c.params.len(),
+                                                            arguments.len()
+                                                        ),
+                                                            strct.start,
+                                                            strct.end,
+                                                        ));
+                                                    }
+                                                }
+                                                None => {}
+                                            }
+                                            // FIXME
+                                            // call stops evaluating after RETURN but still emits some NULL values..?
+                                            match c.call(arguments, &s.env, strct.start, strct.end)
+                                            {
+                                                Ok(o) => {
+                                                    return Ok(o);
+                                                }
+                                                Err(e) => return Err(e),
+                                            }
+                                        }
+                                        _ => {
                                             return Err(LErr::runtime_error(
-                                                format!(
-                                                    "Expected {} arguments, but got {}.",
-                                                    c.params.len(),
-                                                    arguments.len()
-                                                ),
+                                                "Expect closure".to_string(),
                                                 strct.start,
                                                 strct.end,
-                                            ));
+                                            ))
                                         }
-                                        // FIXME
-                                        // call stops evaluating after RETURN but still emits some NULL values..?
-                                        match c.call(arguments, &s.env, strct.start, strct.end) {
-                                            Ok(o) => {
-                                                return Ok(o);
-                                            }
-                                            Err(e) => return Err(e),
-                                        }
-                                    }
+                                    },
                                     _ => {
                                         return Err(LErr::runtime_error(
-                                            "Expect closure".to_string(),
+                                            "Expected a function object".to_string(),
                                             strct.start,
-                                            strct.end,
+                                            strct.start,
                                         ))
                                     }
-                                },
-                                _ => {
-                                    return Err(LErr::runtime_error(
-                                        "blehg".to_string(),
-                                        strct.start,
-                                        strct.start,
-                                    ))
                                 }
                             }
+                            Err(err) => return Err(err),
                         }
-                        Err(err) => return Err(err),
+                    } else {
+                        Err(LErr::runtime_error(
+                            format!("Struct does not contain the field {}", value),
+                            strct.start,
+                            strct.end,
+                        ))
                     }
                 }
                 _ => {

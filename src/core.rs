@@ -183,6 +183,7 @@ pub struct Struct {
     pub env: Rc<RefCell<Env>>,
     pub params: Rc<Vec<Box<String>>>,
     pub methods: HashMap<String, LumiExpr>,
+    pub properties: Vec<String>,
     // pub body: Rc<Vec<Box<LumiExpr>>>,
 }
 
@@ -201,6 +202,17 @@ impl Struct {
                 end,
             )),
         }
+    }
+
+    pub fn is_method(&self, value: &String) -> bool {
+        return match self.methods.get(value) {
+            Some(_) => true,
+            None => false,
+        };
+    }
+
+    pub fn is_property(&self, value: &String) -> bool {
+        self.properties.contains(value)
     }
 }
 

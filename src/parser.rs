@@ -56,7 +56,7 @@ pub enum Expr {
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
-    Get(Box<LumiExpr>, String, Vec<Box<LumiExpr>>),
+    Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -182,6 +182,15 @@ impl Parser {
         }
     }
 
+    fn peek_next_token(&self) -> Option<Token> {
+        match self.tokens.get(self.i + 1) {
+            Some(t) => {
+                return Some(t.token.clone());
+            }
+            None => None,
+        }
+    }
+
     fn previous(&self) -> Option<LocToken> {
         self.tokens.get(self.i - 1).cloned()
     }
@@ -226,6 +235,18 @@ impl Parser {
         }
 
         if self.peek_token() == Some(token.clone()) {
+            return true;
+        }
+
+        false
+    }
+
+    fn check_next(&self, token: Token) -> bool {
+        if self.is_at_end() {
+            return false;
+        }
+
+        if self.peek_next_token() == Some(token.clone()) {
             return true;
         }
 
@@ -404,8 +425,8 @@ impl Parser {
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
-                                    start,
-                                    end: expr.end,
+                            start,
+                            end: expr.end,
                             expr: Expr::Declare(ident, ObjectType::None, Some(Box::new(expr))),
                         });
                     }
@@ -522,36 +543,48 @@ impl Parser {
                         ))
                     }
                 };
-                self.advance();
-                self.consume(
-                    Token::LeftParen,
-                    "Expected '(' after property call.".to_string(),
-                    self.previous().unwrap(),
-                )?;
 
-                let mut arguments: Vec<Box<LumiExpr>> = Vec::new();
-                if !self.check(Token::RightParen) {
-                    loop {
-                        if self.matcher(&[Token::Comma]) {
-                            continue;
-                        }
-                        if arguments.len() >= 255 {
-                            return Err(LErr::parsing_error(
-                                "Can't have more than 255 arguments.".to_string(),
-                                self.previous().unwrap(),
-                            ));
-                        }
-                        arguments.push(Box::new(self.assignment()?));
-                        if self.matcher(&[Token::RightParen]) {
-                            break;
+                let property: bool = !self.check_next(Token::LeftParen);
+
+                if property {
+                    return Ok(LumiExpr {
+                        start,
+                        end: self.peek_loc(),
+                        expr: Expr::Get(Box::new(expr), name, None),
+                    });
+                } else {
+                    self.advance();
+                    self.consume(
+                        Token::LeftParen,
+                        "Expected '(' after property call.".to_string(),
+                        self.previous().unwrap(),
+                    )?;
+
+                    // call with no args gives error 'Expect expression'
+                    let mut arguments: Vec<Box<LumiExpr>> = Vec::new();
+                    if !self.check(Token::RightParen) {
+                        loop {
+                            if self.matcher(&[Token::Comma]) {
+                                continue;
+                            }
+                            if arguments.len() >= 255 {
+                                return Err(LErr::parsing_error(
+                                    "Can't have more than 255 arguments.".to_string(),
+                                    self.previous().unwrap(),
+                                ));
+                            }
+                            arguments.push(Box::new(self.assignment()?));
+                            if self.matcher(&[Token::RightParen]) {
+                                break;
+                            }
                         }
                     }
-                }
 
-                expr = LumiExpr {
-                    start,
-                    end: self.peek_loc(),
-                    expr: Expr::Get(Box::new(expr), name, arguments),
+                    return Ok(LumiExpr {
+                        start,
+                        end: self.peek_loc(),
+                        expr: Expr::Get(Box::new(expr), name, Some(arguments)),
+                    });
                 }
             } else {
                 break;
