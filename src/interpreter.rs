@@ -243,62 +243,32 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     // FIXME check type still maybe?
                     // FIXME same code as Expr::Call
                     if s.is_property(value) {
+                        // value is stored inside the structs env, we just need to look it up and return the object
                         let var_res = lookup_variable(&s.env, value, strct.start, strct.end)?;
                         Ok(var_res.1)
                     } else if s.is_method(value) {
                         match s.find_method(value, strct.start, strct.end) {
-                            Ok(m) => {
-                                match evaluate(&s.env, &m)? {
-                                    Obj::Func(f) => match *f {
-                                        Func::Closure(mut c) => {
-                                            let mut arguments = Vec::new();
-                                            match args {
-                                                Some(args) => {
-                                                    arguments = args
-                                                        .into_iter()
-                                                        .map(|a| evaluate(&s.env, &a))
-                                                        .collect::<Result<Vec<Obj>, LErr>>()?;
-                                                    if arguments.len() != c.params.len() {
-                                                        return Err(LErr::runtime_error(
-                                                            format!(
-                                                            "Expected {} arguments, but got {}.",
-                                                            c.params.len(),
-                                                            arguments.len()
-                                                        ),
-                                                            strct.start,
-                                                            strct.end,
-                                                        ));
-                                                    }
-                                                }
-                                                None => {}
-                                            }
-                                            // FIXME
-                                            // call stops evaluating after RETURN but still emits some NULL values..?
-                                            match c.call(arguments, &s.env, strct.start, strct.end)
-                                            {
-                                                Ok(o) => {
-                                                    return Ok(o);
-                                                }
-                                                Err(e) => return Err(e),
-                                            }
-                                        }
-                                        _ => {
-                                            return Err(LErr::runtime_error(
-                                                "Expect closure".to_string(),
-                                                strct.start,
-                                                strct.end,
-                                            ))
-                                        }
-                                    },
+                            Ok(m) => match evaluate(&s.env, &m)? {
+                                Obj::Func(f) => match *f {
+                                    Func::Closure(closure) => {
+                                        execute_closure_func_call(strct, closure, args, &s.env)
+                                    }
                                     _ => {
                                         return Err(LErr::runtime_error(
-                                            "Expected a function object".to_string(),
+                                            "Expect closure".to_string(),
                                             strct.start,
-                                            strct.start,
+                                            strct.end,
                                         ))
                                     }
+                                },
+                                _ => {
+                                    return Err(LErr::runtime_error(
+                                        "Expected a function object".to_string(),
+                                        strct.start,
+                                        strct.start,
+                                    ))
                                 }
-                            }
+                            },
                             Err(err) => return Err(err),
                         }
                     } else {
@@ -324,31 +294,14 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             // and thus when we evaluate and reach a return value it still evaluates "older" calls afterwards
             match func {
                 Obj::Func(f) => match *f {
-                    Func::Closure(mut c) => {
-                        let arguments = args
-                            .into_iter()
-                            .map(|a| evaluate(env, &a))
-                            .collect::<Result<Vec<Obj>, LErr>>()?;
-                        if arguments.len() != c.params.len() {
-                            return Err(LErr::runtime_error(
-                                format!(
-                                    "Expected {} arguments, but got {}.",
-                                    c.params.len(),
-                                    arguments.len()
-                                ),
-                                callee.start,
-                                callee.end,
-                            ));
-                        }
-
-                        // FIXME
-                        // call stops evaluating after RETURN but still emits some NULL values..?
-                        match c.call(arguments, env, callee.start, callee.end) {
-                            Ok(o) => {
-                                return Ok(o);
-                            }
-                            Err(e) => return Err(e),
-                        }
+                    Func::Closure(closure) => {
+                        // FIXME make args Option
+                        return execute_closure_func_call(
+                            callee,
+                            closure,
+                            &Some(args.clone()),
+                            env,
+                        );
                     }
                     Func::Builtin(b) => {
                         if args.len() == 0 {
@@ -419,6 +372,43 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
 
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
         }
+    }
+}
+
+fn execute_closure_func_call(
+    callee: &Box<LumiExpr>,
+    mut closure: Box<Closure>,
+    args: &Option<Vec<Box<LumiExpr>>>,
+    env: &Rc<RefCell<Env>>,
+) -> Result<Obj, LErr> {
+    let mut arguments = Vec::new();
+    match args {
+        Some(args) => {
+            arguments = args
+                .into_iter()
+                .map(|a| evaluate(env, &a))
+                .collect::<Result<Vec<Obj>, LErr>>()?;
+            if arguments.len() != closure.params.len() {
+                return Err(LErr::runtime_error(
+                    format!(
+                        "Expected {} arguments, but got {}.",
+                        closure.params.len(),
+                        arguments.len()
+                    ),
+                    callee.start,
+                    callee.end,
+                ));
+            }
+        }
+        None => {}
+    }
+    // FIXME
+    // call stops evaluating after RETURN but still emits some NULL values..?
+    match closure.call(arguments, env, callee.start, callee.end) {
+        Ok(o) => {
+            return Ok(o);
+        }
+        Err(e) => return Err(e),
     }
 }
 
