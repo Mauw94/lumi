@@ -102,30 +102,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             eval::exec_binary_op(op, lhs, rhs, lv.start, lv.end, rv.start, rv.end)
         }
         Expr::Declare(var_name, obj_type, expr) => {
-            match expr {
-                Some(e) => {
-                    let value = evaluate(env, e)?;
-                    if !value.is_type(obj_type) {
-                        return Err(LErr::runtime_error(
-                            format!(
-                                "Type mismatch. Tried to assign a {} value to {}",
-                                value.get_type_name(),
-                                obj_type.get_type_name()
-                            ),
-                            e.start,
-                            e.end,
-                        ));
-                    } else {
-                        define(env, var_name.to_string(), obj_type.to_owned(), value)?;
-                    }
-                }
-                None => define(
-                    env,
-                    var_name.to_string(),
-                    obj_type.to_owned(),
-                    Obj::get_default_value(&obj_type)?,
-                )?,
-            }
+            execute_declare_expr(expr, env, var_name, obj_type)?;
 
             Ok(Obj::Null)
         }
@@ -231,31 +208,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                         methods.insert(n.to_string(), *m.clone());
                     }
                     Expr::Declare(var_name, obj_type, expr) => {
-                        // FIXME same code as Expr::Declare above
-                        match expr {
-                            Some(e) => {
-                                let value = evaluate(env, e)?;
-                                if !value.is_type(obj_type) {
-                                    return Err(LErr::runtime_error(
-                                        format!(
-                                            "Type mismatch. Tried to assign a {} value to {}",
-                                            value.get_type_name(),
-                                            obj_type.get_type_name()
-                                        ),
-                                        e.start,
-                                        e.end,
-                                    ));
-                                } else {
-                                    define(env, var_name.to_string(), obj_type.to_owned(), value)?;
-                                }
-                            }
-                            None => define(
-                                env,
-                                var_name.to_string(),
-                                obj_type.to_owned(),
-                                Obj::get_default_value(&obj_type)?,
-                            )?,
-                        }
+                        execute_declare_expr(expr, &s.env, var_name, obj_type)?;
                     }
                     // TODO: add properties as well
                     _ => todo!(), // _ => Err(LErr::runtime_error(
@@ -267,11 +220,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             }
 
             s.methods = methods;
-            // for expr in body.iter() {
-            //     evaluate(&s.env, expr)?;
-            // }
-
             let strct = Obj::Struct(s);
+
+            // define struct in env
             define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
             Ok(Obj::Null)
         }
@@ -290,6 +241,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 Obj::Struct(mut s) => {
                     // TODO: check if prop is a method or property
                     // FIXME check type still maybe?
+                    // FIXME same code as Expr::Call
                     match s.find_method(value, strct.start, strct.end) {
                         Ok(m) => {
                             match evaluate(&s.env, &m)? {
@@ -297,7 +249,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                                     Func::Closure(mut c) => {
                                         let arguments = args
                                             .into_iter()
-                                            .map(|a| evaluate(env, &a))
+                                            .map(|a| evaluate(&s.env, &a))
                                             .collect::<Result<Vec<Obj>, LErr>>()?;
                                         if arguments.len() != c.params.len() {
                                             return Err(LErr::runtime_error(
@@ -449,6 +401,43 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
 
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
         }
+    }
+}
+
+fn execute_declare_expr(
+    expr: &Option<Box<LumiExpr>>,
+    env: &Rc<RefCell<Env>>,
+    var_name: &String,
+    obj_type: &ObjectType,
+) -> Result<(), LErr> {
+    match expr {
+        Some(e) => {
+            let value = evaluate(env, e)?;
+            if !value.is_type(obj_type) {
+                return Err(LErr::runtime_error(
+                    format!(
+                        "Type mismatch. Tried to assign a {} value to {}",
+                        value.get_type_name(),
+                        obj_type.get_type_name()
+                    ),
+                    e.start,
+                    e.end,
+                ));
+            } else {
+                Ok(define(
+                    env,
+                    var_name.to_string(),
+                    obj_type.to_owned(),
+                    value,
+                )?)
+            }
+        }
+        None => Ok(define(
+            env,
+            var_name.to_string(),
+            obj_type.to_owned(),
+            Obj::get_default_value(&obj_type)?,
+        )?),
     }
 }
 

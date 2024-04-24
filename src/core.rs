@@ -224,7 +224,7 @@ impl Closure {
         start: CodeLoc,
         end: CodeLoc,
     ) -> Result<Obj, LErr> {
-        let env = Rc::new(RefCell::new(Env::new(Some(closure.clone()))));
+        let env = Rc::clone(closure);
 
         for (i, p) in self.params.iter().enumerate() {
             let obj = match args.get(i) {

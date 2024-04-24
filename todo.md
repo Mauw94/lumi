@@ -1,6 +1,6 @@
 ### TODOS
 # structs
-pre-defined structs with (static?) methods
+When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
 
 # standard library
 String Manipulation Functions: Functions for manipulating strings, such as concatenation, substring extraction, searching, replacing, and formatting.

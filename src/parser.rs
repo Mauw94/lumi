@@ -404,8 +404,8 @@ impl Parser {
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
-                            start,
-                            end: expr.end,
+                                    start,
+                                    end: expr.end,
                             expr: Expr::Declare(ident, ObjectType::None, Some(Box::new(expr))),
                         });
                     }
@@ -834,7 +834,6 @@ impl Parser {
                 });
             }
         }
-        // FIXME
         // struct declaration.
         if self.matcher(&[Token::Struct]) {
             let _start = self.peek_loc();
