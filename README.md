@@ -1,7 +1,17 @@
 README will be edited upon as we plow through this adventure.
 We shall see where this will bring us : )
 
-# A tour
+# LUMI
+
+## Features?
+* Dynamically typed (somewhat, there's some restrictions to keep it clean-ish)
+* Everything is an expression
+* Built-in functions
+* Structs
+* Lists `[a, b, c]`
+* Dictionaries `{a: b, c: e}` *not yet implemented*
+* For loops `i: 1 to 5 step 1`
+* Functions `fn add(x, b) { return a + b }`
 
 
 ## Variables and assignments
@@ -14,7 +24,7 @@ After declaring ```x -> 2``` we can still do this ```x = "test123"```.
 If we try ```x: int -> 2``` and then ```x = "test"``` a type mismatch error will be thrown.
 
 Declaring a variable without a value also works. When trying to use this variable it will return the default value for the assigned type.
-*Declaring a variable without type and without a value does not work.*
+*Declaring a variable without a type and without a value does not work.*
 ```
 lumi> x: int
 lumi> print x
@@ -155,9 +165,6 @@ lumi> 1 to 3 step 1 { print "a" }
 "a"
 ```
 
-### Known bugs and/or shortcomings
-The return statement inside an IF statement inside a function will not work properly. (yet)
-
 ### Or use built-in functions such as:
 ```
 lumi> time()
@@ -170,11 +177,5 @@ lumi> len(x)
 3
 ```
 
-## Features?
-* Dynamically typed (somewhat, there's some restrictions to keep it clean-ish)
-* Everything is an expression
-* Built-in functions
-* Structs
-* Lists `[a, b, c]`
-* Dictionaries `{a: b, c: e}`
-* For loops `1 to 5 step 1`
+### Known bugs and/or shortcomings
+The return statement inside an IF statement inside a function will not work properly. (yet)
