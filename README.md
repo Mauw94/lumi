@@ -1,10 +1,11 @@
 README will be edited upon as we plow through this adventure.
 We shall see where this will bring us : )
 
-# LUMI
+## What's in it?
 
-## Features?
-* Dynamically typed (somewhat, there's some restrictions to keep it clean-ish)
+* Dynamically typed
+* Declare variables with `->`
+* Stuff that introduces scopes: functions, loops
 * Everything is an expression
 * Built-in functions
 * Structs
@@ -38,27 +39,15 @@ lumi> print x[0]
 "a"
 ```
 
-### Different types
-list: 
-```
-x: list -> [1, 2, 3, 4, 5]
-```
-int: 
-```
-x: int -> 2
-```
-float: 
-```
-x: float -> 2.0
-```
-string: 
-```
-x: str -> "test"
-```
-bool: 
-```
-x: bool -> true
-``` 
+### Different data types
+* Lists: `x: list -> [1, 2, 3, 4, 5]`
+* Numbers
+    ** int: `x: int -> 2`
+    ** float: `x: float -> 2.0`
+* Strings: `x: str -> "test"`
+* Booleans: `x: bool -> true` 
+* Functions: `fn test() {}`
+* Structs: `struct test() {}`
 
 ### Control flow
 ```
@@ -113,7 +102,7 @@ print test.a
 print test.do("test123")
 ```
 
-## More exxamples
+## More examples
 
 ```
 lumi> 3 * -5 --2
