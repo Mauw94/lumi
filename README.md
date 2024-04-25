@@ -10,19 +10,23 @@ Declare with ```->``` and assign with ```=```
 Declaring without a type works somewhat as in TypeScript.   
 Internally the object type will be ```none``` (```any``` in TypeScript) and you can then assign any other type to the variable.  
 
-After declaring ```x -> 2``` we can still do this ```x = "test123"```.
+After declaring ```x -> 2``` we can still do this ```x = "test123"```.  
 If we try ```x: int -> 2``` and then ```x = "test"``` a type mismatch error will be thrown.
 
 Declaring a variable without a value also works. When trying to use this variable it will return the default value for the assigned type.
-Declaring a variable without type and value does not work.
+*Declaring a variable without type and without a value does not work.*
 ```
-x: int
+lumi> x: int
+lumi> print x
+0
 ```
-```
-print x
-``` 
-will return ```0```
 
+You can retrieve a value from a list by index:
+```
+lumi> x: list -> ["a", "b", "c"]
+lumi> print x[0]
+"a"
+```
 
 ### Different types
 list: 
@@ -46,29 +50,60 @@ bool:
 x: bool -> true
 ``` 
 
+### Control flow
+```
+x: list -> ["a", "b", "c"]
 
+if (len(x) == 3) {
+    print "Length of x is 3".
+} else {
+    print "Length if x is not 3."
+}
+```
 
-print b[1]
-
-fn test(arr) {
-    print arr[2] * 2
+### Functions
+```
+fn add(a, b) {
+    return a + b
 }
 
+x -> 2
+y -> 3
+print add(x, y)
+```
+
+### Loops
+```
 i: 1 to 5 step 1 {
     print i
 }
+```
 
-array: list -> [1,2,3,4]
-result: int
+Return statements work, and will break out of the current loop/function.
+```
+i: 1 to 10 step 2 {
+    print i
+    if (i == 5) {
+        return;
+    }
+}
+```
 
-result = test(array)
-print result
+### Structs
+```
+struct test() {
+    a: int -> 2
 
-return; breaks current loop/fn
+    fn do(b) {
+        return b
+    }
+}
 
-struct test(a, b)
+print test.a
+print test.do("test123")
+```
 
-## Examples
+## More exxamples
 
 ```
 lumi> 3 * -5 --2
