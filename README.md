@@ -41,9 +41,10 @@ lumi> print x[0]
 
 ### Different data types
 * Lists: `x: list -> [1, 2, 3, 4, 5]`
-* Numbers
-    ** int: `x: int -> 2`
-    ** float: `x: float -> 2.0`
+* Dictionaries: `{a: b, c: e}` *not yet implemented*
+* Numbers  
+    > int: `x: int -> 2`
+    > float: `x: float -> 2.0`
 * Strings: `x: str -> "test"`
 * Booleans: `x: bool -> true` 
 * Functions: `fn test() {}`
