@@ -55,7 +55,7 @@ pub enum Expr {
         Vec<Box<LumiExpr>>,
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
-    Call(Box<LumiExpr>, Vec<Box<LumiExpr>>),
+    Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>),
     Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
@@ -614,13 +614,18 @@ impl Parser {
                 }
             }
         }
-        if arguments.is_empty() {
-            self.advance();
-        }
+
+        let call_args = match arguments.is_empty() {
+            true => {
+                self.advance();
+                None
+            }
+            false => Some(arguments),
+        };
         return Ok(LumiExpr {
             start,
             end: self.peek_loc(),
-            expr: Expr::Call(Box::new(callee), arguments),
+            expr: Expr::Call(Box::new(callee), call_args),
         });
     }
 

@@ -241,7 +241,6 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             match res {
                 Obj::Struct(mut s) => {
                     // FIXME check type still maybe?
-                    // FIXME same code as Expr::Call
                     if s.is_property(value) {
                         // value is stored inside the structs env, we just need to look it up and return the object
                         let var_res = lookup_variable(&s.env, value, strct.start, strct.end)?;
@@ -295,19 +294,14 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             match func {
                 Obj::Func(f) => match *f {
                     Func::Closure(closure) => {
-                        // FIXME make args Option
-                        return execute_closure_func_call(
-                            callee,
-                            closure,
-                            &Some(args.clone()),
-                            env,
-                        );
+                        return execute_closure_func_call(callee, closure, args, env);
                     }
                     Func::Builtin(b) => {
-                        if args.len() == 0 {
+                        if args.is_none() {
                             return b.run(env, Vec::new(), callee.start, callee.end);
                         } else {
-                            let arguments = args
+                            let args_unwrapped = args.clone().unwrap();
+                            let arguments = args_unwrapped
                                 .into_iter()
                                 .map(|a| evaluate(env, &a))
                                 .collect::<Result<Vec<Obj>, LErr>>()?;
