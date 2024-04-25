@@ -72,6 +72,24 @@ y -> 3
 print add(x, y)
 ```
 
+### Or use built-in functions such as:
+```
+lumi> time()
+Current time is 2024-03-28 21:14:16
+```
+
+```
+lumi> x: list -> [1, 2, 3]
+lumi> len(x)
+3
+```
+
+```
+lumi> x: int -> 100
+lumi> print string(x)
+"100"
+```
+
 ### Loops
 ```
 i: 1 to 5 step 1 {
@@ -155,17 +173,6 @@ lumi> 1 to 3 step 1 { print "a" }
 "a"
 ```
 
-### Or use built-in functions such as:
-```
-lumi> time()
-Current time is 2024-03-28 21:14:16
-```
-
-```
-lumi> x: list -> [1, 2, 3]
-lumi> len(x)
-3
-```
 
 ### Known bugs and/or shortcomings
 The return statement inside an IF statement inside a function will not work properly. (yet)
