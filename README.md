@@ -1,12 +1,32 @@
 README will be edited upon as we plow through this adventure.
 We shall see where this will bring us : )
 
-## What's in it?
-a: int
-a: int -> 2
-a = 4
+# A tour
 
-b: list -> [1, 2, 3, 4, 5]
+
+## Variables and assignments
+Declare with ```->``` and assign with ```=```
+```x -> 2``` works, but if you want to declare a variable with a type you can do ```x: int -> 2```.
+Declaring without a type works somewhat as in TypeScript. Internally the object type will be ```none``` (```any``` in TypeScript) and you can then assign any other type to the variable.
+After declaring ```x -> 2``` we can still do this ```x = "test123"```.
+If we try ```x: int -> 2``` and then ```x = "test"``` a type mismatch error will be thrown.
+
+Declaring a variable without a value also works. When trying to use this variable it will return the default value for the assigned type.
+Declaring a variable without type and value does not work.
+```x: int```
+```print x``` will return ```0```
+
+
+### Different types
+list: ```x: list -> [1, 2, 3, 4, 5]```
+int: ```x: int -> 2```
+float: ```x: float -> 2.0```
+str: ```x: str -> "test"```
+bool: ```x: bool -> true``` 
+
+
+
+
 print b[1]
 
 fn test(arr) {
@@ -86,6 +106,12 @@ The return statement inside an IF statement inside a function will not work prop
 ```
 lumi> time()
 Current time is 2024-03-28 21:14:16
+```
+
+```
+lumi> x: list -> [1, 2, 3]
+lumi> len(x)
+3
 ```
 
 ## Features?
