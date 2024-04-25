@@ -57,7 +57,7 @@ x: list -> ["a", "b", "c"]
 if (len(x) == 3) {
     print "Length of x is 3".
 } else {
-    print "Length if x is not 3."
+    print "Length of x is not 3."
 }
 ```
 
