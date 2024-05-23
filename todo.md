@@ -1,4 +1,7 @@
 ### TODOS
+* in debug mode also print in which file and line the error occurs
+* be able to concat str and number ("asd" + 2 and 2 + "asd") should work
+
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
 
