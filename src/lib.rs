@@ -14,6 +14,7 @@ pub use crate::eval::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
 pub use crate::parser::*;
+pub use crate::helper::*;
 
 mod core;
 mod debug;
@@ -22,6 +23,7 @@ mod eval;
 mod interpreter;
 mod lexer;
 mod parser;
+mod helper;
 
 pub struct AppConfig {
     debug_print_enabled: bool,

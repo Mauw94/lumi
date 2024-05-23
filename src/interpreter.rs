@@ -1,12 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    core::{LErr, LNum, Obj, Seq},
-    define, eval,
-    lexer::Token,
-    lookup_variable,
-    parser::{Expr, LiteralValue, LumiExpr},
-    undefine, Closure, CodeLoc, Env, Func, ObjectType, Struct,
+    core::{LErr, LNum, Obj, Seq}, define, eval, helper, lexer::Token, lookup_variable, parser::{Expr, LiteralValue, LumiExpr}, undefine, Closure, CodeLoc, Env, Func, ObjectType, Struct
 };
 
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
@@ -98,6 +93,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Binary(lv, op, rv) => {
             let lhs = evaluate(env, lv)?;
             let rhs = evaluate(env, rv)?;
+
+            helper::debug_print_obj(&lhs);
+            helper::debug_print_obj(&rhs);
 
             eval::exec_binary_op(op, lhs, rhs, lv.start, lv.end, rv.start, rv.end)
         }

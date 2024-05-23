@@ -422,7 +422,7 @@ impl Obj {
         }
     }
 
-    fn is_string(&self) -> bool {
+    pub fn is_string(&self) -> bool {
         match self {
             Obj::Seq(sq) => match sq {
                 Seq::String(_) => true,

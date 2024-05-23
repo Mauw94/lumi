@@ -13,7 +13,13 @@ pub fn exec_binary_op(
     r_end: CodeLoc,
 ) -> LRes<Obj> {
     match op {
+        // TODO: fix this so a str and a number can be concatenated
         Token::Plus => {
+            // TODO: move to separate func
+            if lhs.is_string() || rhs.is_string() {
+
+            }
+
             let lv = get_num_value(lhs, l_start, l_end)?;
             let rv = get_num_value(rhs, r_start, r_end)?;
             let res = lv + rv;

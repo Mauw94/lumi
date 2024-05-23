@@ -1,6 +1,20 @@
 ### TODOS
 * in debug mode also print in which file and line the error occurs
 * be able to concat str and number ("asd" + 2 and 2 + "asd") should work
+* write helper methods to faster debug print stuff while developing
+
+### BUGS
+* printing a property of a struct pints it twice
+e.g.
+```
+struct test() {
+    a: int -> 2
+}
+
+print test.a
+```
+
+* not finding a method in a struct givesn the error message "Struct does not contain field.." should be "method"
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
