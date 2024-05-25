@@ -292,8 +292,8 @@ impl Builtin for ConcatStr {
     ) -> LRes<Obj> {
         check_args(2, 2, &args, start, end)?;
 
-        let mut first = get_str_from_arg_obj(0, &args)?;
-        let second = get_str_from_arg_obj(1, &args)?;
+        let mut first = get_str_from_args_vec_obj(0, &args)?;
+        let second = get_str_from_args_vec_obj(1, &args)?;
 
         first.push_str(&second);
         Ok(Obj::Seq(Seq::String(Rc::new(first))))
@@ -317,7 +317,7 @@ impl Builtin for Substr {
     ) -> LRes<Obj> {
         check_args(3, 3, &args, start, end)?;
 
-        let str_o = get_str_from_arg_obj(0, &args)?;
+        let str_o = get_str_from_args_vec_obj(0, &args)?;
         let start_index = get_int_from_arg_obj(1, &args)? as usize;
         let end_index = get_int_from_arg_obj(2, &args)? as usize;
 

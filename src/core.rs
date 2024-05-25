@@ -379,6 +379,18 @@ impl Obj {
         }
     }
 
+    pub fn get_num_value(&self, start: CodeLoc, end: CodeLoc) -> Result<f64, LErr> {
+        match self {
+            Obj::Num(LNum::Int(i)) => Ok(*i as f64),
+            Obj::Num(LNum::Float(f)) => Ok(*f),
+            _ => Err(LErr::runtime_error(
+                "A number was expected.".to_string(),
+                start,
+                end,
+            )),
+        }
+    }
+
     pub fn get_list_val(&self) -> Result<Vec<Obj>, LErr> {
         match self {
             Obj::Seq(Seq::List(lst)) => Ok(lst.to_vec()),
@@ -428,6 +440,13 @@ impl Obj {
                 Seq::String(_) => true,
                 _ => false,
             },
+            _ => false,
+        }
+    }
+
+    pub fn is_number(&self) -> bool {
+        match self {
+            Obj::Num(_) => true,
             _ => false,
         }
     }
@@ -555,7 +574,7 @@ impl LNum {
     }
 }
 
-pub fn get_str_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
+pub fn get_str_from_args_vec_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
     match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::String) {

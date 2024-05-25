@@ -1,6 +1,9 @@
+use std::rc::Rc;
+
 use crate::{
     core::{CompareType, LErr, LNum, LRes, Obj},
     lexer::{CodeLoc, Token},
+    Seq,
 };
 
 pub fn exec_binary_op(
@@ -13,25 +16,29 @@ pub fn exec_binary_op(
     r_end: CodeLoc,
 ) -> LRes<Obj> {
     match op {
-        // TODO: fix this so a str and a number can be concatenated
         Token::Plus => {
-            // TODO: move to separate func
-            if lhs.is_string() || rhs.is_string() {
-
-            }
-
-            let lv = get_num_value(lhs, l_start, l_end)?;
-            let rv = get_num_value(rhs, r_start, r_end)?;
-            let res = lv + rv;
-            if res.fract() == 0.0 {
-                return Ok(Obj::Num(LNum::Int(res as i64)));
+            if lhs.is_string() && rhs.is_number() {
+                let rv = rhs.get_num_value(r_start, l_start)?.to_string();
+                let lv = lhs.get_str_val()?;
+                return Ok(Obj::Seq(Seq::String(Rc::new(lv + &rv))));
+            } else if lhs.is_number() && rhs.is_string() {
+                let lv = lhs.get_num_value(l_start, l_end)?.to_string();
+                let rv: String = rhs.get_str_val()?;
+                return Ok(Obj::Seq(Seq::String(Rc::new(lv + &rv))));
             } else {
-                return Ok(Obj::Num(LNum::Float(res)));
+                let lv = lhs.get_num_value(l_start, l_end)?;
+                let rv = rhs.get_num_value(r_start, r_end)?;
+                let res = lv + rv;
+                if res.fract() == 0.0 {
+                    return Ok(Obj::Num(LNum::Int(res as i64)));
+                } else {
+                    return Ok(Obj::Num(LNum::Float(res)));
+                }
             }
         }
         Token::Minus => {
-            let lv = get_num_value(lhs, l_start, l_end)?;
-            let rv = get_num_value(rhs, r_start, r_end)?;
+            let lv = lhs.get_num_value(l_start, l_end)?;
+            let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv - rv;
             if res.fract() == 0.0 {
                 return Ok(Obj::Num(LNum::Int(res as i64)));
@@ -40,8 +47,8 @@ pub fn exec_binary_op(
             }
         }
         Token::Star => {
-            let lv = get_num_value(lhs, l_start, l_end)?;
-            let rv = get_num_value(rhs, r_start, r_end)?;
+            let lv = lhs.get_num_value(l_start, l_end)?;
+            let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv * rv;
             if res.fract() == 0.0 {
                 return Ok(Obj::Num(LNum::Int(res as i64)));
@@ -50,8 +57,8 @@ pub fn exec_binary_op(
             }
         }
         Token::Slash => {
-            let lv = get_num_value(lhs, l_start, l_end)?;
-            let rv = get_num_value(rhs, r_start, r_end)?;
+            let lv = lhs.get_num_value(l_start, l_end)?;
+            let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv / rv;
             if res.fract() == 0.0 {
                 return Ok(Obj::Num(LNum::Int(res as i64)));
@@ -129,16 +136,4 @@ pub fn exec_binary_op(
         },
         _ => return Ok(Obj::Null),
     };
-}
-
-fn get_num_value(obj: Obj, start: CodeLoc, end: CodeLoc) -> Result<f64, LErr> {
-    match obj {
-        Obj::Num(LNum::Int(i)) => Ok(i as f64),
-        Obj::Num(LNum::Float(f)) => Ok(f),
-        _ => Err(LErr::runtime_error(
-            "A number was expected.".to_string(),
-            start,
-            end,
-        )),
-    }
 }
