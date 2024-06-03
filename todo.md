@@ -1,6 +1,5 @@
 ### TODOS
 * in debug mode also print in which file and line the error occurs
-* be able to concat str and number ("asd" + 2 and 2 + "asd") should work
 * write helper methods to faster debug print stuff while developing
 
 ### BUGS
