@@ -62,10 +62,12 @@ fn run_code(config: &AppConfig, code: &str) {
     match lexer.lex() {
         Ok(tokens) => {
             debugger.set_tokens(tokens.clone());
+            debugger.debug_print();
             let mut p = Parser::new(tokens);
             match p.parse() {
                 Ok(expr) => {
                     debugger.set_expr(expr.clone());
+                    debugger.debug_print();
                     match evaluate(&env, &expr) {
                         Ok(x) | Err(LErr::Return(x)) => {
                             debugger.set_eval(x.clone());

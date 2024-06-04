@@ -131,21 +131,14 @@ impl<'a> Lexer<'a> {
                         self.emit(Token::Less);
                     }
                 }
-                '>' => match self.tokens.last() {
-                    Some(t) => {
-                        if t.token == Token::Declare {
-                            {};
-                        }
+                '>' => {
+                    if self.check_next_is_equal('=') {
+                        self.emit(Token::GreaterEqual);
+                        self.next();
+                    } else {
+                        self.emit(Token::Greater);
                     }
-                    None => {
-                        if self.check_next_is_equal('=') {
-                            self.emit(Token::GreaterEqual);
-                            self.next();
-                        } else {
-                            self.emit(Token::Greater);
-                        }
-                    }
-                },
+                }
                 '/' => {
                     if self.check_next_is_equal('/') {
                         let mut rest_of_line: String = String::new();

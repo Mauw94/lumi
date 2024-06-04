@@ -1,10 +1,7 @@
-struct test() {
-    a: int -> 2
-
-    fn do(b) {
-        return b
+fn test(a) {
+    if (a > 5) {
+        print "hehe"
     }
 }
 
-print test.a
-print test.do("sd")
+test(20)
