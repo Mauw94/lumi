@@ -11,19 +11,19 @@ pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
 pub use crate::eval::*;
+pub use crate::helper::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
 pub use crate::parser::*;
-pub use crate::helper::*;
 
 mod core;
 mod debug;
 mod env;
 mod eval;
+mod helper;
 mod interpreter;
 mod lexer;
 mod parser;
-mod helper;
 
 pub struct AppConfig {
     debug_print_enabled: bool,
@@ -307,6 +307,7 @@ impl Builtin for ConcatStr {
 #[derive(Debug)]
 struct Substr;
 
+// Start and end index are both inclusive, with starting position 1 being the first character.
 impl Builtin for Substr {
     fn run(
         &self,
@@ -321,18 +322,20 @@ impl Builtin for Substr {
         let start_index = get_int_from_arg_obj(1, &args)? as usize;
         let end_index = get_int_from_arg_obj(2, &args)? as usize;
 
-        if start_index > str_o.len() {
-            return Err(LErr::internal_error(format!(
-                "First argument is out of bounds. {}",
-                start_index
-            )));
+        if start_index > str_o.len() || start_index < 1 {
+            return Err(LErr::runtime_error(
+                format!("First argument is out of bounds. {}", start_index),
+                start,
+                end,
+            ));
         }
 
         if end_index > str_o.len() {
-            return Err(LErr::internal_error(format!(
-                "Second argument is out of bounds. {}",
-                end_index
-            )));
+            return Err(LErr::runtime_error(
+                format!("Second argument is out of bounds. {}", end_index),
+                start,
+                end,
+            ));
         }
 
         let new_str = &str_o[start_index..end_index];
@@ -357,9 +360,24 @@ impl Builtin for Len {
         end: CodeLoc,
     ) -> LRes<Obj> {
         check_args(1, 1, &args, start, end)?;
-        let res = get_list_from_arg_obj(&args)?;
+        let obj = args.get(0).unwrap();
 
-        Ok(Obj::Num(LNum::Int(res.len() as i64)))
+        if obj.is_string() {
+            let res = get_str_from_args_vec_obj(0, &args)?;
+            Ok(Obj::Num(LNum::Int(res.len() as i64)))
+        } else if obj.is_list() {
+            let res: Vec<Obj> = get_list_from_arg_obj(0, &args)?;
+            Ok(Obj::Num(LNum::Int(res.len() as i64)))
+        } else {
+            Err(LErr::runtime_error(
+                format!(
+                    "Argument needs to be of type list or str. Found {}",
+                    obj.get_type_name()
+                ),
+                start,
+                end,
+            ))
+        }
     }
 
     fn builtin_name(&self) -> &str {

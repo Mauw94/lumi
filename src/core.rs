@@ -472,7 +472,7 @@ impl Obj {
         }
     }
 
-    fn is_list(&self) -> bool {
+    pub fn is_list(&self) -> bool {
         match &self {
             Obj::Seq(sq) => match sq {
                 Seq::List(_) => true,
@@ -622,8 +622,8 @@ pub fn get_float_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<f64, LErr
     }
 }
 
-pub fn get_list_from_arg_obj(args: &Vec<Obj>) -> Result<Vec<Obj>, LErr> {
-    match args.get(0) {
+pub fn get_list_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<Vec<Obj>, LErr> {
+    match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::List) {
                 Ok(o.get_list_val()?)
