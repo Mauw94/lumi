@@ -29,42 +29,26 @@ pub fn exec_binary_op(
                 let lv = lhs.get_num_value(l_start, l_end)?;
                 let rv = rhs.get_num_value(r_start, r_end)?;
                 let res = lv + rv;
-                if res.fract() == 0.0 {
-                    return Ok(Obj::Num(LNum::Int(res as i64)));
-                } else {
-                    return Ok(Obj::Num(LNum::Float(res)));
-                }
+                return return_correct_lnum_type(res);
             }
         }
         Token::Minus => {
             let lv = lhs.get_num_value(l_start, l_end)?;
             let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv - rv;
-            if res.fract() == 0.0 {
-                return Ok(Obj::Num(LNum::Int(res as i64)));
-            } else {
-                return Ok(Obj::Num(LNum::Float(res)));
-            }
+            return return_correct_lnum_type(res);
         }
         Token::Star => {
             let lv = lhs.get_num_value(l_start, l_end)?;
             let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv * rv;
-            if res.fract() == 0.0 {
-                return Ok(Obj::Num(LNum::Int(res as i64)));
-            } else {
-                return Ok(Obj::Num(LNum::Float(res)));
-            }
+            return return_correct_lnum_type(res);
         }
         Token::Slash => {
             let lv = lhs.get_num_value(l_start, l_end)?;
             let rv = rhs.get_num_value(r_start, r_end)?;
             let res = lv / rv;
-            if res.fract() == 0.0 {
-                return Ok(Obj::Num(LNum::Int(res as i64)));
-            } else {
-                return Ok(Obj::Num(LNum::Float(res)));
-            }
+            return return_correct_lnum_type(res);
         }
         Token::EqualEqual => {
             let same_type = lhs.is_same_type(&rhs);
@@ -136,4 +120,12 @@ pub fn exec_binary_op(
         },
         _ => return Ok(Obj::Null),
     };
+}
+
+fn return_correct_lnum_type(res: f64) -> LRes<Obj> {
+    if res.fract() == 0.0 {
+        Ok(Obj::Num(LNum::Int(res as i64)))
+    } else {
+        Ok(Obj::Num(LNum::Float(res)))
+    }
 }
