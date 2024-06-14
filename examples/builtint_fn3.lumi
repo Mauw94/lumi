@@ -1,0 +1,2 @@
+a: str -> "hello world"
+contains_str(a, "hello")
