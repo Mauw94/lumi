@@ -300,7 +300,7 @@ impl Builtin for ConcatStr {
     }
 
     fn builtin_name(&self) -> &str {
-        "concatstr"
+        "concat_str"
     }
 }
 
@@ -382,5 +382,34 @@ impl Builtin for Len {
 
     fn builtin_name(&self) -> &str {
         "len"
+    }
+}
+
+#[derive(Debug)]
+struct ContainsStr;
+
+// First argument the string that will be searched in.
+// Second argument the search value.
+impl Builtin for ContainsStr {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(2, 2, &args, start, end)?;
+
+        let str_to_search_obj = args.get(0).unwrap();
+        let search_val_obj = args.get(1).unwrap();
+
+        let str_to_search = str_to_search_obj.get_str_val()?;
+        let search_val = search_val_obj.get_str_val()?;
+
+        Ok(Obj::Bool(str_to_search.contains(&search_val)))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "contains_str"
     }
 }

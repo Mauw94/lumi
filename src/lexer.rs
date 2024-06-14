@@ -163,10 +163,11 @@ impl<'a> Lexer<'a> {
                     Err(e) => return Err(e),
                 },
                 c => {
-                    if c.is_alphabetic() {
+                    if c.is_alphabetic() || c == '_' {
                         let mut keyword: String = String::new();
                         keyword.push(c);
-                        while let Some(cc) = self.peek().filter(|x| x.is_alphabetic()) {
+                        while let Some(cc) = self.peek().filter(|x| x.is_alphabetic() || **x == '_')
+                        {
                             keyword.push(*cc);
                             self.next();
                         }
