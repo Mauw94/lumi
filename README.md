@@ -90,6 +90,13 @@ lumi> print string(x)
 "100"
 ```
 
+```
+lumi> a: str -> "Hello World"
+lumi> b -> replace_str(a, "World", "hehe xd")
+lumi> print b
+lumi> "Hello hehe xd"
+```
+
 ### Loops
 ```
 i: 1 to 5 step 1 {
