@@ -37,6 +37,7 @@ fn repl(config: &AppConfig) {
                 match p.parse() {
                     Ok(expr) => {
                         debugger.set_expr(expr.clone());
+                        debugger.debug_print();
                         match evaluate(&env, &expr) {
                             Ok(x) => {
                                 debugger.set_eval(x.clone());

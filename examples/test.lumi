@@ -1,7 +1,3 @@
-fn test(a) {
-    if (a > 5) {
-        print "hehe"
-    }
-}
+abc: list -> [1, 3, 4, 5]
 
-test(20)
+sum(abc)

@@ -54,8 +54,8 @@ pub enum Expr {
         Box<LumiExpr>,
         Vec<Box<LumiExpr>>,
     ),
-    Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
-    Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>),
+    Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>), // fn name, params, expressions
+    Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>), // name, arguments
     Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
