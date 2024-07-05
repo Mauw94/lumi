@@ -431,12 +431,13 @@ impl Builtin for ReplaceStr {
         let part_to_replace_obj = args.get(1).unwrap();
         let replace_value_obj = args.get(2).unwrap();
 
-        let str_to_replace_in = str_to_replace_in_obj.get_str_val();
-        let part_to_replace = part_to_replace_obj.get_str_val();
-        let replace_value = replace_value_obj.get_str_val();
+        let str_to_replace_in = str_to_replace_in_obj.get_str_val()?;
+        let part_to_replace = part_to_replace_obj.get_str_val()?;
+        let replace_value = replace_value_obj.get_str_val()?;
 
+        let modified_str = str_to_replace_in.replace(&part_to_replace, &replace_value);
 
-        Ok(Obj::Null)
+        Ok(Obj::Seq(Seq::String(Rc::new(modified_str))))
     }
 
     fn builtin_name(&self) -> &str {

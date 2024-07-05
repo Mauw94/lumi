@@ -1,0 +1,4 @@
+a: str -> "Hello World"
+b -> replace_str(a, "World", "hehe xd")
+
+print b
