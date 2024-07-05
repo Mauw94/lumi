@@ -94,7 +94,7 @@ lumi> print string(x)
 lumi> a: str -> "Hello World"
 lumi> b -> replace_str(a, "World", "hehe xd")
 lumi> print b
-lumi> "Hello hehe xd"
+"Hello hehe xd"
 ```
 
 ### Loops
