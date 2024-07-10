@@ -15,6 +15,7 @@ pub use crate::helper::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
 pub use crate::parser::*;
+pub use crate::vectors::*;
 
 mod core;
 mod debug;
@@ -24,6 +25,7 @@ mod helper;
 mod interpreter;
 mod lexer;
 mod parser;
+mod vectors;
 
 pub struct AppConfig {
     debug_print_enabled: bool,
@@ -442,5 +444,60 @@ impl Builtin for ReplaceStr {
 
     fn builtin_name(&self) -> &str {
         "replace_str"
+    }
+}
+
+#[derive(Debug)]
+struct Sum;
+
+impl Builtin for Sum {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let obj = args.get(0).unwrap();
+        if obj.is_list() {
+            let list = obj.get_list_val()?;
+            let obj_type = list[0].get_object_type()?;
+            match obj_type {
+                ObjectType::Int => {
+                    let vec = vectors::get_list_values_to_rust_vec::<i64>(&list)?;
+                    let sum: i64 = vec.iter().sum();
+
+                    return Ok(Obj::Num(LNum::Int(sum)));
+                }
+                ObjectType::Float => {
+                    let vec = vectors::get_list_values_to_rust_vec::<f64>(&list)?;
+                    let sum: f64 = vec.iter().sum();
+
+                    return Ok(Obj::Num(LNum::Float(sum)));
+                }
+                ObjectType::String => {
+                    let vec = vectors::get_list_values_to_rust_vec::<String>(&list)?;
+                    let concatenated: String = vec.iter().fold(String::new(), |mut acc, s| {
+                        acc.push_str(&s);
+                        acc
+                    });
+
+                    return Ok(Obj::Seq(Seq::String(Rc::new(concatenated))));
+                }
+                ObjectType::Bool => todo!(),
+                ObjectType::List => todo!(),
+                ObjectType::Function => todo!(),
+                ObjectType::Struct => todo!(),
+                ObjectType::None => todo!(),
+            }
+        } else {
+            Err(LErr::internal_error("Expecting a list.".to_string()))
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "sum"
     }
 }

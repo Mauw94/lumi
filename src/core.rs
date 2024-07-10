@@ -282,6 +282,7 @@ impl ObjectType {
         }
     }
 }
+
 impl Obj {
     pub fn is_same_type(&self, other: &Obj) -> bool {
         match (self, other) {
@@ -397,6 +398,24 @@ impl Obj {
             _ => Err(LErr::internal_error(
                 "Expect Seq to be of type list".to_string(),
             )),
+        }
+    }
+
+    pub fn get_object_type(&self) -> Result<ObjectType, LErr> {
+        match self {
+            Obj::Null => Ok(ObjectType::None),
+            Obj::Bool(_) => Ok(ObjectType::Bool),
+            Obj::Num(lnum) => match lnum {
+                LNum::Int(_) => Ok(ObjectType::Int),
+                LNum::Float(_) => Ok(ObjectType::Float),
+            },
+            Obj::Seq(seq) => match seq {
+                Seq::String(_) => Ok(ObjectType::String),
+                Seq::List(_) => Ok(ObjectType::List),
+            },
+            Obj::Output(_) => Ok(ObjectType::None),
+            Obj::Func(_) => Ok(ObjectType::Function),
+            Obj::Struct(_) => Ok(ObjectType::Struct),
         }
     }
 
