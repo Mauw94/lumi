@@ -26,11 +26,10 @@ pub fn get_list_values_to_rust_vec<T>(args: &Vec<Obj>) -> Result<Vec<T>, LErr>
 where
     T: FromObj,
 {
-    let mut new_vec: Vec<T> = Vec::new();
-    for val in args.iter() {
-        let value = T::from_obj(val)?;
-        new_vec.push(value);
-    }
+    let new_vec: Vec<T> = args
+        .iter()
+        .map(T::from_obj)
+        .collect::<Result<Vec<T>, LErr>>()?;
 
     Ok(new_vec)
 }

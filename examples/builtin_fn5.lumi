@@ -1,0 +1,7 @@
+abc: list -> [12, 13, 15]
+
+a -> sum(abc)
+
+if (a == 40) {
+    print "gg"
+}

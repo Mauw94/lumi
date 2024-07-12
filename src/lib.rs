@@ -486,11 +486,19 @@ impl Builtin for Sum {
 
                     return Ok(Obj::Seq(Seq::String(Rc::new(concatenated))));
                 }
-                ObjectType::Bool => todo!(),
-                ObjectType::List => todo!(),
-                ObjectType::Function => todo!(),
-                ObjectType::Struct => todo!(),
-                ObjectType::None => todo!(),
+                ObjectType::List => {
+                    let mut res: Vec<i64> = Vec::new();
+                    for o in list.iter() {
+                        let val = self.run(_env, vec![o.clone()], start, end)?;
+                        res.push(val.get_int_val()?);
+                    }
+
+                    Ok(Obj::Num(LNum::Int(res.iter().sum())))
+                }
+                _ => Err(LErr::internal_error(format!(
+                    "Sum on object of type {} is not possible.",
+                    obj_type.get_type_name()
+                ))),
             }
         } else {
             Err(LErr::internal_error("Expecting a list.".to_string()))
