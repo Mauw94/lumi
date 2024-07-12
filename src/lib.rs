@@ -509,3 +509,46 @@ impl Builtin for Sum {
         "sum"
     }
 }
+
+#[derive(Debug)]
+struct Slice;
+
+impl Builtin for Slice {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(3, 3, &args, start, end)?;
+
+        let obj = args.get(0).unwrap();
+        let from_obj = args.get(1).unwrap();
+        let to_obj = args.get(2).unwrap();
+
+        if obj.is_list() {
+            let list = obj.get_list_val()?;
+            let from = from_obj.get_int_val()? as usize;
+            let to = to_obj.get_int_val()? as usize;
+
+            if to > list.len() {
+                return Err(LErr::runtime_error(
+                    format!("Index out of bounds. Index {to}."),
+                    start,
+                    end,
+                ));
+            }
+
+            let res = &list[from..to];
+
+            return Ok(Obj::Seq(Seq::List(Rc::new(res.to_vec()))));
+        } else {
+            return Err(LErr::internal_error("Expected a list.".to_string()));
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "slice"
+    }
+}

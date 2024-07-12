@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, ConcatStr, ContainsStr, Func, LErr, LRes, Len,
-    Obj, ObjectType, ReplaceStr, Stringify, Substr, Sum, Time, Typeof, Vars,
+    Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr, Sum, Time, Typeof, Vars,
 };
 
 #[derive(Debug)]
@@ -23,7 +23,7 @@ impl Env {
         }
     }
 
-    pub fn insert_builtint(&mut self, b: impl Builtin + 'static) {
+    pub fn insert_builtin(&mut self, b: impl Builtin + 'static) {
         self.insert(
             b.builtin_name().to_string(),
             ObjectType::Function,
@@ -44,18 +44,19 @@ impl Env {
 }
 
 pub fn initialize(env: &mut Env) {
-    env.insert_builtint(Time);
-    env.insert_builtint(Stringify {
+    env.insert_builtin(Time);
+    env.insert_builtin(Stringify {
         name: "string".to_string(),
     });
-    env.insert_builtint(Vars);
-    env.insert_builtint(Typeof);
-    env.insert_builtint(ConcatStr);
-    env.insert_builtint(Substr);
-    env.insert_builtint(Len);
-    env.insert_builtint(ContainsStr);
-    env.insert_builtint(ReplaceStr);
-    env.insert_builtint(Sum);
+    env.insert_builtin(Vars);
+    env.insert_builtin(Typeof);
+    env.insert_builtin(ConcatStr);
+    env.insert_builtin(Substr);
+    env.insert_builtin(Len);
+    env.insert_builtin(ContainsStr);
+    env.insert_builtin(ReplaceStr);
+    env.insert_builtin(Sum);
+    env.insert_builtin(Slice);
 }
 
 pub fn define(

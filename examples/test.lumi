@@ -1,5 +1,3 @@
-a -> [1, 2, 3]
-b -> [1, 2, 3]
-abc: list -> [a,]
+abc: list -> [1, 2, 3]
 
-sum(abc)
+slice(abc, 1, 4)
