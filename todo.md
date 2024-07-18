@@ -1,9 +1,4 @@
 ### TODOS
-* Make this work: 
-    abc: list -> [1, 2, 3, 4, 5]
-    sum(abc)
-    prints 15
-* in debug mode also print in which file and line the error occurs
 * write helper methods to faster debug print stuff while developing
 
 ### BUGS

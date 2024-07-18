@@ -1,3 +1,10 @@
-abc: list -> [1, 2, 3]
+struct abc() {
+    text: str -> "hello world"
 
-slice(abc, 1, 4)
+    fn print_text() {
+        print text
+    }
+}
+
+
+print abc.print_text()

@@ -560,8 +560,9 @@ impl Parser {
                         self.previous().unwrap(),
                     )?;
 
-                    // call with no args gives error 'Expect expression'
                     let mut arguments: Vec<Box<LumiExpr>> = Vec::new();
+
+                    // Parse all arguments if anys
                     if !self.check(Token::RightParen) {
                         loop {
                             if self.matcher(&[Token::Comma]) {
@@ -578,6 +579,13 @@ impl Parser {
                                 break;
                             }
                         }
+                    } else {
+                        // No arguments look for closing parentheses
+                        self.consume(
+                            Token::RightParen,
+                            "Expected ')' after property call.".to_string(),
+                            self.previous().unwrap(),
+                        )?;
                     }
 
                     return Ok(LumiExpr {
@@ -931,6 +939,7 @@ impl Parser {
                     self.previous().unwrap(),
                 )?;
                 let body = self.block()?;
+
                 return Ok(LumiExpr {
                     start,
                     end: self.peek_loc(),
