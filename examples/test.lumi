@@ -1,10 +1,4 @@
-struct abc() {
-    text: str -> "hello world"
+include fileio
 
-    fn print_text() {
-        print text
-    }
-}
-
-
-print abc.print_text()
+// then we need fileio as a known namespace/lib
+// load all its methods and functions into the current top env

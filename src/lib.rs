@@ -14,6 +14,7 @@ pub use crate::eval::*;
 pub use crate::helper::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
+pub use crate::namespace::*;
 pub use crate::parser::*;
 pub use crate::vectors::*;
 
@@ -24,6 +25,7 @@ mod eval;
 mod helper;
 mod interpreter;
 mod lexer;
+mod namespace;
 mod parser;
 mod vectors;
 

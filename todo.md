@@ -1,4 +1,6 @@
 ### TODOS
+* something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)
+* file input/output functions
 * write helper methods to faster debug print stuff while developing
 
 ### BUGS
