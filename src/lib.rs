@@ -97,7 +97,8 @@ pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
 }
 
 pub trait Namespace: Debug {
-    fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<bool>;
+    fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()>;
+    fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()>;
     fn namespace_name(&self) -> &str;
 }
 

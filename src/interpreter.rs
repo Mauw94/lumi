@@ -379,8 +379,12 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     Func::Namespace(n) => {
                         println!("Include namespace? {:?}", is_include);
                         println!("Namespace: {}", n.namespace_name());
-                        n.load_functions(env)?;
-                        todo!();
+                        if *is_include {
+                            n.load_functions(env)?;
+                        } else {
+                            n.unload_functions(env)?;
+                        }
+                        Ok(Obj::Null)
                     }
                     _ => {
                         return Err(LErr::runtime_error(

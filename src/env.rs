@@ -50,6 +50,13 @@ impl Env {
     pub fn add_closure(&mut self, env: Rc<RefCell<Env>>) {
         self.parent = Some(env);
     }
+
+    pub fn remove_builtin(&mut self, key: &str) -> Result<(), LErr> {
+        // TODO: check if actually builtin func
+        self.vars.remove(key);
+
+        Ok(())
+    }
 }
 
 pub fn initialize(env: &mut Env) {

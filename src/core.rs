@@ -530,8 +530,7 @@ impl Obj {
                     // print!("body {:?}", c.body);
                 }
                 Func::Builtin(_) => {}
-                Func::Namespace(_) => todo!(),
-                
+                Func::Namespace(_) => {}
             },
             Obj::Struct(s) => println!("{:?}", s),
         }
