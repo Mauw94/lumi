@@ -55,7 +55,8 @@ pub enum Expr {
         Vec<Box<LumiExpr>>,
     ),
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>), // fn name, params, expressions
-    Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>), // name, arguments
+    Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>),          // name, arguments
+    Namespace(String, CodeLoc, CodeLoc, bool), // namespace only needs the name of the internal function, start codeloc, end codeloc and wether or not to include or exclude it
     Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
@@ -144,6 +145,7 @@ impl fmt::Display for Expr {
                 write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
             Expr::Get(_, _, _) => todo!(),
+            Expr::Namespace(name, _start, _end, _bool) => write!(f, "NAMESPACE {:?}", name),
         }
     }
 }
@@ -847,15 +849,6 @@ impl Parser {
         Ok(expr)
     }
 
-    // fn expression(&mut self) -> Result<LumiExpr, LErr> {
-    //     let expr = self.assignment()?;
-
-    //     let start = self.peek_loc();
-    //     // let end = start;
-
-    //     Ok(expr)
-    // }
-
     fn statement(&mut self) -> Result<LumiExpr, LErr> {
         let start = self.peek_loc();
 
@@ -946,6 +939,44 @@ impl Parser {
                     expr: Expr::Struct(struct_name, Rc::new(parameters), Rc::new(body)),
                 });
             }
+        }
+        // include (namespace) statement.
+        if self.matcher(&[Token::Include]) {
+            let start = self.peek_loc();
+            let namespace_name = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect namespace name".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+            let end = self.peek_loc();
+            return Ok(LumiExpr {
+                start,
+                end,
+                expr: Expr::Namespace(namespace_name, start, self.peek_loc(), true),
+            });
+        }
+        if self.matcher(&[Token::Exclude]) {
+            let start = self.peek_loc();
+            let namespace_name = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect namespace name".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+            let end = self.peek_loc();
+            return Ok(LumiExpr {
+                start,
+                end,
+                expr: Expr::Namespace(namespace_name, start, end, false),
+            });
         }
         // function statement.
         if self.matcher(&[Token::Fn]) {

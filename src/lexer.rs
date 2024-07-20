@@ -62,6 +62,7 @@ pub enum Token {
     Declare,
     Struct,
     Include,
+    Exclude,
     Comment(String),
     Invalid(String),
 }
@@ -333,6 +334,7 @@ impl<'a> Lexer<'a> {
         keywords.insert("step", Token::Step);
         keywords.insert("struct", Token::Struct);
         keywords.insert("include", Token::Include);
+        keywords.insert("exclude", Token::Exclude);
 
         if keywords.contains_key(keyword) {
             self.emit(keywords[keyword].clone());

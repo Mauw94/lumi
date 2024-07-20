@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr};
+use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr, Namespace};
 
 #[derive(Debug)]
 pub enum ErrorLoc {
@@ -176,6 +176,7 @@ pub enum ObjectType {
     Function,
     Struct,
     None,
+    Namespace,
 }
 
 #[derive(Debug, Clone)]
@@ -220,6 +221,7 @@ impl Struct {
 pub enum Func {
     Builtin(Rc<dyn Builtin>),
     Closure(Box<Closure>),
+    Namespace(Rc<dyn Namespace>),
 }
 
 #[derive(Debug, Clone)]
@@ -279,6 +281,7 @@ impl ObjectType {
             ObjectType::Struct => "struct",
             ObjectType::List => "list",
             ObjectType::None => "none",
+            ObjectType::Namespace => "namespace",
         }
     }
 }
@@ -304,6 +307,7 @@ impl Obj {
             ObjectType::Function => self.is_function(),
             ObjectType::Struct => self.is_struct(),
             ObjectType::None => true,
+            ObjectType::Namespace => todo!(),
         }
     }
 
@@ -526,6 +530,8 @@ impl Obj {
                     // print!("body {:?}", c.body);
                 }
                 Func::Builtin(_) => {}
+                Func::Namespace(_) => todo!(),
+                
             },
             Obj::Struct(s) => println!("{:?}", s),
         }

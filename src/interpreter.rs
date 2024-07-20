@@ -308,6 +308,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                             return b.run(env, arguments, callee.start, callee.end);
                         }
                     }
+                    // TODO: parse Call func::namespace whenever 'include + identifier' is called
+                    Func::Namespace(_) => todo!(),
                 },
                 _ => {
                     return Err(LErr::runtime_error(
@@ -365,6 +367,37 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             undefine(env, &index)?; // Remove index var
 
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
+        }
+        Expr::Namespace(name, start, end, is_include) => {
+            // TODO: load namespace functions into top env
+            // when calling function belonging to namespace execute properly
+            // when calling function belonging to namespace when namespace not loaded return proper error
+            println!("evaluating namespace");
+            let func = lookup_variable(&env, name, *start, *end)?;
+            match func.1 {
+                Obj::Func(f) => match *f {
+                    Func::Namespace(n) => {
+                        println!("Include namespace? {:?}", is_include);
+                        println!("Namespace: {}", n.namespace_name());
+                        n.load_functions(env)?;
+                        todo!();
+                    }
+                    _ => {
+                        return Err(LErr::runtime_error(
+                            format!("Expected a namespace here, found {:?}", func.0),
+                            *start,
+                            *end,
+                        ))
+                    }
+                },
+                _ => {
+                    return Err(LErr::runtime_error(
+                        format!("Expected a namespace here, found {:?}", func.0),
+                        *start,
+                        *end,
+                    ))
+                }
+            }
         }
     }
 }

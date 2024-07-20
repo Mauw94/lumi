@@ -5,8 +5,8 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, CodeLoc, ConcatStr, ContainsStr, Func, LErr, LRes, Len,
-    Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr, Sum, Time, Typeof, Vars,
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, ConcatStr, ContainsStr, FileIO, Func, LErr, LRes,
+    Len, Namespace, Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr, Sum, Time, Typeof, Vars,
 };
 
 #[derive(Debug)]
@@ -28,6 +28,15 @@ impl Env {
             b.builtin_name().to_string(),
             ObjectType::Function,
             Obj::Func(Box::new(Func::Builtin(Rc::new(b)))),
+        )
+        .unwrap();
+    }
+
+    pub fn insert_namespace(&mut self, n: impl Namespace + 'static) {
+        self.insert(
+            n.namespace_name().to_string(),
+            ObjectType::Namespace,
+            Obj::Func(Box::new(Func::Namespace(Rc::new(n)))),
         )
         .unwrap();
     }
@@ -57,6 +66,8 @@ pub fn initialize(env: &mut Env) {
     env.insert_builtin(ReplaceStr);
     env.insert_builtin(Sum);
     env.insert_builtin(Slice);
+
+    env.insert_namespace(FileIO);
 }
 
 pub fn define(

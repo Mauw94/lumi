@@ -11,10 +11,10 @@ pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
 pub use crate::eval::*;
+pub use crate::fileio::*;
 pub use crate::helper::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
-pub use crate::namespace::*;
 pub use crate::parser::*;
 pub use crate::vectors::*;
 
@@ -22,10 +22,10 @@ mod core;
 mod debug;
 mod env;
 mod eval;
+mod fileio;
 mod helper;
 mod interpreter;
 mod lexer;
-mod namespace;
 mod parser;
 mod vectors;
 
@@ -94,6 +94,11 @@ pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
     }
 
     Ok(results)
+}
+
+pub trait Namespace: Debug {
+    fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<bool>;
+    fn namespace_name(&self) -> &str;
 }
 
 pub trait Builtin: Debug {
