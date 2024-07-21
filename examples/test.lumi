@@ -1,4 +1,7 @@
 include fileio
 
-// then we need fileio as a known namespace/lib
-// load all its methods and functions into the current top env
+test_file()
+
+contents: list ->  read_file("test_files/1.txt")
+
+print contents

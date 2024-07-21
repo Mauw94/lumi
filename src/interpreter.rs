@@ -56,6 +56,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     Obj::Num(lnum) => match lnum {
                         LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
                         LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
+                        LNum::Byte(b) => return Ok(Obj::Num(LNum::Byte(b))), // Cannot negate unsigned
                     },
                     _ => {
                         return Err(LErr::runtime_error(

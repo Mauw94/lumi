@@ -153,6 +153,7 @@ pub type LRes<T> = Result<T, LErr>;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum LNum {
+    Byte(u8),
     Int(i64),
     Float(f64),
 }
@@ -170,6 +171,7 @@ pub enum CompareType {
 pub enum ObjectType {
     Int,
     Float,
+    Byte,
     String,
     Bool,
     List,
@@ -282,6 +284,7 @@ impl ObjectType {
             ObjectType::List => "list",
             ObjectType::None => "none",
             ObjectType::Namespace => "namespace",
+            ObjectType::Byte => "byte",
         }
     }
 }
@@ -308,6 +311,7 @@ impl Obj {
             ObjectType::Struct => self.is_struct(),
             ObjectType::None => true,
             ObjectType::Namespace => todo!(),
+            ObjectType::Byte => todo!(),
         }
     }
 
@@ -331,6 +335,7 @@ impl Obj {
             Obj::Num(n) => match n {
                 LNum::Int(_) => "int",
                 LNum::Float(_) => "float",
+                LNum::Byte(_) => "byte",
             },
             Obj::Seq(sq) => match sq {
                 Seq::String(_) => "str",
@@ -412,6 +417,7 @@ impl Obj {
             Obj::Num(lnum) => match lnum {
                 LNum::Int(_) => Ok(ObjectType::Int),
                 LNum::Float(_) => Ok(ObjectType::Float),
+                LNum::Byte(_) => Ok(ObjectType::Byte),
             },
             Obj::Seq(seq) => match seq {
                 Seq::String(_) => Ok(ObjectType::String),
@@ -441,7 +447,7 @@ impl Obj {
         match self {
             Obj::Num(n) => match n {
                 LNum::Int(_) => true,
-                LNum::Float(_) => false,
+                _ => false,
             },
             _ => false,
         }
@@ -450,8 +456,8 @@ impl Obj {
     fn is_float(&self) -> bool {
         match self {
             Obj::Num(n) => match n {
-                LNum::Int(_) => false,
                 LNum::Float(_) => true,
+                _ => false,
             },
             _ => false,
         }
@@ -512,6 +518,7 @@ impl Obj {
             Obj::Num(v) => match v {
                 LNum::Int(i) => println!("{}", i),
                 LNum::Float(f) => println!("{}", f),
+                LNum::Byte(b) => println!("{}", b),
             },
             Obj::Seq(v) => match v {
                 Seq::String(s) => println!("\"{}\"", s),
@@ -563,14 +570,17 @@ impl PartialEq for Obj {
     }
 }
 impl LNum {
+    // TOOD: check byte comparing
     pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
             LNum::Float(f) => *f,
             LNum::Int(i) => *i as f64,
+            LNum::Byte(b) => *b as f64,
         };
         let f2 = match num2 {
             LNum::Float(f) => *f,
             LNum::Int(i) => *i as f64,
+            LNum::Byte(b) => *b as f64,
         };
 
         match compare_type {
@@ -586,6 +596,7 @@ impl LNum {
         match &self {
             LNum::Int(i) => *i as usize,
             LNum::Float(f) => *f as usize,
+            LNum::Byte(b) => *b as usize,
         }
     }
 

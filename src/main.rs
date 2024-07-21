@@ -95,7 +95,7 @@ fn setup_env() -> Rc<RefCell<Env>> {
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let config = AppConfig::new(true);
+    let config = AppConfig::new(false);
 
     if args.len() <= 1 {
         repl(&config);

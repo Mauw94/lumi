@@ -169,6 +169,7 @@ impl Stringify {
             Obj::Num(n) => match n {
                 LNum::Int(i) => Ok(i.to_string()),
                 LNum::Float(f) => Ok(f.to_string()),
+                LNum::Byte(b) => Ok(b.to_string()),
             },
             Obj::Bool(b) => Ok(b.to_string()),
             Obj::Seq(seq) => match seq {
