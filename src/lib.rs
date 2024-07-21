@@ -475,19 +475,19 @@ impl Builtin for Sum {
             let obj_type = list[0].get_object_type()?;
             match obj_type {
                 ObjectType::Int => {
-                    let vec = vectors::get_list_values_to_rust_vec::<i64>(&list)?;
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<i64>(&list)?;
                     let sum: i64 = vec.iter().sum();
 
                     return Ok(Obj::Num(LNum::Int(sum)));
                 }
                 ObjectType::Float => {
-                    let vec = vectors::get_list_values_to_rust_vec::<f64>(&list)?;
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<f64>(&list)?;
                     let sum: f64 = vec.iter().sum();
 
                     return Ok(Obj::Num(LNum::Float(sum)));
                 }
                 ObjectType::String => {
-                    let vec = vectors::get_list_values_to_rust_vec::<String>(&list)?;
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<String>(&list)?;
                     let concatenated: String = vec.iter().fold(String::new(), |mut acc, s| {
                         acc.push_str(&s);
                         acc

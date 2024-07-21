@@ -34,7 +34,7 @@ impl FromObj for u8 {
 // let list = obj.get_list_val()?;
 // let vec = vectors::get_list_values_to_rust_vec::<i64>(&list)?;
 // IMPORTANT: the return type needs to implement the trait FromObj (see above)
-pub fn get_list_values_to_rust_vec<T>(args: &Vec<Obj>) -> Result<Vec<T>, LErr>
+pub fn parse_lumi_list_to_rust_vec<T>(args: &Vec<Obj>) -> Result<Vec<T>, LErr>
 where
     T: FromObj,
 {
@@ -46,7 +46,7 @@ where
     Ok(new_vec)
 }
 
-pub fn parse_u8_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
+pub fn parse_u8vec_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
     let lumi_vec: Vec<Obj> = bytes.iter().map(|b| Obj::Num(LNum::Byte(*b))).collect();
     Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
 }

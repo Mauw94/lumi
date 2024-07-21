@@ -13,7 +13,6 @@ impl Namespace for FileIO {
         println!("loading FILEIO functions..");
 
         let mut e = env.borrow_mut();
-        e.insert_builtin(TestFile);
         e.insert_builtin(ReadFile);
 
         Ok(())
@@ -27,29 +26,9 @@ impl Namespace for FileIO {
         println!("unloading FILEIO functions...");
 
         let mut e = env.borrow_mut();
-        e.remove_builtin(TestFile.builtin_name())?;
+        e.remove_builtin(ReadFile.builtin_name())?;
 
         Ok(())
-    }
-}
-
-#[derive(Debug)]
-struct TestFile;
-
-impl Builtin for TestFile {
-    fn run(
-        &self,
-        _env: &std::rc::Rc<std::cell::RefCell<Env>>,
-        _args: Vec<Obj>,
-        _start: CodeLoc,
-        _end: CodeLoc,
-    ) -> LRes<Obj> {
-        println!("Running TestFile from FileIO");
-        Ok(Obj::Null)
-    }
-
-    fn builtin_name(&self) -> &str {
-        "test_file"
     }
 }
 
@@ -72,14 +51,14 @@ impl Builtin for ReadFile {
                 let file_loc = Path::new(&path);
                 match fs::read(file_loc) {
                     Ok(contents) => {
-                        let res = vectors::parse_u8_to_lumi_vec(contents);
+                        let res = vectors::parse_u8vec_to_lumi_vec(contents);
 
                         match &res {
                             Ok(r) => {
                                 let lst = r.get_list_val()?;
                                 // TODO: from here we can build a function that reads the lumi_u8_vec and returns the original text of the read file.
                                 let vec: Vec<u8> =
-                                    vectors::get_list_values_to_rust_vec::<u8>(&lst)?;
+                                    vectors::parse_lumi_list_to_rust_vec::<u8>(&lst)?;
                                 println!("ORIGINAL VEC{:?}", vec);
                             }
                             Err(_) => todo!(),

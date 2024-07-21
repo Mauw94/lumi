@@ -1,5 +1,6 @@
 ### TODOS
 * add vectors stuff and namespace examples/info to readme
+* add keywords to get an overview of certain types of functionalities, like: namespace_all gives a list of all available namespaces. fileio_all gives a list of all functionalities in the fileio namespace.
 * something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)
 * file input/output functions
 * function to convert Vec<u8> back to text

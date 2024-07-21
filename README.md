@@ -97,6 +97,10 @@ lumi> print b
 "Hello hehe xd"
 ```
 
+### Or include a namespace for more functionality, such as the FileIO namespace
+These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
+
+
 ### Loops
 ```
 i: 1 to 5 step 1 {
