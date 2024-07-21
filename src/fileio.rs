@@ -1,8 +1,8 @@
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use crate::{
-    check_args, get_str_from_args_vec_obj, Builtin, CodeLoc, Env, LErr, LNum, LRes, Namespace, Obj,
-    Seq,
+    check_args, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env, LErr, LRes, Namespace,
+    Obj,
 };
 
 #[derive(Debug)]
@@ -68,18 +68,24 @@ impl Builtin for ReadFile {
 
         match args.len() {
             1 => {
-                println!("1 arg");
                 let path = get_str_from_args_vec_obj(0, &args)?;
-                println!("{:?}", path);
                 let file_loc = Path::new(&path);
                 match fs::read(file_loc) {
                     Ok(contents) => {
-                        println!("{:?}", contents);
-                        // TODO: move to Vectors
-                        let lumi_vec: Vec<Obj> =
-                            contents.iter().map(|b| Obj::Num(LNum::Byte(*b))).collect();
+                        let res = vectors::parse_u8_to_lumi_vec(contents);
 
-                        return Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))));
+                        match &res {
+                            Ok(r) => {
+                                let lst = r.get_list_val()?;
+                                // TODO: from here we can build a function that reads the lumi_u8_vec and returns the original text of the read file.
+                                let vec: Vec<u8> =
+                                    vectors::get_list_values_to_rust_vec::<u8>(&lst)?;
+                                println!("ORIGINAL VEC{:?}", vec);
+                            }
+                            Err(_) => todo!(),
+                        }
+
+                        return res;
                     }
                     Err(e) => return Err(LErr::internal_error(e.to_string())),
                 }

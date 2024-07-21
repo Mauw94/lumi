@@ -375,6 +375,20 @@ impl Obj {
         }
     }
 
+    pub fn get_byte_val(&self) -> Result<u8, LErr> {
+        match self {
+            Obj::Num(lnum) => match lnum {
+                LNum::Byte(b) => Ok(*b),
+                _ => Err(LErr::internal_error(
+                    "Expected Num to be of type LNum::byte".to_string(),
+                )),
+            },
+            _ => Err(LErr::internal_error(
+                "Expected obj to be of type Num".to_string(),
+            )),
+        }
+    }
+
     pub fn get_str_val(&self) -> Result<String, LErr> {
         match self {
             Obj::Seq(seq) => match seq {

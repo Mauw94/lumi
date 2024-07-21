@@ -1,6 +1,7 @@
 ### TODOS
 * something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)
 * file input/output functions
+* function to convert Vec<u8> back to text
 * write helper methods to faster debug print stuff while developing
 
 ### BUGS

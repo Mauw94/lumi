@@ -1,4 +1,6 @@
-use crate::{LErr, Obj};
+use std::rc::Rc;
+
+use crate::{LErr, LNum, LRes, Obj, Seq};
 
 pub trait FromObj: Sized {
     fn from_obj(obj: &Obj) -> Result<Self, LErr>;
@@ -22,6 +24,16 @@ impl FromObj for f64 {
     }
 }
 
+impl FromObj for u8 {
+    fn from_obj(obj: &Obj) -> Result<Self, LErr> {
+        obj.get_byte_val()
+    }
+}
+
+// Usage example
+// let list = obj.get_list_val()?;
+// let vec = vectors::get_list_values_to_rust_vec::<i64>(&list)?;
+// IMPORTANT: the return type needs to implement the trait FromObj (see above)
 pub fn get_list_values_to_rust_vec<T>(args: &Vec<Obj>) -> Result<Vec<T>, LErr>
 where
     T: FromObj,
@@ -32,4 +44,9 @@ where
         .collect::<Result<Vec<T>, LErr>>()?;
 
     Ok(new_vec)
+}
+
+pub fn parse_u8_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
+    let lumi_vec: Vec<Obj> = bytes.iter().map(|b| Obj::Num(LNum::Byte(*b))).collect();
+    Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
 }
