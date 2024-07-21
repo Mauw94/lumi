@@ -5,8 +5,9 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, CodeLoc, ConcatStr, ContainsStr, FileIO, Func, LErr, LRes,
-    Len, Namespace, Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr, Sum, Time, Typeof, Vars,
+    try_borrow, try_borrow_mut, BuiltIn, Builtin, CodeLoc, ConcatStr, ContainsStr, FileIO, Func,
+    LErr, LRes, Len, Namespace, Namespaces, Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr,
+    Sum, Time, Typeof, Vars,
 };
 
 #[derive(Debug)]
@@ -53,20 +54,18 @@ impl Env {
 
     pub fn remove_builtin(&mut self, key: &str) -> Result<(), LErr> {
         match self.vars.get(key) {
-            Some(built_in) => {
-                match built_in.0 {
-                    ObjectType::Function => {
-                        self.vars.remove(key);
-                        return Ok(());
-                    }
-                    _ => {
-                        return Err(LErr::internal_error(format!(
-                            "Expected to be removing a built-in function. Found {} instead",
-                            built_in.0.get_type_name()
-                        )))
-                    }
+            Some(built_in) => match built_in.0 {
+                ObjectType::Function => {
+                    self.vars.remove(key);
+                    return Ok(());
                 }
-            }
+                _ => {
+                    return Err(LErr::internal_error(format!(
+                        "Expected to be removing a built-in function. Found {} instead",
+                        built_in.0.get_type_name()
+                    )))
+                }
+            },
             None => {
                 return Err(LErr::internal_error(
                     "Tried removing a non-existing built-in funciton.".to_string(),
@@ -82,6 +81,8 @@ pub fn initialize(env: &mut Env) {
         name: "string".to_string(),
     });
     env.insert_builtin(Vars);
+    env.insert_builtin(BuiltIn);
+    env.insert_builtin(Namespaces);
     env.insert_builtin(Typeof);
     env.insert_builtin(ConcatStr);
     env.insert_builtin(Substr);
@@ -142,6 +143,54 @@ pub fn lookup_variable(
             }
         },
     }
+}
+
+pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
+    let cur_env = try_borrow(&env)?;
+    let mut built_in_function_names: Vec<String> = Vec::new();
+    // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
+    for (_key, (obj_type, obj)) in &cur_env.vars {
+        if let ObjectType::Function = obj_type {
+            let obj_borrow = obj.borrow();
+            match obj_borrow.clone() {
+                Obj::Func(f) => match *f {
+                    Func::Builtin(b) => built_in_function_names.push(b.builtin_name().to_string()),
+                    _ => return Err(LErr::internal_error("Not a function.".to_string())),
+                },
+                _ => return Err(LErr::internal_error("Not a function.".to_string())),
+            }
+        }
+    }
+
+    for name in &built_in_function_names {
+        println!("{}", name);
+    }
+
+    Ok(Obj::Null)
+}
+
+pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
+    let cur_env = try_borrow(env)?;
+    let mut namespace_names: Vec<String> = Vec::new();
+    // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
+    for (_key, (obj_type, obj)) in &cur_env.vars {
+        if let ObjectType::Namespace = obj_type {
+            let obj_borrow = obj.borrow();
+            match obj_borrow.clone() {
+                Obj::Func(f) => match *f {
+                    Func::Namespace(n) => namespace_names.push(n.namespace_name().to_string()),
+                    _ => return Err(LErr::internal_error("Not a namespace.".to_string())),
+                },
+                _ => return Err(LErr::internal_error("Not a namespace.".to_string())),
+            }
+        }
+    }
+
+    for name in &namespace_names {
+        println!("{}", name);
+    }
+
+    Ok(Obj::Null)
 }
 
 fn find_key_containing_var(env: Ref<'_, Env>, var_name: &String) -> Option<String> {

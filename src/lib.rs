@@ -561,3 +561,45 @@ impl Builtin for Slice {
         "slice"
     }
 }
+
+#[derive(Debug)]
+struct BuiltIn;
+
+impl Builtin for BuiltIn {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        _args: Vec<Obj>,
+        _start: CodeLoc,
+        _end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &_args, _start, _end)?;
+        get_all_builtin_functions(env)?;
+        Ok(Obj::Null)
+    }
+
+    fn builtin_name(&self) -> &str {
+        "built_in"
+    }
+}
+
+#[derive(Debug)]
+struct Namespaces;
+
+impl Builtin for Namespaces {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        _args: Vec<Obj>,
+        _start: CodeLoc,
+        _end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &_args, _start, _end)?;
+        get_all_namespaces(env)?;
+        Ok(Obj::Null)
+    }
+
+    fn builtin_name(&self) -> &str {
+        "namespaces"
+    }
+}

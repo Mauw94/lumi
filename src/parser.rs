@@ -1104,6 +1104,7 @@ impl Parser {
                 expr: Expr::Block(exprs),
             });
         }
+
         self.assignment()
     }
 
