@@ -1,4 +1,5 @@
 ### TODOS
+* add vectors stuff and namespace examples/info to readme
 * something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)
 * file input/output functions
 * function to convert Vec<u8> back to text
