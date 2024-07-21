@@ -2,4 +2,7 @@ include fileio
 
 contents: list ->  read_file("test_files/1.txt")
 
-print contents
+text: str -> byte_to_str(contents)
+print text
+
+exclude fileio

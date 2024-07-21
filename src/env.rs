@@ -52,10 +52,27 @@ impl Env {
     }
 
     pub fn remove_builtin(&mut self, key: &str) -> Result<(), LErr> {
-        // TODO: check if actually builtin func
-        self.vars.remove(key);
-
-        Ok(())
+        match self.vars.get(key) {
+            Some(built_in) => {
+                match built_in.0 {
+                    ObjectType::Function => {
+                        self.vars.remove(key);
+                        return Ok(());
+                    }
+                    _ => {
+                        return Err(LErr::internal_error(format!(
+                            "Expected to be removing a built-in function. Found {} instead",
+                            built_in.0.get_type_name()
+                        )))
+                    }
+                }
+            }
+            None => {
+                return Err(LErr::internal_error(
+                    "Tried removing a non-existing built-in funciton.".to_string(),
+                ))
+            }
+        }
     }
 }
 
@@ -96,6 +113,7 @@ pub fn undefine(env: &Rc<RefCell<Env>>, key: &str) -> Result<(), LErr> {
     Ok(())
 }
 
+// TODO: expand this so it knows what it is looking for (variable, function, namespace, struct, ..)
 pub fn lookup_variable(
     env: &Rc<RefCell<Env>>,
     var_name: &String,

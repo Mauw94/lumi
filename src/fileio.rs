@@ -1,8 +1,8 @@
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use crate::{
-    check_args, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env, LErr, LRes, Namespace,
-    Obj,
+    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
+    LErr, LRes, Namespace, Obj, Seq,
 };
 
 #[derive(Debug)]
@@ -14,6 +14,7 @@ impl Namespace for FileIO {
 
         let mut e = env.borrow_mut();
         e.insert_builtin(ReadFile);
+        e.insert_builtin(ByteToString);
 
         Ok(())
     }
@@ -27,6 +28,7 @@ impl Namespace for FileIO {
 
         let mut e = env.borrow_mut();
         e.remove_builtin(ReadFile.builtin_name())?;
+        e.remove_builtin(ByteToString.builtin_name())?;
 
         Ok(())
     }
@@ -50,22 +52,7 @@ impl Builtin for ReadFile {
                 let path = get_str_from_args_vec_obj(0, &args)?;
                 let file_loc = Path::new(&path);
                 match fs::read(file_loc) {
-                    Ok(contents) => {
-                        let res = vectors::parse_u8vec_to_lumi_vec(contents);
-
-                        match &res {
-                            Ok(r) => {
-                                let lst = r.get_list_val()?;
-                                // TODO: from here we can build a function that reads the lumi_u8_vec and returns the original text of the read file.
-                                let vec: Vec<u8> =
-                                    vectors::parse_lumi_list_to_rust_vec::<u8>(&lst)?;
-                                println!("ORIGINAL VEC{:?}", vec);
-                            }
-                            Err(_) => todo!(),
-                        }
-
-                        return res;
-                    }
+                    Ok(contents) => return vectors::parse_u8vec_to_lumi_vec(contents),
                     Err(e) => return Err(LErr::internal_error(e.to_string())),
                 }
             }
@@ -78,5 +65,31 @@ impl Builtin for ReadFile {
 
     fn builtin_name(&self) -> &str {
         "read_file"
+    }
+}
+
+#[derive(Debug)]
+struct ByteToString;
+
+impl Builtin for ByteToString {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+        let list = get_list_from_arg_obj(0, &args)?;
+        let vec: Vec<u8> = vectors::parse_lumi_list_to_rust_vec::<u8>(&list)?;
+
+        match String::from_utf8(vec) {
+            Ok(text) => return Ok(Obj::Seq(Seq::String(Rc::new(text)))),
+            Err(e) => return Err(LErr::internal_error(e.to_string())),
+        };
+    }
+
+    fn builtin_name(&self) -> &str {
+        "byte_to_str"
     }
 }

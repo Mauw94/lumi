@@ -1,0 +1,6 @@
+include fileio
+
+contents: list -> read_file("test_files/1.txt")
+text: str -> byte_to_str(contents)
+
+print text
