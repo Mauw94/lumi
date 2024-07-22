@@ -101,8 +101,8 @@ An overview of all built-in functions can be retrieved by calling ```built_in()`
 When including a namespace and then calling ```built_in()``` we will also see the added functions from that included namespace. 
 After the function we can see of which library the function is a part of.
 
-* ```vars() (stdlib)```
-* ```read_file() (fileio)```
+* ```vars (stdlib)```
+* ```read_file (fileio)```
 
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
