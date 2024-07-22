@@ -97,9 +97,16 @@ lumi> print b
 "Hello hehe xd"
 ```
 
+An overview of all built-in functions can be retrieved by calling ```built_in()```. An overview of all available namespaces by calling ```namespaces()```.
+When including a namespace and then calling ```built_in()``` we will also see the added functions from that included namespace. 
+After the function we can see of which library the function is a part of.
+
+* ```vars() (stdlib)```
+* ```read_file() (fileio)```
+
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
-
+When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the Env.
 
 ### Loops
 ```
