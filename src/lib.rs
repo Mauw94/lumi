@@ -17,7 +17,9 @@ pub use crate::interpreter::*;
 pub use crate::lexer::*;
 pub use crate::parser::*;
 pub use crate::vectors::*;
+pub use crate::execute::*;
 
+mod execute;
 mod core;
 mod debug;
 mod env;
