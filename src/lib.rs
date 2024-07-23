@@ -138,9 +138,7 @@ impl Builtin for Time {
 }
 
 #[derive(Debug)]
-struct Stringify {
-    name: String,
-}
+struct Stringify;
 
 impl Builtin for Stringify {
     fn run(
@@ -159,7 +157,7 @@ impl Builtin for Stringify {
     }
 
     fn builtin_name(&self) -> &str {
-        &self.name
+        "string"
     }
 }
 
@@ -565,6 +563,7 @@ impl Builtin for Slice {
 #[derive(Debug)]
 struct BuiltIn;
 
+// TODO: builtin with 1 argument (name of the namespace) gives us all the functions from that namespace
 impl Builtin for BuiltIn {
     fn run(
         &self,

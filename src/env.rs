@@ -11,8 +11,23 @@ use crate::{
 };
 
 #[derive(Debug)]
+pub enum NamespaceType {
+    StdLib,
+    External(String),
+}
+
+impl NamespaceType {
+    fn get_name(&self) -> String {
+        match self {
+            NamespaceType::StdLib => format!("stdlib"),
+            NamespaceType::External(n) => format!("{}", n),
+        }
+    }
+}
+
+#[derive(Debug)]
 pub struct Env {
-    pub vars: HashMap<String, (ObjectType, Box<RefCell<Obj>>)>,
+    pub vars: HashMap<String, (ObjectType, Box<RefCell<Obj>>, NamespaceType)>,
     pub parent: Option<Rc<RefCell<Env>>>,
 }
 
@@ -24,27 +39,35 @@ impl Env {
         }
     }
 
-    pub fn insert_builtin(&mut self, b: impl Builtin + 'static) {
+    pub fn insert_builtin(&mut self, b: impl Builtin + 'static, namespace_type: NamespaceType) {
         self.insert(
             b.builtin_name().to_string(),
             ObjectType::Function,
             Obj::Func(Box::new(Func::Builtin(Rc::new(b)))),
+            namespace_type,
         )
         .unwrap();
     }
 
-    pub fn insert_namespace(&mut self, n: impl Namespace + 'static) {
+    pub fn insert_namespace(&mut self, n: impl Namespace + 'static, namespace_name: &str) {
         self.insert(
             n.namespace_name().to_string(),
             ObjectType::Namespace,
             Obj::Func(Box::new(Func::Namespace(Rc::new(n)))),
+            NamespaceType::External(namespace_name.to_string()),
         )
         .unwrap();
     }
 
-    pub fn insert(&mut self, key: String, obj_type: ObjectType, obj: Obj) -> LRes<()> {
+    pub fn insert(
+        &mut self,
+        key: String,
+        obj_type: ObjectType,
+        obj: Obj,
+        namespace_type: NamespaceType,
+    ) -> LRes<()> {
         self.vars
-            .insert(key, (obj_type, Box::new(RefCell::new(obj))));
+            .insert(key, (obj_type, Box::new(RefCell::new(obj)), namespace_type));
         Ok(())
     }
 
@@ -76,25 +99,24 @@ impl Env {
 }
 
 pub fn initialize(env: &mut Env) {
-    env.insert_builtin(Time);
-    env.insert_builtin(Stringify {
-        name: "string".to_string(),
-    });
-    env.insert_builtin(Vars);
-    env.insert_builtin(BuiltIn);
-    env.insert_builtin(Namespaces);
-    env.insert_builtin(Typeof);
-    env.insert_builtin(ConcatStr);
-    env.insert_builtin(Substr);
-    env.insert_builtin(Len);
-    env.insert_builtin(ContainsStr);
-    env.insert_builtin(ReplaceStr);
-    env.insert_builtin(Sum);
-    env.insert_builtin(Slice);
+    env.insert_builtin(Time, NamespaceType::StdLib);
+    env.insert_builtin(Stringify, NamespaceType::StdLib);
+    env.insert_builtin(Vars, NamespaceType::StdLib);
+    env.insert_builtin(BuiltIn, NamespaceType::StdLib);
+    env.insert_builtin(Namespaces, NamespaceType::StdLib);
+    env.insert_builtin(Typeof, NamespaceType::StdLib);
+    env.insert_builtin(ConcatStr, NamespaceType::StdLib);
+    env.insert_builtin(Substr, NamespaceType::StdLib);
+    env.insert_builtin(Len, NamespaceType::StdLib);
+    env.insert_builtin(ContainsStr, NamespaceType::StdLib);
+    env.insert_builtin(ReplaceStr, NamespaceType::StdLib);
+    env.insert_builtin(Sum, NamespaceType::StdLib);
+    env.insert_builtin(Slice, NamespaceType::StdLib);
 
-    env.insert_namespace(FileIO);
+    env.insert_namespace(FileIO, FileIO.namespace_name());
 }
 
+// TODO: we need to separate vars and functions (and maybe also namespaces?)
 pub fn define(
     env: &Rc<RefCell<Env>>,
     var_name: String,
@@ -102,8 +124,10 @@ pub fn define(
     obj: Obj,
 ) -> Result<(), LErr> {
     let mut r = try_borrow_mut(env)?;
-    r.vars
-        .insert(var_name, (obj_type, Box::new(RefCell::new(obj))));
+    r.vars.insert(
+        var_name,
+        (obj_type, Box::new(RefCell::new(obj)), NamespaceType::StdLib),
+    );
     Ok(())
 }
 
@@ -147,14 +171,15 @@ pub fn lookup_variable(
 
 pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(&env)?;
-    let mut built_in_function_names: Vec<String> = Vec::new();
+    let mut built_in_function_names: Vec<(String, String)> = Vec::new();
     // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
-    for (_key, (obj_type, obj)) in &cur_env.vars {
+    for (_key, (obj_type, obj, namespace_type)) in &cur_env.vars {
         if let ObjectType::Function = obj_type {
             let obj_borrow = obj.borrow();
             match obj_borrow.clone() {
                 Obj::Func(f) => match *f {
-                    Func::Builtin(b) => built_in_function_names.push(b.builtin_name().to_string()),
+                    Func::Builtin(b) => built_in_function_names
+                        .push((b.builtin_name().to_string(), namespace_type.get_name())),
                     _ => return Err(LErr::internal_error("Not a function.".to_string())),
                 },
                 _ => return Err(LErr::internal_error("Not a function.".to_string())),
@@ -163,7 +188,7 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     }
 
     for name in &built_in_function_names {
-        println!("{}", name);
+        println!("{} ({})", name.0, name.1);
     }
 
     Ok(Obj::Null)
@@ -173,7 +198,7 @@ pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(env)?;
     let mut namespace_names: Vec<String> = Vec::new();
     // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
-    for (_key, (obj_type, obj)) in &cur_env.vars {
+    for (_key, (obj_type, obj, _)) in &cur_env.vars {
         if let ObjectType::Namespace = obj_type {
             let obj_borrow = obj.borrow();
             match obj_borrow.clone() {

@@ -1,8 +1,7 @@
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use crate::{
-    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
-    LErr, LRes, Namespace, Obj, Seq,
+    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env, LErr, LRes, Namespace, NamespaceType, Obj, Seq
 };
 
 #[derive(Debug)]
@@ -13,8 +12,14 @@ impl Namespace for FileIO {
         println!("loading FILEIO functions..");
 
         let mut e = env.borrow_mut();
-        e.insert_builtin(ReadFile);
-        e.insert_builtin(ByteToString);
+        e.insert_builtin(
+            ReadFile,
+            NamespaceType::External(FileIO.namespace_name().to_string()),
+        );
+        e.insert_builtin(
+            ByteToString,
+            NamespaceType::External(FileIO.namespace_name().to_string()),
+        );
 
         Ok(())
     }
