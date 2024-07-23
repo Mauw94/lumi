@@ -30,6 +30,7 @@ pub struct Env {
     pub vars: HashMap<String, (ObjectType, Box<RefCell<Obj>>)>,
     pub functions: HashMap<String, (ObjectType, Box<RefCell<Obj>>, NamespaceType)>,
     pub namespaces: HashMap<String, Box<RefCell<Obj>>>,
+    pub structs: HashMap<String, Box<RefCell<Obj>>>,
     pub parent: Option<Rc<RefCell<Env>>>,
 }
 
@@ -39,6 +40,7 @@ impl Env {
             vars: HashMap::new(),
             functions: HashMap::new(),
             namespaces: HashMap::new(),
+            structs: HashMap::new(),
             parent: closure,
         }
     }
@@ -72,6 +74,11 @@ impl Env {
                 namespace_type,
             ),
         );
+        Ok(())
+    }
+
+    pub fn insert_struct(&mut self, key: String, obj: Obj) -> LRes<()> {
+        self.structs.insert(key, Box::new(RefCell::new(obj)));
         Ok(())
     }
 
@@ -135,8 +142,9 @@ pub fn define_var(
     obj_type: ObjectType,
     obj: Obj,
 ) -> Result<(), LErr> {
-    let mut r = try_borrow_mut(env)?;
-    r.vars
+    let mut cur_env = try_borrow_mut(env)?;
+    cur_env
+        .vars
         .insert(var_name, (obj_type, Box::new(RefCell::new(obj))));
     Ok(())
 }
@@ -147,11 +155,17 @@ pub fn define_function(
     obj_type: ObjectType,
     obj: Obj,
 ) -> Result<(), LErr> {
-    let mut r = try_borrow_mut(env)?;
-    r.functions.insert(
+    let mut cur_env = try_borrow_mut(env)?;
+    cur_env.functions.insert(
         var_name,
         (obj_type, Box::new(RefCell::new(obj)), NamespaceType::StdLib),
     );
+    Ok(())
+}
+
+pub fn define_struct(env: &Rc<RefCell<Env>>, strct_name: String, obj: Obj) -> Result<(), LErr> {
+    let mut cur_env = try_borrow_mut(env)?;
+    cur_env.insert_struct(strct_name, obj).unwrap();
     Ok(())
 }
 
@@ -167,6 +181,7 @@ pub enum LookupType {
     Var,
     Function,
     Namespace,
+    Struct,
     Unknown,
 }
 
@@ -225,6 +240,26 @@ pub fn lookup(
         LookupType::Namespace => match cur_env.namespaces.get(identifier) {
             Some(obj) => {
                 let object = obj.borrow().clone();
+                return Ok((ObjectType::Struct, object));
+            }
+            None => match &cur_env.parent {
+                Some(p) => return lookup(&p, identifier, start, end, lookup_type),
+                None => {
+                    let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
+                    let f = match s_key {
+                        Some(k) => format!(
+                            "Did not find struct with name: '{}'. Did you mean '{}'?",
+                            identifier, k
+                        ),
+                        None => format!("Did not find struct with name: '{}'.", identifier,),
+                    };
+                    return Err(LErr::runtime_error(f, start, end));
+                }
+            },
+        },
+        LookupType::Struct => match cur_env.structs.get(identifier) {
+            Some(obj) => {
+                let object = obj.borrow().clone();
                 return Ok((ObjectType::Namespace, object));
             }
             None => match &cur_env.parent {
@@ -249,6 +284,8 @@ pub fn lookup(
                 return lookup(env, identifier, start, end, LookupType::Function);
             } else if cur_env.namespaces.contains_key(identifier) {
                 return lookup(env, identifier, start, end, LookupType::Namespace);
+            } else if cur_env.structs.contains_key(identifier) {
+                return lookup(env, identifier, start, end, LookupType::Struct);
             } else {
                 match &cur_env.parent {
                     Some(parent_env) => {
@@ -256,7 +293,7 @@ pub fn lookup(
                     }
                     None => {
                         return Err(LErr::runtime_error(
-                            format!("Did not find an identifier with nane: {}.", identifier),
+                            format!("Did not find an identifier with name: {}.", identifier),
                             start,
                             end,
                         ));
@@ -336,6 +373,13 @@ fn find_key_containing_identifier(
         }
         LookupType::Namespace => {
             for (key, _) in env.namespaces.iter() {
+                if key.contains(identifier) {
+                    return Some(key.to_string());
+                }
+            }
+        }
+        LookupType::Struct => {
+            for (key, _) in env.structs.iter() {
                 if key.contains(identifier) {
                     return Some(key.to_string());
                 }

@@ -1,8 +1,9 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    define_function, define_var, interpreter, lookup, undefine_var, Closure, CodeLoc, Env, Expr,
-    Func, LErr, LNum, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct, Token,
+    define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
+    CodeLoc, Env, Expr, Func, LErr, LNum, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct,
+    Token,
 };
 
 pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {
@@ -194,14 +195,7 @@ pub fn struct_expr(
         }
     }
 
-    // define struct in env
-    // TODO: make a define struct here
-    define_var(
-        env,
-        s_name.to_string(),
-        ObjectType::Struct,
-        Obj::Struct(new_struct.clone()),
-    )?;
+    define_struct(env, s_name.to_string(), Obj::Struct(new_struct.clone()))?;
     Ok(Obj::Null)
 }
 

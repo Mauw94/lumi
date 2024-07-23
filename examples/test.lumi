@@ -8,6 +8,8 @@ struct test() {
     }
 }
 
+print test.a
 test.something()
+
 // Uncomment this and the read_file function won't be found since it is not in the top env. It will only exist in the env where struct test is located.
 // text -> read_file("test_files/1.txt") 
