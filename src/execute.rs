@@ -82,12 +82,6 @@ pub fn index_expr(env: &Rc<RefCell<Env>>, var: &String, expr: &Box<LumiExpr>) ->
     get_value_by_index_from_list(env, var, index, expr.start, expr.end)
 }
 
-// When declaring a variable without a type it is always re-assignable.
-// e.g.
-// a: int -> 2
-// a = "test" => will fail with a type mismatch.
-// a -> 5
-// a = "abc" => will NOT fail because variable 'a' never got a specific type.
 pub fn assign_exp(
     env: &Rc<RefCell<Env>>,
     l_expr: &LumiExpr,
@@ -96,7 +90,7 @@ pub fn assign_exp(
     match &l_expr.expr {
         Expr::Identifier(var_name) => {
             match lookup(env, var_name, l_expr.start, l_expr.end, LookupType::Var) {
-                Ok(o) => match &r_expr.expr {
+                Ok(lh_obj) => match &r_expr.expr {
                     Expr::Index(var, i) => {
                         let index_obj = interpreter::evaluate(env, i)?;
                         let index: usize =
@@ -111,14 +105,15 @@ pub fn assign_exp(
                     }
                     _ => {
                         let rhs = interpreter::evaluate(env, &r_expr)?;
-                        if rhs.is_type(&o.0) {
-                            define_var(env, var_name.to_string(), o.0, rhs)?;
+                        println!("{:?}", rhs);
+                        if rhs.is_type(&lh_obj.0) {
+                            define_var(env, var_name.to_string(), lh_obj.0, rhs)?;
                         } else {
                             return Err(LErr::runtime_error(
                                 format!(
                                     "Type mismatch. Tried to assign a {} value to {}",
                                     rhs.get_type_name(),
-                                    o.0.get_type_name()
+                                    lh_obj.0.get_type_name()
                                 ),
                                 r_expr.start,
                                 r_expr.end,
