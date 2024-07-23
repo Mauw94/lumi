@@ -185,7 +185,7 @@ pub enum ObjectType {
 pub struct Struct {
     pub env: Rc<RefCell<Env>>,
     pub params: Rc<Vec<Box<String>>>,
-    pub methods: HashMap<String, LumiExpr>,
+    pub functions: HashMap<String, LumiExpr>,
     pub properties: Vec<String>,
     // pub body: Rc<Vec<Box<LumiExpr>>>,
 }
@@ -197,7 +197,7 @@ impl Struct {
         start: CodeLoc,
         end: CodeLoc,
     ) -> Result<LumiExpr, LErr> {
-        match self.methods.get(method) {
+        match self.functions.get(method) {
             Some(m) => Ok(m.clone()),
             None => Err(LErr::runtime_error(
                 format!("Method not found {}", method),
@@ -208,7 +208,7 @@ impl Struct {
     }
 
     pub fn is_method(&self, value: &String) -> bool {
-        return match self.methods.get(value) {
+        return match self.functions.get(value) {
             Some(_) => true,
             None => false,
         };

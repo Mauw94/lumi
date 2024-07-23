@@ -142,7 +142,7 @@ pub fn list_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<O
         .collect::<Result<Vec<Obj>, LErr>>()?;
 
     if objs.is_empty() {
-        return Ok(Obj::Seq(Seq::List(Rc::new(objs))));
+        return Ok(Obj::Seq(Seq::List(Rc::new(Vec::new()))));
     } else {
         let first_type = objs.first().unwrap(); // We expect the first value to be available
         for (i, o) in objs.iter().enumerate() {
@@ -168,21 +168,21 @@ pub fn struct_expr(
     parameters: &Rc<Vec<Box<String>>>,
     body: &Rc<Vec<Box<LumiExpr>>>,
 ) -> Result<Obj, LErr> {
-    let mut s = Struct {
+    let mut new_struct = Struct {
         params: Rc::clone(parameters),
         env: Rc::clone(env),
-        methods: HashMap::new(),
+        functions: HashMap::new(),
         properties: Vec::new(),
     };
 
     for m in body.iter() {
         match &m.expr {
             Expr::Fn(n, _p, _e) => {
-                s.methods.insert(n.to_string(), *m.clone());
+                new_struct.functions.insert(n.to_string(), *m.clone());
             }
             Expr::Declare(var_name, obj_type, expr) => {
-                s.properties.push(var_name.to_string());
-                declare_expr(&s.env, expr, var_name, obj_type)?;
+                new_struct.properties.push(var_name.to_string());
+                declare_expr(&new_struct.env, expr, var_name, obj_type)?;
             }
             _ => {
                 return Err(LErr::runtime_error(
@@ -194,11 +194,14 @@ pub fn struct_expr(
         }
     }
 
-    let strct = Obj::Struct(s);
-
     // define struct in env
     // TODO: make a define struct here
-    define_var(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
+    define_var(
+        env,
+        s_name.to_string(),
+        ObjectType::Struct,
+        Obj::Struct(new_struct.clone()),
+    )?;
     Ok(Obj::Null)
 }
 
