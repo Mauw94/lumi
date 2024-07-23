@@ -1,0 +1,10 @@
+struct test() {
+    a: str -> "hello world"
+
+    fn do_something() {
+        a = "hello different world"
+        return a
+    }
+}
+
+print test.do_something() == "hello different world"

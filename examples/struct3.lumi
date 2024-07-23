@@ -1,0 +1,7 @@
+struct sentence() {
+    word: str -> "this is a word"
+}
+
+sentence.word = "different word"
+
+print sentence.word == "different word"
