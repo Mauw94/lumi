@@ -185,6 +185,37 @@ pub enum LookupType {
     Unknown,
 }
 
+fn lookup_in_parent_env(
+    cur_env: &Ref<Env>,
+    identifier: &String,
+    start: CodeLoc,
+    end: CodeLoc,
+    lookup_type: LookupType,
+) -> LRes<(ObjectType, Obj)> {
+    let type_name: &str = match lookup_type {
+        LookupType::Var => "variable",
+        LookupType::Function => "function",
+        LookupType::Namespace => "namespace",
+        LookupType::Struct => "struct",
+        LookupType::Unknown => "unkown",
+    };
+
+    match &cur_env.parent {
+        Some(p) => return lookup(&p, identifier, start, end, lookup_type),
+        None => {
+            let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
+            let f = match s_key {
+                Some(k) => format!(
+                    "Did not find {type_name} with name: '{}'. Did you mean '{}'?",
+                    identifier, k
+                ),
+                None => format!("Did not find {type_name} with name: '{}'.", identifier,),
+            };
+            return Err(LErr::runtime_error(f, start, end));
+        }
+    }
+}
+
 pub fn lookup(
     env: &Rc<RefCell<Env>>,
     identifier: &String,
@@ -200,21 +231,7 @@ pub fn lookup(
                 let object = obj.1.borrow().clone();
                 return Ok((object_type, object));
             }
-            None => match &cur_env.parent {
-                // TOOD: clean-up  this code, move to privates
-                Some(p) => return lookup(&p, identifier, start, end, lookup_type),
-                None => {
-                    let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
-                    let f = match s_key {
-                        Some(k) => format!(
-                            "Did not find variable with name: '{}'. Did you mean '{}'?",
-                            identifier, k
-                        ),
-                        None => format!("Did not find variable with name: '{}'.", identifier,),
-                    };
-                    return Err(LErr::runtime_error(f, start, end));
-                }
-            },
+            None => lookup_in_parent_env(&cur_env, identifier, start, end, lookup_type),
         },
         LookupType::Function => match cur_env.functions.get(identifier) {
             Some(obj) => {
@@ -222,60 +239,21 @@ pub fn lookup(
                 let object = obj.1.borrow().clone();
                 return Ok((object_type, object));
             }
-            None => match &cur_env.parent {
-                Some(p) => return lookup(&p, identifier, start, end, lookup_type),
-                None => {
-                    let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
-                    let f = match s_key {
-                        Some(k) => format!(
-                            "Did not find function with name: '{}'. Did you mean '{}'?",
-                            identifier, k
-                        ),
-                        None => format!("Did not find function with name: '{}'.", identifier,),
-                    };
-                    return Err(LErr::runtime_error(f, start, end));
-                }
-            },
+            None => lookup_in_parent_env(&cur_env, identifier, start, end, lookup_type),
         },
         LookupType::Namespace => match cur_env.namespaces.get(identifier) {
             Some(obj) => {
                 let object = obj.borrow().clone();
                 return Ok((ObjectType::Struct, object));
             }
-            None => match &cur_env.parent {
-                Some(p) => return lookup(&p, identifier, start, end, lookup_type),
-                None => {
-                    let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
-                    let f = match s_key {
-                        Some(k) => format!(
-                            "Did not find struct with name: '{}'. Did you mean '{}'?",
-                            identifier, k
-                        ),
-                        None => format!("Did not find struct with name: '{}'.", identifier,),
-                    };
-                    return Err(LErr::runtime_error(f, start, end));
-                }
-            },
+            None => lookup_in_parent_env(&cur_env, identifier, start, end, lookup_type),
         },
         LookupType::Struct => match cur_env.structs.get(identifier) {
             Some(obj) => {
                 let object = obj.borrow().clone();
                 return Ok((ObjectType::Namespace, object));
             }
-            None => match &cur_env.parent {
-                Some(p) => return lookup(&p, identifier, start, end, lookup_type),
-                None => {
-                    let s_key = find_key_containing_identifier(cur_env, identifier, lookup_type);
-                    let f = match s_key {
-                        Some(k) => format!(
-                            "Did not find namespace with name: '{}'. Did you mean '{}'?",
-                            identifier, k
-                        ),
-                        None => format!("Did not find namespace with name: '{}'.", identifier,),
-                    };
-                    return Err(LErr::runtime_error(f, start, end));
-                }
-            },
+            None => lookup_in_parent_env(&cur_env, identifier, start, end, lookup_type),
         },
         LookupType::Unknown => {
             if cur_env.vars.contains_key(identifier) {
@@ -292,11 +270,78 @@ pub fn lookup(
                         return lookup(&parent_env, identifier, start, end, lookup_type)
                     }
                     None => {
-                        return Err(LErr::runtime_error(
-                            format!("Did not find an identifier with name: {}.", identifier),
-                            start,
-                            end,
+                        let msg = String::from(format!(
+                            "Did not find identifier with name: '{}'.",
+                            identifier
                         ));
+
+                        match find_key_containing_identifier(&cur_env, identifier, LookupType::Var)
+                        {
+                            Some(key) => {
+                                return Err(LErr::runtime_error(
+                                    format!(
+                                        "Did not find variable with name: '{}'. Did you mean '{}'?",
+                                        identifier, key
+                                    ),
+                                    start,
+                                    end,
+                                ))
+                            }
+                            None => (),
+                        }
+                        match find_key_containing_identifier(
+                            &cur_env,
+                            identifier,
+                            LookupType::Function,
+                        ) {
+                            Some(key) => {
+                                return Err(LErr::runtime_error(
+                                    format!(
+                                        "Did not find function with name: '{}'. Did you mean '{}'?",
+                                        identifier, key
+                                    ),
+                                    start,
+                                    end,
+                                ))
+                            }
+                            None => (),
+                        }
+                        match find_key_containing_identifier(
+                            &cur_env,
+                            identifier,
+                            LookupType::Struct,
+                        ) {
+                            Some(key) => {
+                                return Err(LErr::runtime_error(
+                                    format!(
+                                        "Did not find struct with name: '{}'. Did you mean '{}'?",
+                                        identifier, key
+                                    ),
+                                    start,
+                                    end,
+                                ))
+                            }
+                            None => (),
+                        }
+                        match find_key_containing_identifier(
+                            &cur_env,
+                            identifier,
+                            LookupType::Namespace,
+                        ) {
+                            Some(key) => {
+                                return Err(LErr::runtime_error(
+                                    format!(
+                                    "Did not find namespace with name: '{}'. Did you mean '{}'?",
+                                    identifier, key
+                                ),
+                                    start,
+                                    end,
+                                ))
+                            }
+                            None => (),
+                        }
+
+                        return Err(LErr::runtime_error(msg, start, end));
                     }
                 }
             }
@@ -352,7 +397,7 @@ pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
 }
 
 fn find_key_containing_identifier(
-    env: Ref<'_, Env>,
+    env: &Ref<'_, Env>,
     identifier: &String,
     lookup_type: LookupType,
 ) -> Option<String> {
