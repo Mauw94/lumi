@@ -96,7 +96,7 @@ impl Env {
     }
 
     pub fn remove_builtin(&mut self, key: &str) -> Result<(), LErr> {
-        match self.vars.get(key) {
+        match self.functions.get(key) {
             Some(built_in) => match built_in.0 {
                 ObjectType::Function => {
                     self.vars.remove(key);
