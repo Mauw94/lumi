@@ -319,8 +319,6 @@ pub fn namespace_expr(
     match func.1 {
         Obj::Func(f) => match *f {
             Func::Namespace(n) => {
-                println!("Include namespace? {:?}", is_include);
-                println!("Namespace: {}", n.namespace_name());
                 if *is_include {
                     n.load_functions(env)?;
                 } else {
