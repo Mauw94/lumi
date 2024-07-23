@@ -2,11 +2,11 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, Obj, Seq},
-    define, eval,
+    define_function, define_var, eval,
     lexer::Token,
-    lookup_variable,
+    lookup,
     parser::{Expr, LiteralValue, LumiExpr},
-    undefine, Closure, CodeLoc, Env, Func, ObjectType, Struct,
+    undefine_var, Closure, CodeLoc, Env, Func, LookupType, ObjectType, Struct,
 };
 
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
@@ -36,7 +36,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),
-        Expr::Identifier(v) => match lookup_variable(env, v, expr.start, expr.end) {
+        Expr::Identifier(v) => match lookup(env, v, expr.start, expr.end, LookupType::Unknown) {
             Ok(v) => Ok(v.1),
             Err(e) => Err(e),
         },
@@ -115,7 +115,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             // a -> 5
             // a = "abc" => will NOT fail because variable 'a' never got a specific type.
             Expr::Identifier(var_name) => {
-                match lookup_variable(env, var_name, l_expr.start, l_expr.end) {
+                match lookup(env, var_name, l_expr.start, l_expr.end, LookupType::Var) {
                     Ok(o) => match &r_expr.expr {
                         Expr::Index(var, i) => {
                             let index_obj = evaluate(env, i)?;
@@ -131,7 +131,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                         _ => {
                             let rhs = evaluate(env, &r_expr)?;
                             if rhs.is_type(&o.0) {
-                                define(env, var_name.to_string(), o.0, rhs)?;
+                                define_var(env, var_name.to_string(), o.0, rhs)?;
                             } else {
                                 return Err(LErr::runtime_error(
                                     format!(
@@ -225,7 +225,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             let strct = Obj::Struct(s);
 
             // define struct in env
-            define(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
+            // TODO: make a define struct here
+            define_var(env, s_name.to_string(), ObjectType::Struct, strct.clone())?;
             Ok(Obj::Null)
         }
         Expr::Fn(fn_name, parameters, expressions) => {
@@ -234,7 +235,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 body: Rc::clone(expressions),
                 params: Rc::clone(parameters),
             }))));
-            define(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
+            define_function(env, fn_name.to_string(), ObjectType::Function, func.clone())?;
             Ok(func)
         }
         Expr::Get(strct, value, args) => {
@@ -244,7 +245,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     // FIXME check type still maybe?
                     if s.is_property(value) {
                         // value is stored inside the structs env, we just need to look it up and return the object
-                        let var_res = lookup_variable(&s.env, value, strct.start, strct.end)?;
+                        let var_res =
+                            lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
                         Ok(var_res.1)
                     } else if s.is_method(value) {
                         match s.find_method(value, strct.start, strct.end) {
@@ -346,7 +348,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 Err(e) => return Err(e),
             };
 
-            define(
+            define_var(
                 env,
                 index.to_string(),
                 ObjectType::Int,
@@ -357,7 +359,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                     objects.push(evaluate(env, expr)?);
                 }
                 to += step;
-                define(
+                define_var(
                     env,
                     index.to_string(),
                     ObjectType::Int,
@@ -365,16 +367,12 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 )?;
             }
 
-            undefine(env, &index)?; // Remove index var
+            undefine_var(env, &index)?; // Remove index var
 
             Ok(Obj::Seq(Seq::List(Rc::new(objects))))
         }
         Expr::Namespace(name, start, end, is_include) => {
-            // TODO: load namespace functions into top env
-            // when calling function belonging to namespace execute properly
-            // when calling function belonging to namespace when namespace not loaded return proper error
-            println!("evaluating namespace");
-            let func = lookup_variable(&env, name, *start, *end)?;
+            let func = lookup(&env, name, *start, *end, LookupType::Namespace)?;
             match func.1 {
                 Obj::Func(f) => match *f {
                     Func::Namespace(n) => {
@@ -464,7 +462,7 @@ fn execute_declare_expr(
                     e.end,
                 ));
             } else {
-                Ok(define(
+                Ok(define_var(
                     env,
                     var_name.to_string(),
                     obj_type.to_owned(),
@@ -472,7 +470,7 @@ fn execute_declare_expr(
                 )?)
             }
         }
-        None => Ok(define(
+        None => Ok(define_var(
             env,
             var_name.to_string(),
             obj_type.to_owned(),
@@ -505,7 +503,7 @@ fn get_value_by_index_from_list(
     start: CodeLoc,
     end: CodeLoc,
 ) -> Result<Obj, LErr> {
-    match lookup_variable(env, var, start, end) {
+    match lookup(env, var, start, end, LookupType::Var) {
         Ok(o) => match o.1 {
             Obj::Seq(sq) => match sq {
                 Seq::List(list) => {

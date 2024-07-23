@@ -5,7 +5,7 @@ use std::{
     rc::Rc,
 };
 
-use crate::{define, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr, Namespace};
+use crate::{define_var, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr, Namespace};
 
 #[derive(Debug)]
 pub enum ErrorLoc {
@@ -253,7 +253,7 @@ impl Closure {
                     ))
                 }
             };
-            define(&env, p.to_string(), ObjectType::None, obj.clone())?;
+            define_var(&env, p.to_string(), ObjectType::None, obj.clone())?;
         }
 
         for expr in self.body.iter() {
