@@ -2,9 +2,7 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     core::{LErr, LNum, Obj, Seq},
-    define_function, define_var, eval,
-    lexer::Token,
-    lookup,
+    define_function, define_var, eval, execute, lookup,
     parser::{Expr, LiteralValue, LumiExpr},
     undefine_var, Closure, CodeLoc, Env, Func, LookupType, ObjectType, Struct,
 };
@@ -45,47 +43,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             LiteralValue::False => Ok(Obj::Bool(false)),
             LiteralValue::Nil => Ok(Obj::Null),
         },
-        Expr::Unary(t, expr) => {
-            let rhs = evaluate(env, expr)?;
-
-            match t {
-                Token::Bang => {
-                    return Ok(Obj::Bool(!is_truthy(rhs)));
-                }
-                Token::Minus => match rhs {
-                    Obj::Num(lnum) => match lnum {
-                        LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
-                        LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
-                        LNum::Byte(b) => return Ok(Obj::Num(LNum::Byte(b))), // Cannot negate unsigned
-                    },
-                    _ => {
-                        return Err(LErr::runtime_error(
-                            "Operand must be a number".to_string(),
-                            expr.start,
-                            expr.end,
-                        ))
-                    }
-                },
-                _ => Ok(Obj::Null),
-            }
-        }
-        Expr::Logical(l_expr, op, r_expr) => {
-            let lhs = evaluate(env, l_expr)?;
-
-            if op == &Token::Or {
-                if is_truthy(lhs.clone()) {
-                    return Ok(lhs);
-                }
-            } else if op == &Token::And {
-                let rhs = evaluate(env, &r_expr)?;
-                return Ok(Obj::Bool(is_truthy(lhs.clone()) && is_truthy(rhs.clone())));
-            } else {
-                if !is_truthy(lhs.clone()) {
-                    return Ok(lhs);
-                }
-            }
-
-            return evaluate(env, &r_expr);
+        Expr::Unary(token, expr) => execute::unary_exp(env, token, expr),
+        Expr::Logical(l_expr, operator_token, r_expr) => {
+            execute::logical_expr(env, operator_token, &l_expr, &r_expr)
         }
         Expr::If(condition, body, else_branch) => {
             if is_truthy(evaluate(env, condition)?) {
@@ -107,82 +67,8 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
 
             Ok(Obj::Null)
         }
-        Expr::Assign(l_expr, r_expr) => match &l_expr.expr {
-            // When declaring a variable without a type it is always re-assignable.
-            // e.g.
-            // a: int -> 2
-            // a = "test" => will fail with a type mismatch.
-            // a -> 5
-            // a = "abc" => will NOT fail because variable 'a' never got a specific type.
-            Expr::Identifier(var_name) => {
-                match lookup(env, var_name, l_expr.start, l_expr.end, LookupType::Var) {
-                    Ok(o) => match &r_expr.expr {
-                        Expr::Index(var, i) => {
-                            let index_obj = evaluate(env, i)?;
-                            let index: usize = get_real_index_num_from_object(
-                                index_obj,
-                                r_expr.start,
-                                r_expr.end,
-                            )?;
-                            return get_value_by_index_from_list(
-                                env, var, index, expr.start, r_expr.end,
-                            );
-                        }
-                        _ => {
-                            let rhs = evaluate(env, &r_expr)?;
-                            if rhs.is_type(&o.0) {
-                                define_var(env, var_name.to_string(), o.0, rhs)?;
-                            } else {
-                                return Err(LErr::runtime_error(
-                                    format!(
-                                        "Type mismatch. Tried to assign a {} value to {}",
-                                        rhs.get_type_name(),
-                                        o.0.get_type_name()
-                                    ),
-                                    r_expr.start,
-                                    r_expr.end,
-                                ));
-                            }
-                        }
-                    },
-                    Err(e) => return Err(e),
-                }
-                return Ok(Obj::Null);
-            }
-            _ => {
-                return Err(LErr::runtime_error(
-                    "Cannot assign to non-identifier.".to_string(),
-                    l_expr.start,
-                    l_expr.end,
-                ))
-            }
-        },
-        Expr::List(exprs) => {
-            let objs: Vec<Obj> = exprs
-                .into_iter()
-                .map(|e| evaluate(env, &e))
-                .collect::<Result<Vec<Obj>, LErr>>()?;
-
-            if objs.is_empty() {
-                return Ok(Obj::Seq(Seq::List(Rc::new(objs))));
-            } else {
-                let first_type = objs.first().unwrap(); // We expect the first value to be available
-                for (i, o) in objs.iter().enumerate() {
-                    if !o.is_same_type(first_type) {
-                        return Err(LErr::runtime_error(
-                            format!(
-                                "Value in list is not of the same type ({}), expected type {}",
-                                o.get_type_name(),
-                                first_type.get_type_name()
-                            ),
-                            exprs.get(i).unwrap().start,
-                            exprs.get(i).unwrap().end,
-                        ));
-                    }
-                }
-            }
-            Ok(Obj::Seq(Seq::List(Rc::new(objs))))
-        }
+        Expr::Assign(l_expr, r_expr) => execute::assign_exp(env, l_expr, r_expr),
+        Expr::List(exprs) => execute::list_expr(env, exprs),
         Expr::Index(var, expr) => {
             let index_obj = evaluate(env, expr)?;
             let index: usize = get_real_index_num_from_object(index_obj, expr.start, expr.end)?;
