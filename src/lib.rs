@@ -11,19 +11,19 @@ pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
 pub use crate::eval::*;
+pub use crate::execute::*;
 pub use crate::fileio::*;
 pub use crate::helper::*;
 pub use crate::interpreter::*;
 pub use crate::lexer::*;
 pub use crate::parser::*;
 pub use crate::vectors::*;
-pub use crate::execute::*;
 
-mod execute;
 mod core;
 mod debug;
 mod env;
 mod eval;
+mod execute;
 mod fileio;
 mod helper;
 mod interpreter;
@@ -47,20 +47,16 @@ impl AppConfig {
     }
 }
 
-pub fn quick_eval(code: &str) -> Obj {
+pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
     let env = setup_env();
     let mut lexer = Lexer::new(code);
     let mut parser = Parser::new(lexer.lex().unwrap());
 
     match evaluate(&env, &parser.parse().unwrap()) {
-        Ok(obj) => obj,
+        Ok(obj) => Ok(obj),
         Err(e) => match e {
-            LErr::Throw(s, _) => {
-                eprintln!("Something went wrong.");
-                println!("{}", s);
-                Obj::Null
-            }
-            LErr::Return(o) => o,
+            LErr::Throw(s, _) => Err(LErr::internal_error(s)),
+            LErr::Return(_) => Ok(Obj::Null),
         },
     }
 }
@@ -75,12 +71,19 @@ pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
     let mut results: Vec<Obj> = Vec::new();
     let input_folder = Path::new("examples");
     if let Ok(entries) = fs::read_dir(input_folder) {
+        println!("{:?}", entries);
         for entry in entries {
             if let Ok(entry) = entry {
                 if let Some(file_name) = entry.file_name().to_str() {
                     let file_path = input_folder.join(file_name);
                     match fs::read_to_string(&file_path) {
-                        Ok(content) => results.push(quick_eval(&content)),
+                        Ok(content) => match quick_eval(&content) {
+                            Ok(result) => results.push(result),
+                            Err(e) => match e {
+                                LErr::Throw(_, _) => return Err(e),
+                                LErr::Return(_) => println!("{:?}", e),
+                            },
+                        },
                         Err(err) => {
                             return Err(LErr::internal_error(format!(
                                 "Error reading file: {}. File name: {}",
