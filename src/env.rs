@@ -5,9 +5,8 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, BuiltIn, Builtin, CodeLoc, ConcatStr, ContainsStr, FileIO, Func,
-    LErr, LRes, Len, Namespace, Namespaces, Obj, ObjectType, ReplaceStr, Slice, Stringify, Substr,
-    Sum, Time, Typeof, Vars,
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
+    ObjectType, StdLib,
 };
 
 #[derive(Debug)]
@@ -119,20 +118,7 @@ impl Env {
 }
 
 pub fn initialize(env: &mut Env) {
-    env.insert_builtin(Time, NamespaceType::StdLib);
-    env.insert_builtin(Stringify, NamespaceType::StdLib);
-    env.insert_builtin(Vars, NamespaceType::StdLib);
-    env.insert_builtin(BuiltIn, NamespaceType::StdLib);
-    env.insert_builtin(Namespaces, NamespaceType::StdLib);
-    env.insert_builtin(Typeof, NamespaceType::StdLib);
-    env.insert_builtin(ConcatStr, NamespaceType::StdLib);
-    env.insert_builtin(Substr, NamespaceType::StdLib);
-    env.insert_builtin(Len, NamespaceType::StdLib);
-    env.insert_builtin(ContainsStr, NamespaceType::StdLib);
-    env.insert_builtin(ReplaceStr, NamespaceType::StdLib);
-    env.insert_builtin(Sum, NamespaceType::StdLib);
-    env.insert_builtin(Slice, NamespaceType::StdLib);
-
+    env.insert_namespace(StdLib.namespace_name().to_string(), StdLib);
     env.insert_namespace(FileIO.namespace_name().to_string(), FileIO);
 }
 

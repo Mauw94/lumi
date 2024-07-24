@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use lumi::{evaluate, initialize, AppConfig, Env, LDebug, LErr, Lexer, Parser};
+use lumi::{evaluate, initialize, AppConfig, Env, LDebug, LErr, Lexer, Namespace, Parser, StdLib};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -57,7 +57,6 @@ fn repl(config: &AppConfig) {
 
 fn run_code(config: &AppConfig, code: &str) {
     let env = setup_env();
-
     let mut debugger = LDebug::new(config);
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
@@ -89,7 +88,9 @@ fn run_code(config: &AppConfig, code: &str) {
 fn setup_env() -> Rc<RefCell<Env>> {
     let mut e = Env::new(None);
     initialize(&mut e);
-    Rc::new(RefCell::new(e))
+    let ref_e = Rc::new(RefCell::new(e));
+    StdLib.load_functions(&ref_e).unwrap();
+    ref_e
 }
 
 fn main() {
