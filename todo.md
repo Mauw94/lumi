@@ -1,5 +1,4 @@
 ### TODOS
-* when calling built_in() show if the function is part of the std library or a namespace
 * add vectors stuff and namespace examples/info to readme
 * add keywords to get an overview of certain types of functionalities, like: namespace_all gives a list of all available namespaces. fileio_all gives a list of all functionalities in the fileio namespace.
 * something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)

@@ -686,3 +686,19 @@ pub fn get_list_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<Vec<Obj>, 
         None => Err(LErr::internal_error(format!("Did not find an argument."))),
     }
 }
+
+pub fn get_str_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
+    match args.get(index) {
+        Some(o) => {
+            if o.is_string() {
+                Ok(o.get_str_val()?)
+            } else {
+                Err(LErr::internal_error(format!(
+                    "Argument {:?} is not of type str.",
+                    o
+                )))
+            }
+        }
+        None => Err(LErr::internal_error(format!("Did not find an argument."))),
+    }
+}

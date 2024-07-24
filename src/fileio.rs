@@ -9,6 +9,10 @@ use crate::{
 pub struct FileIO;
 
 impl Namespace for FileIO {
+    fn get_function_names(&self) -> Vec<String> {
+        vec!["read_file".to_string(), "byte_to_string".to_string()]
+    }
+
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
         e.insert_builtin(

@@ -352,7 +352,6 @@ pub fn lookup(
 pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(&env)?;
     let mut built_in_function_names: Vec<(String, String)> = Vec::new();
-    // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
     for (_key, (obj_type, obj, namespace_type)) in &cur_env.functions {
         if let ObjectType::Function = obj_type {
             let obj_borrow = obj.borrow();
@@ -374,10 +373,38 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     Ok(Obj::Null)
 }
 
+pub fn get_all_builtin_functions_for_namespace(
+    env: &Rc<RefCell<Env>>,
+    namespace_name: String,
+) -> LRes<Obj> {
+    let cur_env = try_borrow(&env)?;
+
+    match cur_env
+        .namespaces
+        .iter()
+        .filter(|(ns_n, _)| **ns_n == namespace_name)
+        .next()
+    {
+        Some(namespace) => match namespace.1.borrow().clone() {
+            Obj::Func(f) => match *f {
+                Func::Namespace(n) => {
+                    for name in n.get_function_names() {
+                        println!("{}", name);
+                    }
+                }
+                _ => (),
+            },
+            _ => (),
+        },
+        None => println!("Namespace '{}' does not exist.", namespace_name),
+    }
+
+    Ok(Obj::Null)
+}
+
 pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(env)?;
     let mut namespace_names: Vec<String> = Vec::new();
-    // TOOD: also check parent env for built_in function names. Here we could be nested in a closure
     for (_key, obj) in &cur_env.namespaces {
         let obj_borrow = obj.borrow();
         match obj_borrow.clone() {

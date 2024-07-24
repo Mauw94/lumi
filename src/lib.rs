@@ -104,6 +104,7 @@ pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
 pub trait Namespace: Debug {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()>;
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()>;
+    fn get_function_names(&self) -> Vec<String>;
     fn namespace_name(&self) -> &str;
 }
 
@@ -568,17 +569,25 @@ impl Builtin for Slice {
 #[derive(Debug)]
 struct BuiltIn;
 
-// TODO: builtin with 1 argument (name of the namespace) gives us all the functions from that namespace
 impl Builtin for BuiltIn {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
-        _args: Vec<Obj>,
+        args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
     ) -> LRes<Obj> {
-        check_args(0, 0, &_args, _start, _end)?;
-        get_all_builtin_functions(env)?;
+        check_args(0, 1, &args, _start, _end)?;
+
+        match args.len() {
+            0 => get_all_builtin_functions(env)?,
+            1 => {
+                let namespace_name = get_str_from_arg_obj(0, &args)?;
+                get_all_builtin_functions_for_namespace(env, namespace_name)?
+            }
+            _ => Obj::Null, // impossible to reach this
+        };
+
         Ok(Obj::Null)
     }
 
