@@ -63,7 +63,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Fn(fn_name, parameters, expressions) => {
             execute::function_expr(env, fn_name, parameters, expressions)
         }
-        Expr::Get(strct, value, args) => execute::get_expr(env, strct, value, args),
+        Expr::Get(strct, value, args, get_type) => {
+            execute::get_expr(env, strct, value, args, &get_type)
+        }
         Expr::Call(callee, args) => execute::call_expr(env, callee, args),
         Expr::For(index, to_expr, from_expr, step_expr, body) => {
             execute::for_expr(env, index, to_expr, from_expr, step_expr, body)

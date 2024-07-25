@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
-    CodeLoc, Env, Expr, Func, LErr, LNum, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct,
-    Token,
+    CodeLoc, Env, Expr, Func, GetType, LErr, LNum, LookupType, LumiExpr, Obj, ObjectType, Seq,
+    Struct, Token,
 };
 
 pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {
@@ -384,21 +384,23 @@ pub fn get_expr(
     strct: &Box<LumiExpr>,
     value: &String,
     args: &Option<Vec<Box<LumiExpr>>>,
+    get_type: &GetType, // FIXME: implement this
 ) -> Result<Obj, LErr> {
     let res = interpreter::evaluate(env, strct)?;
     match res {
         Obj::Struct(mut s) => {
-            // FIXME check type still maybe?
-            if s.is_property(value) {
-                // value is stored inside the structs env, we just need to look it up and return the object
-                let var_res = lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
-                Ok(var_res.1)
-            } else if s.is_method(value) {
-                match s.find_method(value, strct.start, strct.end) {
+            println!("GET TYPE: {:?}", get_type);
+
+            match get_type {
+                GetType::Property => {
+                    let var = lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
+                    return Ok(var.1);
+                }
+                GetType::Function => match s.find_method(value, strct.start, strct.end) {
                     Ok(m) => match interpreter::evaluate(&s.env, &m)? {
                         Obj::Func(f) => match *f {
                             Func::Closure(closure) => {
-                                execute_closure_func_call(strct, closure, args, &s.env)
+                                return execute_closure_func_call(strct, closure, args, &s.env)
                             }
                             _ => {
                                 return Err(LErr::runtime_error(
@@ -417,13 +419,7 @@ pub fn get_expr(
                         }
                     },
                     Err(err) => return Err(err),
-                }
-            } else {
-                Err(LErr::runtime_error(
-                    format!("Struct does not contain the field {}", value),
-                    strct.start,
-                    strct.end,
-                ))
+                },
             }
         }
         _ => {

@@ -200,7 +200,7 @@ impl Struct {
         match self.functions.get(method) {
             Some(m) => Ok(m.clone()),
             None => Err(LErr::runtime_error(
-                format!("Method not found {}", method),
+                format!("Did not find method '{}'", method),
                 start,
                 end,
             )),

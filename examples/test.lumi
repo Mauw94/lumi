@@ -1,5 +1,7 @@
 struct test() {
-    a: str -> "test"
+    fn something() {
+        print "abc"
+    }
 }
 
-print test.a
+test.something()

@@ -37,6 +37,12 @@ pub enum LiteralValue {
 }
 
 #[derive(Debug, Clone)]
+pub enum GetType {
+    Property,
+    Function,
+}
+
+#[derive(Debug, Clone)]
 pub enum Expr {
     Int(i64),
     Float(f64),
@@ -57,7 +63,7 @@ pub enum Expr {
     Fn(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>), // fn name, params, expressions
     Call(Box<LumiExpr>, Option<Vec<Box<LumiExpr>>>),          // name, arguments
     Namespace(String, CodeLoc, CodeLoc, bool), // namespace only needs the name of the internal function, start codeloc, end codeloc and wether or not to include or exclude it
-    Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>),
+    Get(Box<LumiExpr>, String, Option<Vec<Box<LumiExpr>>>, GetType),
     Binary(Box<LumiExpr>, Token, Box<LumiExpr>),
     Assign(Box<LumiExpr>, Box<LumiExpr>),
     Sequence(Vec<Box<LumiExpr>>),
@@ -144,11 +150,11 @@ impl fmt::Display for Expr {
             Expr::Struct(name, params, body) => {
                 write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
-            Expr::Get(e, callee, arguments) => {
+            Expr::Get(e, callee, arguments, get_type) => {
                 write!(
                     f,
-                    "expr: {} callee: {:?} arguments?: {:?} arguments",
-                    e, callee, arguments
+                    "expr: {} callee: {:?} arguments?: {:?} arguments get type: {:?}",
+                    e, callee, arguments, get_type
                 )
             }
             Expr::Namespace(name, _start, _end, _bool) => write!(f, "NAMESPACE {:?}", name),
@@ -558,7 +564,7 @@ impl Parser {
                     return Ok(LumiExpr {
                         start,
                         end: self.peek_loc(),
-                        expr: Expr::Get(Box::new(expr), name, None),
+                        expr: Expr::Get(Box::new(expr), name, None, GetType::Property),
                     });
                 } else {
                     self.advance();
@@ -599,7 +605,7 @@ impl Parser {
                     return Ok(LumiExpr {
                         start,
                         end: self.peek_loc(),
-                        expr: Expr::Get(Box::new(expr), name, Some(arguments)),
+                        expr: Expr::Get(Box::new(expr), name, Some(arguments), GetType::Function),
                     });
                 }
             } else {
