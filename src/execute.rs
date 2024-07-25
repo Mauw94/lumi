@@ -11,8 +11,7 @@ pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Resu
         return interpreter::evaluate(env, exprs.last().unwrap());
     } else {
         for expr in exprs {
-            let o = interpreter::evaluate(env, expr)?;
-            o.print_value();
+            interpreter::evaluate(env, expr)?;
         }
     }
 
@@ -106,7 +105,6 @@ pub fn assign_exp(
                     }
                     _ => {
                         let rhs = interpreter::evaluate(env, &r_expr)?;
-                        println!("{:?}", rhs);
                         if rhs.is_type(&lh_obj.0) {
                             define_var(env, var_name.to_string(), lh_obj.0, rhs)?;
                         } else {

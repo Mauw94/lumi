@@ -144,7 +144,13 @@ impl fmt::Display for Expr {
             Expr::Struct(name, params, body) => {
                 write!(f, "name {} params {:?}, body {:?}", name, params, body)
             }
-            Expr::Get(_, _, _) => todo!(),
+            Expr::Get(e, callee, arguments) => {
+                write!(
+                    f,
+                    "expr: {} callee: {:?} arguments?: {:?} arguments",
+                    e, callee, arguments
+                )
+            }
             Expr::Namespace(name, _start, _end, _bool) => write!(f, "NAMESPACE {:?}", name),
         }
     }

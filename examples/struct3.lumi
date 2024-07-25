@@ -3,5 +3,5 @@ struct sentence() {
 }
 
 sentence.word = "different word"
-
-print sentence.word == "different word"
+ 
+print sentence.word
