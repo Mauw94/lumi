@@ -1,23 +1,8 @@
 ### TODOS
-* add vectors stuff and namespace examples/info to readme
-* add keywords to get an overview of certain types of functionalities, like: namespace_all gives a list of all available namespaces. fileio_all gives a list of all functionalities in the fileio namespace.
-* something like namespaces that we import to include other libs? (use "include" keyword, then name of env?)
 * file input/output functions
-* function to convert Vec<u8> back to text
-* write helper methods to faster debug print stuff while developing
 
 ### BUGS
-* printing a property of a struct pints it twice
-e.g.
-```
-struct test() {
-    a: int -> 2
-}
-
-print test.a
-```
-
-* not finding a method in a struct givesn the error message "Struct does not contain field.." should be "method"
+* not finding a method in a struct gives the error message "Struct does not contain field.." should be "method"
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
