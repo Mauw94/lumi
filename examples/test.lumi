@@ -1,7 +1,8 @@
 struct test() {
     fn something() {
-        print "abc"
+        return 123
     }
 }
 
-test.something()
+a: int -> test.something()
+print a

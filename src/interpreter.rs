@@ -52,8 +52,10 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Index(var, expr) => execute::index_expr(env, var, expr),
         Expr::Print(expr) => {
             let prt = evaluate(env, expr)?;
-            prt.print_value();
-            Ok(Obj::Null)
+
+            Ok(Obj::Seq(Seq::String(Rc::new(String::from(
+                prt.format_value(),
+            )))))
         }
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),

@@ -388,40 +388,36 @@ pub fn get_expr(
 ) -> Result<Obj, LErr> {
     let res = interpreter::evaluate(env, strct)?;
     match res {
-        Obj::Struct(mut s) => {
-            println!("GET TYPE: {:?}", get_type);
-
-            match get_type {
-                GetType::Property => {
-                    let var = lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
-                    return Ok(var.1);
-                }
-                GetType::Function => match s.find_method(value, strct.start, strct.end) {
-                    Ok(m) => match interpreter::evaluate(&s.env, &m)? {
-                        Obj::Func(f) => match *f {
-                            Func::Closure(closure) => {
-                                return execute_closure_func_call(strct, closure, args, &s.env)
-                            }
-                            _ => {
-                                return Err(LErr::runtime_error(
-                                    "Expect closure".to_string(),
-                                    strct.start,
-                                    strct.end,
-                                ))
-                            }
-                        },
+        Obj::Struct(mut s) => match get_type {
+            GetType::Property => {
+                let var = lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
+                return Ok(var.1);
+            }
+            GetType::Function => match s.find_method(value, strct.start, strct.end) {
+                Ok(m) => match interpreter::evaluate(&s.env, &m)? {
+                    Obj::Func(f) => match *f {
+                        Func::Closure(closure) => {
+                            return execute_closure_func_call(strct, closure, args, &s.env)
+                        }
                         _ => {
                             return Err(LErr::runtime_error(
-                                "Expected a function object".to_string(),
+                                "Expect closure".to_string(),
                                 strct.start,
-                                strct.start,
+                                strct.end,
                             ))
                         }
                     },
-                    Err(err) => return Err(err),
+                    _ => {
+                        return Err(LErr::runtime_error(
+                            "Expected a function object".to_string(),
+                            strct.start,
+                            strct.start,
+                        ))
+                    }
                 },
-            }
-        }
+                Err(err) => return Err(err),
+            },
+        },
         _ => {
             return Err(LErr::runtime_error(
                 "Expected a struct here.".to_string(),
