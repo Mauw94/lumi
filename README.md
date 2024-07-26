@@ -188,7 +188,7 @@ lumi> test("hehexd")
 ```
 
 ```
-lumi> 1 to 3 step 1 { print "a" }
+lumi> i: 1 to 3 step 1 { print "a" }
 "a"
 "a"
 "a"
