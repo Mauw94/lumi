@@ -1,5 +1,6 @@
 ### TODOS
 * file input/output functions
+* create better outputs for wasm
 
 ### BUGS
 * running a whole script at once in the console or through calling `run_code(..)` in lib should print a value. Right now it just returns `Obj::Null`
