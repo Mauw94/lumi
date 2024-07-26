@@ -48,7 +48,6 @@ fn repl() {
 
 fn run_code(code: &str) {
     let env = setup_env();
-    let eval = Rc::new(RefCell::new(Results::new()));
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
         Ok(tokens) => {
