@@ -4,19 +4,12 @@ use crate::{
     core::{LErr, LNum, Obj, Seq},
     eval, execute, lookup,
     parser::{Expr, LiteralValue, LumiExpr},
-    Env, LookupType, EVAL,
+    Env, LookupType,
 };
 
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
     match &expr.expr {
-        Expr::Sequence(exprs) => {
-            let objects = execute::sequence_expr(env, exprs)?;
-            println!("{:?}", objects);
-            let mut eval = EVAL.lock().unwrap();
-            eval.res = objects;
-            
-            Ok(Obj::Null)
-        }
+        Expr::Sequence(exprs) => execute::sequence_expr(env, exprs),
         Expr::Block(exprs) => execute::block_expr(env, exprs),
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),

@@ -88,17 +88,26 @@ pub fn run_code(code: &str) -> Vec<String> {
                 Ok(expr) => match evaluate(&env, &expr) {
                     Ok(_) | Err(LErr::Return(_)) => {}
                     Err(e) => {
-                        println!("{}", e.render(&code));
+                        add_err_res_to_eval(e.render(&code));
                     }
                 },
-                Err(e) => println!("{}", e.render(&code)),
+                Err(e) => {
+                    add_err_res_to_eval(e.render(&code));
+                }
             }
         }
-        Err(e) => println!("{}", e.render(&code)),
+        Err(e) => {
+            add_err_res_to_eval(e.render(&code));
+        }
     }
 
     print_eval();
     get_eval()
+}
+
+fn add_err_res_to_eval(res: String) {
+    let mut eval = EVAL.lock().unwrap();
+    eval.res = vec![res];
 }
 
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {

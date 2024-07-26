@@ -3,17 +3,25 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 use crate::{
     define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
     CodeLoc, Env, Expr, Func, GetType, LErr, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType,
-    Seq, Struct, Token,
+    Seq, Struct, Token, EVAL,
 };
 
-pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Vec<String>> {
-    let mut eval: Vec<String> = Vec::new();
-    for expr in exprs {
-        let res = interpreter::evaluate(env, expr)?;
-        eval.push(res.format_value());
+pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Obj> {
+    let mut results: Vec<String> = Vec::new();
+    if exprs.len() == 1 {
+        let res = interpreter::evaluate(env, exprs.last().unwrap())?;
+        results.push(res.format_value());
+    } else {
+        for expr in exprs {
+            let res = interpreter::evaluate(env, expr)?;
+            results.push(res.format_value());
+        }
     }
 
-    Ok(eval)
+    let mut eval = EVAL.lock().unwrap();
+    eval.res = results;
+
+    Ok(Obj::Null)
 }
 
 pub fn block_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {
