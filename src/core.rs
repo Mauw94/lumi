@@ -569,7 +569,7 @@ impl Obj {
                 LNum::Byte(b) => format!("{}", b),
             },
             Obj::Seq(v) => match v {
-                Seq::String(s) => format!("\"{}\"", s),
+                Seq::String(s) => format!("{}", s),
                 Seq::List(objs) => {
                     let mut result = Vec::new();
                     for obj in objs.clone().iter() {
