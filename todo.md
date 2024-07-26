@@ -1,6 +1,7 @@
 ### TODOS
+* stdlib functions like built_in() also need to output something for wasm
+* Expr::Call needs to also output stuff, only outputs Obj::Null so it's useless for WASM
 * file input/output functions
-* create better outputs for wasm
 
 ### BUGS
 struct test() { fn do() { return 123 }} a: int -> test.do() print a
