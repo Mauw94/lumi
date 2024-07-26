@@ -2,7 +2,16 @@
 * file input/output functions
 
 ### BUGS
-* not finding a method in a struct gives the error message "Struct does not contain field.." should be "method"
+* running a whole script like 
+```
+struct test() {
+    fn something() {
+        return 123
+    }
+}
+
+a: int -> test.something()
+print a``` should print a value
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
