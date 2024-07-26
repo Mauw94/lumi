@@ -2,7 +2,7 @@
 * file input/output functions
 
 ### BUGS
-* running a whole script like 
+* running a whole script at once in the console or through calling `run_code(..)` in lib should print a value. Right now it just returns `Obj::Null`
 ```
 struct test() {
     fn something() {
@@ -13,7 +13,6 @@ struct test() {
 a: int -> test.something()
 print a
 ``` 
-should print a value
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
