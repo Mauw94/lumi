@@ -3,6 +3,7 @@
 * create better outputs for wasm
 
 ### BUGS
+struct test() { fn do() { return 123 }} a: int -> test.do() print a
 * running a whole script at once in the console or through calling `run_code(..)` in lib should print a value. Right now it just returns `Obj::Null`
 ```
 struct test() {

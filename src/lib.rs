@@ -1,13 +1,16 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Mutex;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub use crate::core::*;
-pub use crate::debug::*;
 pub use crate::env::*;
 pub use crate::eval::*;
 pub use crate::execute::*;
@@ -20,7 +23,6 @@ pub use crate::stdlib::*;
 pub use crate::vectors::*;
 
 mod core;
-mod debug;
 mod env;
 mod eval;
 mod execute;
@@ -32,20 +34,25 @@ mod parser;
 mod stdlib;
 mod vectors;
 
-pub struct AppConfig {
-    debug_print_enabled: bool,
+pub struct Eval {
+    res: Vec<String>,
 }
 
-impl AppConfig {
-    pub fn new(debug_print_enabled: bool) -> Self {
-        Self {
-            debug_print_enabled,
-        }
-    }
+lazy_static! {
+    static ref EVAL: Mutex<Eval> = Mutex::new(Eval { res: Vec::new() });
+}
 
-    pub fn is_debug_print_enabled(&self) -> bool {
-        self.debug_print_enabled
+pub fn print_eval() {
+    let eval = EVAL.lock().unwrap();
+    for item in &eval.res {
+        println!("{}", item);
     }
+}
+
+pub fn get_eval() -> Vec<String> {
+    let eval = EVAL.lock().unwrap();
+
+    eval.res.clone()
 }
 
 pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
@@ -71,28 +78,36 @@ fn setup_env() -> Rc<RefCell<Env>> {
 }
 
 #[wasm_bindgen]
-pub fn run_code(code: &str) -> String {
+pub fn run_code(code: &str) -> Vec<String> {
     let env = setup_env();
     let mut lexer = Lexer::new(code);
-    let output = match lexer.lex() {
+    match lexer.lex() {
         Ok(tokens) => {
             let mut p = Parser::new(tokens);
             match p.parse() {
                 Ok(expr) => match evaluate(&env, &expr) {
-                    Ok(x) | Err(LErr::Return(x)) => {
-                        format!("{:?}", x.format_value())
-                    }
+                    Ok(_) | Err(LErr::Return(_)) => {}
                     Err(e) => {
-                        format!("{}", e.render(&code))
+                        add_err_res_to_eval(e.render(&code));
                     }
                 },
-                Err(e) => format!("{}", e.render(&code)),
+                Err(e) => {
+                    add_err_res_to_eval(e.render(&code));
+                }
             }
         }
-        Err(e) => format!("{}", e.render(&code)),
-    };
+        Err(e) => {
+            add_err_res_to_eval(e.render(&code));
+        }
+    }
 
-    output
+    print_eval();
+    get_eval()
+}
+
+fn add_err_res_to_eval(res: String) {
+    let mut eval = EVAL.lock().unwrap();
+    eval.res = vec![res];
 }
 
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {

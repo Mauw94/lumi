@@ -1,6 +1,6 @@
-use lumi::{execute_examples, quick_eval, Obj};
+use lumi_lib::{execute_examples, quick_eval, Obj};
 
-extern crate lumi;
+extern crate lumi_lib;
 
 fn i(n: i64) -> Obj {
     Obj::i64(n)
