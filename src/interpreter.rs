@@ -6,10 +6,22 @@ use crate::{
     parser::{Expr, LiteralValue, LumiExpr},
     Env, LookupType,
 };
+pub struct Results {
+    res: Vec<Obj>,
+}
 
+impl Results {
+    pub fn new() -> Self {
+        Self { res: Vec::new() }
+    }
+}
 pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
     match &expr.expr {
-        Expr::Sequence(exprs) => execute::sequence_expr(env, exprs),
+        Expr::Sequence(exprs) => {
+            let objects = execute::sequence_expr(env, exprs)?;
+            println!("{:?}", objects);
+            Ok(Obj::Null)
+        }
         Expr::Block(exprs) => execute::block_expr(env, exprs),
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
@@ -52,10 +64,9 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Index(var, expr) => execute::index_expr(env, var, expr),
         Expr::Print(expr) => {
             let prt = evaluate(env, expr)?;
-
             prt.print_value();
 
-            Ok(Obj::Null)
+            Ok(prt)
         }
         Expr::Return(Some(expr)) => Err(LErr::Return(evaluate(env, expr)?)),
         Expr::Return(None) => Err(LErr::Return(Obj::Null)),

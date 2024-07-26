@@ -7,7 +7,6 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub use crate::core::*;
-pub use crate::debug::*;
 pub use crate::env::*;
 pub use crate::eval::*;
 pub use crate::execute::*;
@@ -20,7 +19,6 @@ pub use crate::stdlib::*;
 pub use crate::vectors::*;
 
 mod core;
-mod debug;
 mod env;
 mod eval;
 mod execute;
@@ -31,22 +29,6 @@ mod lexer;
 mod parser;
 mod stdlib;
 mod vectors;
-
-pub struct AppConfig {
-    debug_print_enabled: bool,
-}
-
-impl AppConfig {
-    pub fn new(debug_print_enabled: bool) -> Self {
-        Self {
-            debug_print_enabled,
-        }
-    }
-
-    pub fn is_debug_print_enabled(&self) -> bool {
-        self.debug_print_enabled
-    }
-}
 
 pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
     let env = setup_env();

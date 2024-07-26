@@ -2,20 +2,17 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
-    CodeLoc, Env, Expr, Func, GetType, LErr, LNum, LookupType, LumiExpr, Obj, ObjectType, Seq,
-    Struct, Token,
+    CodeLoc, Env, Expr, Func, GetType, LErr, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType,
+    Seq, Struct, Token,
 };
 
-pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {
-    if exprs.len() == 1 {
-        return interpreter::evaluate(env, exprs.last().unwrap());
-    } else {
-        for expr in exprs {
-            interpreter::evaluate(env, expr)?;
-        }
+pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Vec<Obj>> {
+    let mut objects: Vec<Obj> = Vec::new();
+    for expr in exprs {
+        objects.push(interpreter::evaluate(env, expr)?);
     }
 
-    Ok(Obj::Null)
+    Ok(objects)
 }
 
 pub fn block_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {

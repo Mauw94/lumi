@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use lumi::{evaluate, initialize, AppConfig, Env, LDebug, LErr, Lexer, Namespace, Parser, StdLib};
+use lumi::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, Results, StdLib};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -22,31 +22,22 @@ fn prompt(input: &mut String) -> bool {
     }
 }
 
-fn repl(config: &AppConfig) {
+fn repl() {
     let env = setup_env();
 
-    let mut debugger = LDebug::new(config);
     let mut input = String::new();
     while prompt(&mut input) {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                debugger.set_tokens(tokens.clone());
-                debugger.debug_print();
                 let mut p = Parser::new(tokens);
                 match p.parse() {
-                    Ok(expr) => {
-                        debugger.set_expr(expr.clone());
-                        debugger.debug_print();
-                        match evaluate(&env, &expr) {
-                            Ok(x) => {
-                                debugger.set_eval(x.clone());
-                                debugger.debug_print();
-                                x.print_value();
-                            }
-                            Err(e) => println!("{}", e.render(&input)),
+                    Ok(expr) => match evaluate(&env, &expr) {
+                        Ok(x) => {
+                            x.print_value();
                         }
-                    }
+                        Err(e) => println!("{}", e.render(&input)),
+                    },
                     Err(e) => println!("{}", e.render(&input)),
                 }
             }
@@ -55,29 +46,20 @@ fn repl(config: &AppConfig) {
     }
 }
 
-fn run_code(config: &AppConfig, code: &str) {
+fn run_code(code: &str) {
     let env = setup_env();
-    let mut debugger = LDebug::new(config);
+    let eval = Rc::new(RefCell::new(Results::new()));
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
         Ok(tokens) => {
-            debugger.set_tokens(tokens.clone());
-            debugger.debug_print();
             let mut p = Parser::new(tokens);
             match p.parse() {
-                Ok(expr) => {
-                    debugger.set_expr(expr.clone());
-                    debugger.debug_print();
-                    match evaluate(&env, &expr) {
-                        Ok(x) | Err(LErr::Return(x)) => {
-                            debugger.set_eval(x.clone());
-                            debugger.debug_print();
-                        }
-                        Err(e) => {
-                            println!("{}", e.render(&code));
-                        }
+                Ok(expr) => match evaluate(&env, &expr) {
+                    Ok(_) | Err(LErr::Return(_)) => {}
+                    Err(e) => {
+                        println!("{}", e.render(&code));
                     }
-                }
+                },
                 Err(e) => println!("{}", e.render(&code)),
             }
         }
@@ -95,11 +77,8 @@ fn setup_env() -> Rc<RefCell<Env>> {
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-
-    let config = AppConfig::new(false);
-
     if args.len() <= 1 {
-        repl(&config);
+        repl();
     } else {
         let start = Instant::now();
 
@@ -108,7 +87,7 @@ fn main() {
         let file_path = input_folder.join(filename);
 
         match fs::read_to_string(&file_path) {
-            Ok(content) => run_code(&config, &content),
+            Ok(content) => run_code(&content),
             Err(err) => eprintln!("Error reading file: {}", err),
         }
 
