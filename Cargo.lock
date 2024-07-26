@@ -110,6 +110,7 @@ name = "lumi"
 version = "0.1.0"
 dependencies = [
  "chrono",
+ "wasm-bindgen",
 ]
 
 [[package]]

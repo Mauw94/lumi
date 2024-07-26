@@ -4,6 +4,8 @@ use std::fs;
 use std::path::Path;
 use std::rc::Rc;
 
+use wasm_bindgen::prelude::wasm_bindgen;
+
 pub use crate::core::*;
 pub use crate::debug::*;
 pub use crate::env::*;
@@ -66,6 +68,31 @@ fn setup_env() -> Rc<RefCell<Env>> {
     let ref_e = Rc::new(RefCell::new(e));
     StdLib.load_functions(&ref_e).unwrap();
     ref_e
+}
+
+#[wasm_bindgen]
+pub fn run_code(code: &str) -> String {
+    let env = setup_env();
+    let mut lexer = Lexer::new(code);
+    let output = match lexer.lex() {
+        Ok(tokens) => {
+            let mut p = Parser::new(tokens);
+            match p.parse() {
+                Ok(expr) => match evaluate(&env, &expr) {
+                    Ok(x) | Err(LErr::Return(x)) => {
+                        format!("{:?}", x.format_value())
+                    }
+                    Err(e) => {
+                        format!("{}", e.render(&code))
+                    }
+                },
+                Err(e) => format!("{}", e.render(&code)),
+            }
+        }
+        Err(e) => format!("{}", e.render(&code)),
+    };
+
+    output
 }
 
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {

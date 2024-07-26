@@ -557,6 +557,48 @@ impl Obj {
         }
     }
 
+    pub fn format_value(&self) -> String {
+        match &self {
+            Obj::Null => {
+                format!("null")
+            }
+            Obj::Bool(v) => format!("{}", v),
+            Obj::Num(v) => match v {
+                LNum::Int(i) => format!("{}", i),
+                LNum::Float(f) => format!("{}", f),
+                LNum::Byte(b) => format!("{}", b),
+            },
+            Obj::Seq(v) => match v {
+                Seq::String(s) => format!("\"{}\"", s),
+                Seq::List(objs) => {
+                    let mut result = Vec::new();
+                    for obj in objs.clone().iter() {
+                        result.push(obj.format_value());
+                    }
+
+                    result.join(" ")
+                }
+            },
+            Obj::Output(v) => format!("{}", v),
+            Obj::Func(f) => match &**f {
+                Func::Closure(_c) => {
+                    // for p in c.params.iter() {
+                    //     println!("param: {}", p);
+                    // }
+                    // print!("body {:?}", c.body);
+                    format!("null")
+                }
+                Func::Builtin(_) => {
+                    format!("null")
+                }
+                Func::Namespace(_) => {
+                    format!("null")
+                }
+            },
+            Obj::Struct(s) => format!("{:?}", s),
+        }
+    }
+
     pub fn i64(n: i64) -> Self {
         Obj::Num(LNum::Int(n))
     }

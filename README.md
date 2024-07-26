@@ -14,6 +14,9 @@ We shall see where this will bring us : )
 * For loops `i: 1 to 5 step 1`
 * Functions `fn add(x, b) { return a + b }`
 
+## Build wasm-pack
+* run command wasm-pack build --target web
+* use files in pkg folder
 
 ## Variables and assignments
 Declare with ```->``` and assign with ```=```
