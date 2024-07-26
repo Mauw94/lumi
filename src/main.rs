@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use lumi::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, Results, StdLib};
+use lumi_lib::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, StdLib};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -88,7 +88,7 @@ fn main() {
         match fs::read_to_string(&file_path) {
             Ok(content) => run_code(&content),
             Err(err) => eprintln!("Error reading file: {}", err),
-        }
+        };
 
         let duration = start.elapsed();
         print!(

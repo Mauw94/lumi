@@ -6,13 +6,14 @@ use crate::{
     Seq, Struct, Token,
 };
 
-pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Vec<Obj>> {
-    let mut objects: Vec<Obj> = Vec::new();
+pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Vec<String>> {
+    let mut eval: Vec<String> = Vec::new();
     for expr in exprs {
-        objects.push(interpreter::evaluate(env, expr)?);
+        let res = interpreter::evaluate(env, expr)?;
+        eval.push(res.format_value());
     }
 
-    Ok(objects)
+    Ok(eval)
 }
 
 pub fn block_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {

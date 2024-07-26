@@ -1,8 +1,12 @@
+#[macro_use]
+extern crate lazy_static;
+
 use std::cell::RefCell;
 use std::fmt::Debug;
 use std::fs;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Mutex;
 
 use wasm_bindgen::prelude::wasm_bindgen;
 
@@ -30,6 +34,27 @@ mod parser;
 mod stdlib;
 mod vectors;
 
+pub struct Eval {
+    res: Vec<String>,
+}
+
+lazy_static! {
+    static ref EVAL: Mutex<Eval> = Mutex::new(Eval { res: Vec::new() });
+}
+
+pub fn print_eval() {
+    let eval = EVAL.lock().unwrap();
+    for item in &eval.res {
+        println!("{}", item);
+    }
+}
+
+pub fn get_eval() -> Vec<String> {
+    let eval = EVAL.lock().unwrap();
+
+    eval.res.clone()
+}
+
 pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
     let env = setup_env();
     let mut lexer = Lexer::new(code);
@@ -53,28 +78,27 @@ fn setup_env() -> Rc<RefCell<Env>> {
 }
 
 #[wasm_bindgen]
-pub fn run_code(code: &str) -> String {
+pub fn run_code(code: &str) -> Vec<String> {
     let env = setup_env();
     let mut lexer = Lexer::new(code);
-    let output = match lexer.lex() {
+    match lexer.lex() {
         Ok(tokens) => {
             let mut p = Parser::new(tokens);
             match p.parse() {
                 Ok(expr) => match evaluate(&env, &expr) {
-                    Ok(x) | Err(LErr::Return(x)) => {
-                        format!("{:?}", x.format_value())
-                    }
+                    Ok(_) | Err(LErr::Return(_)) => {}
                     Err(e) => {
-                        format!("{}", e.render(&code))
+                        println!("{}", e.render(&code));
                     }
                 },
-                Err(e) => format!("{}", e.render(&code)),
+                Err(e) => println!("{}", e.render(&code)),
             }
         }
-        Err(e) => format!("{}", e.render(&code)),
-    };
+        Err(e) => println!("{}", e.render(&code)),
+    }
 
-    output
+    print_eval();
+    get_eval()
 }
 
 pub fn execute_examples() -> Result<Vec<Obj>, LErr> {

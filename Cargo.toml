@@ -7,7 +7,9 @@ edition = "2021"
 
 [lib]
 crate-type = ["cdylib", "rlib"]
+name = "lumi_lib"
 
 [dependencies]
 chrono = "0.4"
 wasm-bindgen = "0.2"
+lazy_static = "1.4.0"
