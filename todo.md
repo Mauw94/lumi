@@ -11,7 +11,9 @@ struct test() {
 }
 
 a: int -> test.something()
-print a``` should print a value
+print a
+``` 
+should print a value
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
