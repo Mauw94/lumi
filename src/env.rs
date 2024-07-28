@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
-    ObjectType, StdLib,
+    ObjectType, Seq, StdLib,
 };
 
 #[derive(Debug)]
@@ -338,13 +338,19 @@ pub fn lookup(
 pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(&env)?;
     let mut built_in_function_names: Vec<(String, String)> = Vec::new();
+    // FIXME: no need for another vec
+    let mut res: Vec<String> = Vec::new();
+
     for (_key, (obj_type, obj, namespace_type)) in &cur_env.functions {
         if let ObjectType::Function = obj_type {
             let obj_borrow = obj.borrow();
             match obj_borrow.clone() {
                 Obj::Func(f) => match *f {
-                    Func::Builtin(b) => built_in_function_names
-                        .push((b.builtin_name().to_string(), namespace_type.get_name())),
+                    Func::Builtin(b) => {
+                        built_in_function_names
+                            .push((b.builtin_name().to_string(), namespace_type.get_name()));
+                        res.push(b.builtin_name().to_string());
+                    }
                     _ => return Err(LErr::internal_error("Not a function.".to_string())),
                 },
                 _ => return Err(LErr::internal_error("Not a function.".to_string())),
@@ -356,7 +362,9 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
         println!("{} ({})", name.0, name.1);
     }
 
-    Ok(Obj::Null)
+    return Ok(Obj::Seq(Seq::String(Rc::new(res.join(", ")))));
+
+    // Ok(Obj::Null)
 }
 
 pub fn get_all_builtin_functions_for_namespace(
@@ -374,9 +382,13 @@ pub fn get_all_builtin_functions_for_namespace(
         Some(namespace) => match namespace.1.borrow().clone() {
             Obj::Func(f) => match *f {
                 Func::Namespace(n) => {
+                    let mut res: Vec<String> = Vec::new();
                     for name in n.get_function_names() {
                         println!("{}", name);
+                        res.push(name);
                     }
+
+                    return Ok(Obj::Seq(Seq::String(Rc::new(res.join("")))));
                 }
                 _ => (),
             },

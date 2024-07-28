@@ -509,15 +509,13 @@ impl Builtin for BuiltIn {
         check_args(0, 1, &args, _start, _end)?;
 
         match args.len() {
-            0 => get_all_builtin_functions(env)?,
+            0 => get_all_builtin_functions(env),
             1 => {
                 let namespace_name = get_str_from_arg_obj(0, &args)?;
-                get_all_builtin_functions_for_namespace(env, namespace_name)?
+                get_all_builtin_functions_for_namespace(env, namespace_name)
             }
-            _ => Obj::Null, // impossible to reach this
-        };
-
-        Ok(Obj::Null)
+            _ => Ok(Obj::Null),
+        }
     }
 
     fn builtin_name(&self) -> &str {

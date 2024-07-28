@@ -12,16 +12,18 @@ pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes
         let res = interpreter::evaluate(env, exprs.last().unwrap())?;
         results.push(res.format_value());
 
+        let mut eval = EVAL.lock().unwrap();
+        eval.res = results;
         return Ok(res);
     } else {
         for expr in exprs {
             let res = interpreter::evaluate(env, expr)?;
             results.push(res.format_value());
         }
-    }
 
-    let mut eval = EVAL.lock().unwrap();
-    eval.res = results;
+        let mut eval = EVAL.lock().unwrap();
+        eval.res = results;
+    }
 
     Ok(Obj::Null)
 }
