@@ -338,8 +338,6 @@ pub fn lookup(
 pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     let cur_env = try_borrow(&env)?;
     let mut built_in_function_names: Vec<(String, String)> = Vec::new();
-    // FIXME: no need for another vec
-    let mut res: Vec<String> = Vec::new();
 
     for (_key, (obj_type, obj, namespace_type)) in &cur_env.functions {
         if let ObjectType::Function = obj_type {
@@ -349,7 +347,6 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
                     Func::Builtin(b) => {
                         built_in_function_names
                             .push((b.builtin_name().to_string(), namespace_type.get_name()));
-                        res.push(b.builtin_name().to_string());
                     }
                     _ => return Err(LErr::internal_error("Not a function.".to_string())),
                 },
@@ -362,9 +359,14 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
         println!("{} ({})", name.0, name.1);
     }
 
-    return Ok(Obj::Seq(Seq::String(Rc::new(res.join(", ")))));
+    let eval_built_in_function_names: Vec<String> = built_in_function_names
+        .iter()
+        .map(|(name, n_t)| format!("{} ({})", name, n_t))
+        .collect();
 
-    // Ok(Obj::Null)
+    return Ok(Obj::Seq(Seq::String(Rc::new(
+        eval_built_in_function_names.join(", "),
+    ))));
 }
 
 pub fn get_all_builtin_functions_for_namespace(
