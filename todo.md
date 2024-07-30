@@ -4,6 +4,7 @@
 * Check the Obj is type functions
 * Struct functions expressions can be made Rc<LumiExpr>? Might save a clone
 * Extend obj and object_type comparisons
+* Be able to add and remove items from a list
 
 * Expr::Call needs to also output stuff, only outputs Obj::Null so it's useless for WASM
 * file input/output functions
