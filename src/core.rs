@@ -151,11 +151,13 @@ pub enum Seq {
 
 pub type LRes<T> = Result<T, LErr>;
 
+// TODO: smaller int, float types
 #[derive(Debug, Clone, PartialEq)]
 pub enum LNum {
     Byte(u8),
-    Int(i64),
-    Float(f64),
+    SmallInt(i16),
+    Int(i32),
+    Float(f32),
 }
 
 #[allow(dead_code)]
@@ -169,6 +171,7 @@ pub enum CompareType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectType {
+    SmallInt,
     Int,
     Float,
     Byte,
@@ -185,7 +188,7 @@ pub enum ObjectType {
 pub struct Struct {
     pub env: Rc<RefCell<Env>>,
     pub params: Rc<Vec<Box<String>>>,
-    pub functions: HashMap<String, LumiExpr>,
+    pub functions: HashMap<String, LumiExpr>, // TODO: LumiExpr can be made Rc<LumiExpr> so we don't need to clone?
     pub properties: Vec<String>,
     // pub body: Rc<Vec<Box<LumiExpr>>>,
 }
@@ -275,6 +278,7 @@ impl Closure {
 impl ObjectType {
     pub fn get_type_name(&self) -> &str {
         match self {
+            ObjectType::SmallInt => "smallint",
             ObjectType::Int => "int",
             ObjectType::Float => "float",
             ObjectType::String => "str",
@@ -302,6 +306,7 @@ impl Obj {
 
     pub fn is_type(&self, obj_type: &ObjectType) -> bool {
         match obj_type {
+            ObjectType::SmallInt => self.is_smallint(),
             ObjectType::Int => self.is_int(),
             ObjectType::Float => self.is_float(),
             ObjectType::String => self.is_string(),
@@ -333,6 +338,7 @@ impl Obj {
             Obj::Null => "nill",
             Obj::Bool(_) => "bool",
             Obj::Num(n) => match n {
+                LNum::SmallInt(_) => "smallint",
                 LNum::Int(_) => "int",
                 LNum::Float(_) => "float",
                 LNum::Byte(_) => "byte",
@@ -347,7 +353,7 @@ impl Obj {
         }
     }
 
-    pub fn get_int_val(&self) -> Result<i64, LErr> {
+    pub fn get_int_val(&self) -> Result<i32, LErr> {
         match self {
             Obj::Num(lnum) => match lnum {
                 LNum::Int(i) => Ok(*i),
@@ -361,7 +367,7 @@ impl Obj {
         }
     }
 
-    pub fn get_float_val(&self) -> Result<f64, LErr> {
+    pub fn get_float_val(&self) -> Result<f32, LErr> {
         match self {
             Obj::Num(lnum) => match lnum {
                 LNum::Float(i) => Ok(*i),
@@ -403,9 +409,9 @@ impl Obj {
         }
     }
 
-    pub fn get_num_value(&self, start: CodeLoc, end: CodeLoc) -> Result<f64, LErr> {
+    pub fn get_num_value(&self, start: CodeLoc, end: CodeLoc) -> Result<f32, LErr> {
         match self {
-            Obj::Num(LNum::Int(i)) => Ok(*i as f64),
+            Obj::Num(LNum::Int(i)) => Ok(*i as f32),
             Obj::Num(LNum::Float(f)) => Ok(*f),
             _ => Err(LErr::runtime_error(
                 "A number was expected.".to_string(),
@@ -429,6 +435,7 @@ impl Obj {
             Obj::Null => Ok(ObjectType::None),
             Obj::Bool(_) => Ok(ObjectType::Bool),
             Obj::Num(lnum) => match lnum {
+                LNum::SmallInt(_) => Ok(ObjectType::SmallInt),
                 LNum::Int(_) => Ok(ObjectType::Int),
                 LNum::Float(_) => Ok(ObjectType::Float),
                 LNum::Byte(_) => Ok(ObjectType::Byte),
@@ -454,6 +461,16 @@ impl Obj {
                 "Object type {} does not have a defautl value.",
                 object_type.get_type_name()
             ))),
+        }
+    }
+
+    fn is_smallint(&self) -> bool {
+        match self {
+            Obj::Num(n) => match n {
+                LNum::SmallInt(_) => true,
+                _ => false,
+            },
+            _ => false,
         }
     }
 
@@ -530,6 +547,7 @@ impl Obj {
             Obj::Null => {}
             Obj::Bool(v) => println!("{}", v),
             Obj::Num(v) => match v {
+                LNum::SmallInt(i) => println!("{}", i),
                 LNum::Int(i) => println!("{}", i),
                 LNum::Float(f) => println!("{}", f),
                 LNum::Byte(b) => println!("{}", b),
@@ -564,6 +582,7 @@ impl Obj {
             }
             Obj::Bool(v) => format!("{}", v),
             Obj::Num(v) => match v {
+                LNum::SmallInt(i) => format!("{}", i),
                 LNum::Int(i) => format!("{}", i),
                 LNum::Float(f) => format!("{}", f),
                 LNum::Byte(b) => format!("{}", b),
@@ -599,11 +618,11 @@ impl Obj {
         }
     }
 
-    pub fn i64(n: i64) -> Self {
+    pub fn i32(n: i32) -> Self {
         Obj::Num(LNum::Int(n))
     }
 
-    pub fn f64(n: f64) -> Self {
+    pub fn f32(n: f32) -> Self {
         Obj::Num(LNum::Float(n))
     }
 }
@@ -630,13 +649,15 @@ impl LNum {
     pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
             LNum::Float(f) => *f,
-            LNum::Int(i) => *i as f64,
-            LNum::Byte(b) => *b as f64,
+            LNum::SmallInt(i) => *i as f32,
+            LNum::Int(i) => *i as f32,
+            LNum::Byte(b) => *b as f32,
         };
         let f2 = match num2 {
             LNum::Float(f) => *f,
-            LNum::Int(i) => *i as f64,
-            LNum::Byte(b) => *b as f64,
+            LNum::SmallInt(i) => *i as f32,
+            LNum::Int(i) => *i as f32,
+            LNum::Byte(b) => *b as f32,
         };
 
         match compare_type {
@@ -650,6 +671,7 @@ impl LNum {
 
     pub fn get_num_val_usize(&self) -> usize {
         match &self {
+            LNum::SmallInt(i) => *i as usize,
             LNum::Int(i) => *i as usize,
             LNum::Float(f) => *f as usize,
             LNum::Byte(b) => *b as usize,
@@ -681,7 +703,7 @@ pub fn get_str_from_args_vec_obj(index: usize, args: &Vec<Obj>) -> Result<String
     }
 }
 
-pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> {
+pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i32, LErr> {
     match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::Int) {
@@ -697,7 +719,7 @@ pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> 
     }
 }
 
-pub fn get_float_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<f64, LErr> {
+pub fn get_float_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<f32, LErr> {
     match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::Float) {

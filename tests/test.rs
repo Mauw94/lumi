@@ -2,12 +2,12 @@ use lumi_lib::{execute_examples, quick_eval, Obj};
 
 extern crate lumi_lib;
 
-fn i(n: i64) -> Obj {
-    Obj::i64(n)
+fn i(n: i32) -> Obj {
+    Obj::i32(n)
 }
 
-fn f(n: f64) -> Obj {
-    Obj::f64(n)
+fn f(n: f32) -> Obj {
+    Obj::f32(n)
 }
 
 fn b(x: bool) -> Obj {

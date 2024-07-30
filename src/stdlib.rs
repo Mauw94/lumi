@@ -124,6 +124,7 @@ impl Stringify {
     fn stringify_obj(&self, obj: &Obj, start: CodeLoc, end: CodeLoc) -> Result<String, LErr> {
         match obj {
             Obj::Num(n) => match n {
+                LNum::SmallInt(i) => Ok(i.to_string()),
                 LNum::Int(i) => Ok(i.to_string()),
                 LNum::Float(f) => Ok(f.to_string()),
                 LNum::Byte(b) => Ok(b.to_string()),
@@ -308,10 +309,10 @@ impl Builtin for Len {
 
         if obj.is_string() {
             let res = get_str_from_args_vec_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(res.len() as i64)))
+            Ok(Obj::Num(LNum::Int(res.len() as i32)))
         } else if obj.is_list() {
             let res: Vec<Obj> = get_list_from_arg_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(res.len() as i64)))
+            Ok(Obj::Num(LNum::Int(res.len() as i32)))
         } else {
             Err(LErr::runtime_error(
                 format!(
@@ -408,14 +409,14 @@ impl Builtin for Sum {
             let obj_type = list[0].get_object_type()?;
             match obj_type {
                 ObjectType::Int => {
-                    let vec = vectors::parse_lumi_list_to_rust_vec::<i64>(&list)?;
-                    let sum: i64 = vec.iter().sum();
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<i32>(&list)?;
+                    let sum: i32 = vec.iter().sum();
 
                     return Ok(Obj::Num(LNum::Int(sum)));
                 }
                 ObjectType::Float => {
-                    let vec = vectors::parse_lumi_list_to_rust_vec::<f64>(&list)?;
-                    let sum: f64 = vec.iter().sum();
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<f32>(&list)?;
+                    let sum: f32 = vec.iter().sum();
 
                     return Ok(Obj::Num(LNum::Float(sum)));
                 }
@@ -429,7 +430,7 @@ impl Builtin for Sum {
                     return Ok(Obj::Seq(Seq::String(Rc::new(concatenated))));
                 }
                 ObjectType::List => {
-                    let mut res: Vec<i64> = Vec::new();
+                    let mut res: Vec<i32> = Vec::new();
                     for o in list.iter() {
                         let val = self.run(_env, vec![o.clone()], start, end)?;
                         res.push(val.get_int_val()?);

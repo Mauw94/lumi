@@ -46,6 +46,7 @@ pub fn unary_exp(env: &Rc<RefCell<Env>>, token: &Token, expr: &LumiExpr) -> Resu
         }
         Token::Minus => match rhs {
             Obj::Num(lnum) => match lnum {
+                LNum::SmallInt(v) => return Ok(Obj::Num(LNum::SmallInt(-v))),
                 LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
                 LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
                 LNum::Byte(b) => return Ok(Obj::Num(LNum::Byte(b))), // Cannot negate unsigned

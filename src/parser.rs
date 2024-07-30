@@ -44,8 +44,8 @@ pub enum GetType {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    Int(i64),
-    Float(f64),
+    Int(i32),
+    Float(f32),
     String(String),
     Identifier(String),
     Declare(String, ObjectType, Option<Box<LumiExpr>>),
@@ -491,6 +491,9 @@ impl Parser {
                     end: self.end_loc(),
                     expr: Expr::Literal(LiteralValue::Nil),
                 });
+            }
+            Some(Token::Invalid(err)) => {
+                return Err(LErr::parsing_error(err, self.previous().unwrap()))
             }
             None | _ => {
                 return Err(LErr::parsing_error(

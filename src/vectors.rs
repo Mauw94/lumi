@@ -6,7 +6,7 @@ pub trait FromObj: Sized {
     fn from_obj(obj: &Obj) -> Result<Self, LErr>;
 }
 
-impl FromObj for i64 {
+impl FromObj for i32 {
     fn from_obj(obj: &Obj) -> Result<Self, LErr> {
         obj.get_int_val()
     }
@@ -18,7 +18,7 @@ impl FromObj for String {
     }
 }
 
-impl FromObj for f64 {
+impl FromObj for f32 {
     fn from_obj(obj: &Obj) -> Result<Self, LErr> {
         obj.get_float_val()
     }
