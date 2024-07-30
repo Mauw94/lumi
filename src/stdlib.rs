@@ -174,17 +174,19 @@ impl Builtin for Vars {
 
         let e = try_borrow(env)?;
 
+        let mut res: Vec<String> = Vec::new();
         let mut out = String::new();
         write!(out, "\x1b[33m").ok();
 
         for v in e.vars.iter() {
             writeln!(out, "{} ({:?})", v.0, v.1 .0).ok();
+            res.push(format!("{} ({:?})", v.0, v.1 .0));
         }
         write!(out, "\x1b[0m").ok();
 
         println!("{}", out);
 
-        Ok(Obj::Null)
+        Ok(Obj::Seq(Seq::String(Rc::new(res.join(", ")))))
     }
 
     fn builtin_name(&self) -> &str {
