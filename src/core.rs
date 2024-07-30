@@ -151,12 +151,12 @@ pub enum Seq {
 
 pub type LRes<T> = Result<T, LErr>;
 
-// TODO: smaller int, float types
 #[derive(Debug, Clone, PartialEq)]
 pub enum LNum {
     Byte(u8),
     SmallInt(i16),
     Int(i32),
+    // BigInt(i64), // FIXME
     Float(f32),
 }
 

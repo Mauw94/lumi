@@ -395,7 +395,7 @@ pub fn get_expr(
     strct: &Box<LumiExpr>,
     value: &String,
     args: &Option<Vec<Box<LumiExpr>>>,
-    get_type: &GetType, // FIXME: implement this
+    get_type: &GetType,
 ) -> Result<Obj, LErr> {
     let res = interpreter::evaluate(env, strct)?;
     match res {

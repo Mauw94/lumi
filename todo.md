@@ -1,21 +1,15 @@
 ### TODOS
-* stdlib functions like built_in() also need to output something for wasm
+* Binary op on i32 MAX value should give an error or warning 
+* be able to convert from i32 to i64
+* Check the Obj is type functions
+* Struct functions expressions can be made Rc<LumiExpr>? Might save a clone
+* Extend obj and object_type comparisons
+
 * Expr::Call needs to also output stuff, only outputs Obj::Null so it's useless for WASM
 * file input/output functions
 
 ### BUGS
-struct test() { fn do() { return 123 }} a: int -> test.do() print a
-* running a whole script at once in the console or through calling `run_code(..)` in lib should print a value. Right now it just returns `Obj::Null`
-```
-struct test() {
-    fn something() {
-        return 123
-    }
-}
-
-a: int -> test.something()
-print a
-``` 
+* 
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.

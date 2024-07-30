@@ -30,7 +30,6 @@ fn repl() {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                println!("{:?}", tokens);
                 let mut p = Parser::new(tokens);
                 match p.parse() {
                     Ok(expr) => match evaluate(&env, &expr) {
