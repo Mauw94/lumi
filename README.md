@@ -1,5 +1,4 @@
-README will be edited upon as we plow through this adventure.
-We shall see where this will bring us : )
+# Lumi
 
 ## What's in it?
 
