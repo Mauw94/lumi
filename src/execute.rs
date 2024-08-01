@@ -272,21 +272,21 @@ pub fn for_expr(
     let mut objects: Vec<Obj> = Vec::new();
 
     let mut to = match interpreter::evaluate(env, to_expr) {
-        Ok(o) => match o.get_int_val() {
+        Ok(o) => match o.get_smallint_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
         Err(e) => return Err(e),
     };
     let from = match interpreter::evaluate(env, from_expr) {
-        Ok(o) => match o.get_int_val() {
+        Ok(o) => match o.get_smallint_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
         Err(e) => return Err(e),
     };
     let step = match interpreter::evaluate(env, step_expr) {
-        Ok(o) => match o.get_int_val() {
+        Ok(o) => match o.get_smallint_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
@@ -297,7 +297,7 @@ pub fn for_expr(
         env,
         index.to_string(),
         ObjectType::Int,
-        Obj::Num(LNum::Int(to)),
+        Obj::Num(LNum::SmallInt(to)),
     )?;
     while to <= from {
         for expr in body {
@@ -308,7 +308,7 @@ pub fn for_expr(
             env,
             index.to_string(),
             ObjectType::Int,
-            Obj::Num(LNum::Int(to)),
+            Obj::Num(LNum::SmallInt(to)),
         )?;
     }
 

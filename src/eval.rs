@@ -124,7 +124,11 @@ pub fn exec_binary_op(
 
 fn return_correct_lnum_type(res: f32) -> LRes<Obj> {
     if res.fract() == 0.0 {
-        Ok(Obj::Num(LNum::Int(res as i32)))
+        if LNum::fits_in_i16(res) {
+            Ok(Obj::Num(LNum::SmallInt(res as i16)))
+        } else {
+            Ok(Obj::Num(LNum::Int(res as i32)))
+        }
     } else {
         Ok(Obj::Num(LNum::Float(res)))
     }

@@ -2,8 +2,8 @@ use lumi_lib::{execute_examples, quick_eval, Obj};
 
 extern crate lumi_lib;
 
-fn i(n: i32) -> Obj {
-    Obj::i32(n)
+fn i(n: i16) -> Obj {
+    Obj::i16(n)
 }
 
 fn f(n: f32) -> Obj {
@@ -18,6 +18,8 @@ fn b(x: bool) -> Obj {
 //     Obj::Seq(Seq::String(Rc::new(str)))
 // }
 
+// TODO: keep track of where we are in the testing phase, so when something goes wrong we can print which test failed.
+// TODO: make test to check if smallint and int are created correctly
 // cargo test examples -- --nocapture
 #[test]
 fn examples() {

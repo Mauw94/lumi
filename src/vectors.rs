@@ -6,6 +6,12 @@ pub trait FromObj: Sized {
     fn from_obj(obj: &Obj) -> Result<Self, LErr>;
 }
 
+impl FromObj for i16 {
+    fn from_obj(obj: &Obj) -> Result<Self, LErr> {
+        obj.get_smallint_val()
+    }
+}
+
 impl FromObj for i32 {
     fn from_obj(obj: &Obj) -> Result<Self, LErr> {
         obj.get_int_val()

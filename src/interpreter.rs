@@ -11,6 +11,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
     match &expr.expr {
         Expr::Sequence(exprs) => execute::sequence_expr(env, exprs),
         Expr::Block(exprs) => execute::block_expr(env, exprs),
+        Expr::SmallInt(v) => Ok(Obj::Num(LNum::SmallInt(*v))),
         Expr::Int(v) => Ok(Obj::Num(LNum::Int(*v))),
         Expr::Float(v) => Ok(Obj::Num(LNum::Float(*v))),
         Expr::String(v) => Ok(Obj::Seq(Seq::String(Rc::new(v.to_string())))),

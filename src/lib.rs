@@ -63,7 +63,10 @@ pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
     match evaluate(&env, &parser.parse().unwrap()) {
         Ok(obj) => Ok(obj),
         Err(e) => match e {
-            LErr::Throw(s, _) => Err(LErr::internal_error(s)),
+            LErr::Throw(s, _) => {
+                println!("{:?}", code);
+                Err(LErr::internal_error(s))
+            }
             LErr::Return(_) => Ok(Obj::Null),
         },
     }

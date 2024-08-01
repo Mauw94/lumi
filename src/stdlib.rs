@@ -410,6 +410,12 @@ impl Builtin for Sum {
             let list = obj.get_list_val()?;
             let obj_type = list[0].get_object_type()?;
             match obj_type {
+                ObjectType::SmallInt => {
+                    let vec = vectors::parse_lumi_list_to_rust_vec::<i16>(&list)?;
+                    let sum: i32 = vec.iter().map(|&x| x as i32).sum();
+
+                    return Ok(Obj::Num(LNum::Int(sum)));
+                }
                 ObjectType::Int => {
                     let vec = vectors::parse_lumi_list_to_rust_vec::<i32>(&list)?;
                     let sum: i32 = vec.iter().sum();

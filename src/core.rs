@@ -305,18 +305,28 @@ impl Obj {
     }
 
     pub fn is_type(&self, obj_type: &ObjectType) -> bool {
-        match obj_type {
-            ObjectType::SmallInt => self.is_smallint(),
-            ObjectType::Int => self.is_int(),
-            ObjectType::Float => self.is_float(),
-            ObjectType::String => self.is_string(),
-            ObjectType::Bool => self.is_bool(),
-            ObjectType::List => self.is_list(),
-            ObjectType::Function => self.is_function(),
-            ObjectType::Struct => self.is_struct(),
-            ObjectType::None => true,
-            ObjectType::Namespace => todo!(),
-            ObjectType::Byte => todo!(),
+        // FIXME: this check shhouldn't be here
+        if self.is_smallint() {
+            return match obj_type {
+                ObjectType::SmallInt => true,
+                ObjectType::Int => true,
+                ObjectType::None => true,
+                _ => false,
+            };
+        } else {
+            return match obj_type {
+                ObjectType::SmallInt => self.is_smallint(),
+                ObjectType::Int => self.is_int(),
+                ObjectType::Float => self.is_float(),
+                ObjectType::String => self.is_string(),
+                ObjectType::Bool => self.is_bool(),
+                ObjectType::List => self.is_list(),
+                ObjectType::Function => self.is_function(),
+                ObjectType::Struct => self.is_struct(),
+                ObjectType::None => true,
+                ObjectType::Namespace => todo!(),
+                ObjectType::Byte => todo!(),
+            };
         }
     }
 
@@ -353,9 +363,20 @@ impl Obj {
         }
     }
 
+    pub fn get_smallint_val(&self) -> Result<i16, LErr> {
+        match self {
+            Obj::Num(LNum::SmallInt(i)) => Ok(*i),
+            Obj::Num(LNum::Int(i)) => Ok(*i as i16),
+            _ => Err(LErr::internal_error(
+                "Expected Num to be of type LNum::SmallInt".to_string(),
+            )),
+        }
+    }
+
     pub fn get_int_val(&self) -> Result<i32, LErr> {
         match self {
             Obj::Num(lnum) => match lnum {
+                LNum::SmallInt(i) => Ok(*i as i32), // TODO, FIXME this is a temp solution
                 LNum::Int(i) => Ok(*i),
                 _ => Err(LErr::internal_error(
                     "Expected Num to be of type LNum::int".to_string(),
@@ -411,6 +432,7 @@ impl Obj {
 
     pub fn get_num_value(&self, start: CodeLoc, end: CodeLoc) -> Result<f32, LErr> {
         match self {
+            Obj::Num(LNum::SmallInt(i)) => Ok(*i as f32),
             Obj::Num(LNum::Int(i)) => Ok(*i as f32),
             Obj::Num(LNum::Float(f)) => Ok(*f),
             _ => Err(LErr::runtime_error(
@@ -618,10 +640,12 @@ impl Obj {
         }
     }
 
+    pub fn i16(n: i16) -> Self {
+        Obj::Num(LNum::SmallInt(n))
+    }
     pub fn i32(n: i32) -> Self {
         Obj::Num(LNum::Int(n))
     }
-
     pub fn f32(n: f32) -> Self {
         Obj::Num(LNum::Float(n))
     }
@@ -684,6 +708,10 @@ impl LNum {
 
     pub fn default_float() -> LNum {
         LNum::Float(0.0)
+    }
+
+    pub fn fits_in_i16(f: f32) -> bool {
+        f >= i16::MIN as f32 && f <= i16::MAX as f32
     }
 }
 

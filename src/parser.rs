@@ -44,6 +44,7 @@ pub enum GetType {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
+    SmallInt(i16),
     Int(i32),
     Float(f32),
     String(String),
@@ -84,6 +85,7 @@ impl fmt::Display for LumiExpr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Expr::SmallInt(val) => write!(f, "SMALL_INT {}", val),
             Expr::Int(val) => write!(f, "INT {}", val),
             Expr::Float(val) => write!(f, "FLOAT {}", val),
             Expr::String(val) => write!(f, "STRING {}", val),
@@ -281,6 +283,14 @@ impl Parser {
         let start = self.peek_loc();
 
         match self.current_token() {
+            Some(Token::SmallInt(value)) => {
+                self.advance();
+                return Ok(LumiExpr {
+                    start,
+                    end: self.end_loc(),
+                    expr: Expr::SmallInt(value),
+                });
+            }
             Some(Token::Int(value)) => {
                 self.advance();
                 return Ok(LumiExpr {
@@ -337,18 +347,18 @@ impl Parser {
                                     });
                                 }
                             }
-                            Token::Int(i) => {
+                            Token::SmallInt(i) => {
                                 self.advance();
                                 // for loop
                                 while self.matcher(&[Token::To]) {
                                     let from = LumiExpr {
                                         start,
                                         end: self.end_loc(),
-                                        expr: Expr::Int(i),
+                                        expr: Expr::SmallInt(i),
                                     };
                                     let to = match self.primary() {
                                         Ok(expr) => match expr.expr {
-                                            Expr::Int(_) => expr,
+                                            Expr::SmallInt(_) => expr,
                                             Expr::Identifier(_) => expr,
                                             _ => {
                                                 return Err(LErr::parsing_error(
@@ -367,7 +377,7 @@ impl Parser {
                                     )?;
                                     let step = match self.primary() {
                                         Ok(expr) => match expr.expr {
-                                            Expr::Int(_) => expr,
+                                            Expr::SmallInt(_) => expr,
                                             _ => {
                                                 return Err(LErr::parsing_error(
                                                     "Expected int value after 'step' keyword"

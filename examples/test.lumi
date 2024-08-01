@@ -1,8 +1,3 @@
-struct test() {
-    fn something() {
-        return 123
-    }
-}
+a: list -> [1, 2, 3, 4, 5, 32767]
 
-a: int -> test.something()
-print a
+print sum(a)
