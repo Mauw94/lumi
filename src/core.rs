@@ -5,7 +5,9 @@ use std::{
     rc::Rc,
 };
 
-use crate::{define_var, evaluate, lexer::CodeLoc, Builtin, Env, LocToken, LumiExpr, Namespace};
+use crate::{
+    define_var, evaluate, lexer::CodeLoc, Builtin, Env, LNum, LocToken, LumiExpr, Namespace,
+};
 
 #[derive(Debug)]
 pub enum ErrorLoc {
@@ -151,15 +153,6 @@ pub enum Seq {
 
 pub type LRes<T> = Result<T, LErr>;
 
-#[derive(Debug, Clone, PartialEq)]
-pub enum LNum {
-    Byte(u8),
-    SmallInt(i16),
-    Int(i32),
-    // BigInt(i64), // FIXME
-    Float(f32),
-}
-
 #[allow(dead_code)]
 pub enum CompareType {
     Equal,
@@ -171,7 +164,6 @@ pub enum CompareType {
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum ObjectType {
-    SmallInt,
     Int,
     Float,
     Byte,
@@ -278,7 +270,6 @@ impl Closure {
 impl ObjectType {
     pub fn get_type_name(&self) -> &str {
         match self {
-            ObjectType::SmallInt => "smallint",
             ObjectType::Int => "int",
             ObjectType::Float => "float",
             ObjectType::String => "str",
@@ -305,28 +296,17 @@ impl Obj {
     }
 
     pub fn is_type(&self, obj_type: &ObjectType) -> bool {
-        // FIXME: this check shhouldn't be here
-        if self.is_smallint() {
-            return match obj_type {
-                ObjectType::SmallInt => true,
-                ObjectType::Int => true,
-                ObjectType::None => true,
-                _ => false,
-            };
-        } else {
-            return match obj_type {
-                ObjectType::SmallInt => self.is_smallint(),
-                ObjectType::Int => self.is_int(),
-                ObjectType::Float => self.is_float(),
-                ObjectType::String => self.is_string(),
-                ObjectType::Bool => self.is_bool(),
-                ObjectType::List => self.is_list(),
-                ObjectType::Function => self.is_function(),
-                ObjectType::Struct => self.is_struct(),
-                ObjectType::None => true,
-                ObjectType::Namespace => todo!(),
-                ObjectType::Byte => todo!(),
-            };
+        match obj_type {
+            ObjectType::Int => self.is_int(),
+            ObjectType::Float => self.is_float(),
+            ObjectType::String => self.is_string(),
+            ObjectType::Bool => self.is_bool(),
+            ObjectType::List => self.is_list(),
+            ObjectType::Function => self.is_function(),
+            ObjectType::Struct => self.is_struct(),
+            ObjectType::None => true,
+            ObjectType::Namespace => todo!(),
+            ObjectType::Byte => todo!(),
         }
     }
 
@@ -348,7 +328,6 @@ impl Obj {
             Obj::Null => "nill",
             Obj::Bool(_) => "bool",
             Obj::Num(n) => match n {
-                LNum::SmallInt(_) => "smallint",
                 LNum::Int(_) => "int",
                 LNum::Float(_) => "float",
                 LNum::Byte(_) => "byte",
@@ -363,21 +342,14 @@ impl Obj {
         }
     }
 
-    pub fn get_smallint_val(&self) -> Result<i16, LErr> {
-        match self {
-            Obj::Num(LNum::SmallInt(i)) => Ok(*i),
-            Obj::Num(LNum::Int(i)) => Ok(*i as i16),
-            _ => Err(LErr::internal_error(
-                "Expected Num to be of type LNum::SmallInt".to_string(),
-            )),
-        }
-    }
-
-    pub fn get_int_val(&self) -> Result<i32, LErr> {
+    pub fn get_int_val(&self) -> Result<i64, LErr> {
         match self {
             Obj::Num(lnum) => match lnum {
-                LNum::SmallInt(i) => Ok(*i as i32), // TODO, FIXME this is a temp solution
-                LNum::Int(i) => Ok(*i),
+                LNum::Int(lint) => match lint {
+                    crate::LInt::Small(i) => Ok(*i as i64),
+                    crate::LInt::Big(i) => Ok(*i as i64),
+                    crate::LInt::Long(i) => Ok(*i as i64),
+                },
                 _ => Err(LErr::internal_error(
                     "Expected Num to be of type LNum::int".to_string(),
                 )),
@@ -432,8 +404,11 @@ impl Obj {
 
     pub fn get_num_value(&self, start: CodeLoc, end: CodeLoc) -> Result<f32, LErr> {
         match self {
-            Obj::Num(LNum::SmallInt(i)) => Ok(*i as f32),
-            Obj::Num(LNum::Int(i)) => Ok(*i as f32),
+            Obj::Num(LNum::Int(i)) => match i {
+                crate::LInt::Small(i) => Ok(*i as f32),
+                crate::LInt::Big(i) => Ok(*i as f32),
+                crate::LInt::Long(i) => Ok(*i as f32),
+            },
             Obj::Num(LNum::Float(f)) => Ok(*f),
             _ => Err(LErr::runtime_error(
                 "A number was expected.".to_string(),
@@ -457,7 +432,6 @@ impl Obj {
             Obj::Null => Ok(ObjectType::None),
             Obj::Bool(_) => Ok(ObjectType::Bool),
             Obj::Num(lnum) => match lnum {
-                LNum::SmallInt(_) => Ok(ObjectType::SmallInt),
                 LNum::Int(_) => Ok(ObjectType::Int),
                 LNum::Float(_) => Ok(ObjectType::Float),
                 LNum::Byte(_) => Ok(ObjectType::Byte),
@@ -483,16 +457,6 @@ impl Obj {
                 "Object type {} does not have a defautl value.",
                 object_type.get_type_name()
             ))),
-        }
-    }
-
-    fn is_smallint(&self) -> bool {
-        match self {
-            Obj::Num(n) => match n {
-                LNum::SmallInt(_) => true,
-                _ => false,
-            },
-            _ => false,
         }
     }
 
@@ -569,8 +533,11 @@ impl Obj {
             Obj::Null => {}
             Obj::Bool(v) => println!("{}", v),
             Obj::Num(v) => match v {
-                LNum::SmallInt(i) => println!("{}", i),
-                LNum::Int(i) => println!("{}", i),
+                LNum::Int(i) => match i {
+                    crate::LInt::Small(i) => println!("{}", i),
+                    crate::LInt::Big(i) => println!("{}", i),
+                    crate::LInt::Long(i) => println!("{}", i),
+                },
                 LNum::Float(f) => println!("{}", f),
                 LNum::Byte(b) => println!("{}", b),
             },
@@ -604,8 +571,11 @@ impl Obj {
             }
             Obj::Bool(v) => format!("{}", v),
             Obj::Num(v) => match v {
-                LNum::SmallInt(i) => format!("{}", i),
-                LNum::Int(i) => format!("{}", i),
+                LNum::Int(i) => match i {
+                    crate::LInt::Small(i) => format!("{}", i),
+                    crate::LInt::Big(i) => format!("{}", i),
+                    crate::LInt::Long(i) => format!("{}", i),
+                },
                 LNum::Float(f) => format!("{}", f),
                 LNum::Byte(b) => format!("{}", b),
             },
@@ -641,10 +611,13 @@ impl Obj {
     }
 
     pub fn i16(n: i16) -> Self {
-        Obj::Num(LNum::SmallInt(n))
+        Obj::Num(LNum::Int(crate::LInt::Small(n)))
     }
     pub fn i32(n: i32) -> Self {
-        Obj::Num(LNum::Int(n))
+        Obj::Num(LNum::Int(crate::LInt::Big(n)))
+    }
+    pub fn i64(n: i64) -> Self {
+        Obj::Num(LNum::Int(crate::LInt::Long(n)))
     }
     pub fn f32(n: f32) -> Self {
         Obj::Num(LNum::Float(n))
@@ -668,52 +641,6 @@ impl PartialEq for Obj {
         }
     }
 }
-impl LNum {
-    // TOOD: check byte comparing
-    pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
-        let f1 = match num1 {
-            LNum::Float(f) => *f,
-            LNum::SmallInt(i) => *i as f32,
-            LNum::Int(i) => *i as f32,
-            LNum::Byte(b) => *b as f32,
-        };
-        let f2 = match num2 {
-            LNum::Float(f) => *f,
-            LNum::SmallInt(i) => *i as f32,
-            LNum::Int(i) => *i as f32,
-            LNum::Byte(b) => *b as f32,
-        };
-
-        match compare_type {
-            CompareType::Equal => f1 == f2,
-            CompareType::Greater => f1 > f2,
-            CompareType::GreaterEqual => f1 >= f2,
-            CompareType::Less => f1 < f2,
-            CompareType::LessEqual => f1 <= f2,
-        }
-    }
-
-    pub fn get_num_val_usize(&self) -> usize {
-        match &self {
-            LNum::SmallInt(i) => *i as usize,
-            LNum::Int(i) => *i as usize,
-            LNum::Float(f) => *f as usize,
-            LNum::Byte(b) => *b as usize,
-        }
-    }
-
-    pub fn default_int() -> LNum {
-        LNum::Int(0)
-    }
-
-    pub fn default_float() -> LNum {
-        LNum::Float(0.0)
-    }
-
-    pub fn fits_in_i16(f: f32) -> bool {
-        f >= i16::MIN as f32 && f <= i16::MAX as f32
-    }
-}
 
 pub fn get_str_from_args_vec_obj(index: usize, args: &Vec<Obj>) -> Result<String, LErr> {
     match args.get(index) {
@@ -731,7 +658,7 @@ pub fn get_str_from_args_vec_obj(index: usize, args: &Vec<Obj>) -> Result<String
     }
 }
 
-pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i32, LErr> {
+pub fn get_int_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<i64, LErr> {
     match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::Int) {

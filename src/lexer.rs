@@ -18,8 +18,7 @@ pub struct LocToken {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
     Float(f32),
-    SmallInt(i16),
-    Int(i32),
+    Int(i64),
     String(String),
     Identifier(String),
     IdentifierType(ObjectType),
@@ -214,28 +213,12 @@ impl<'a> Lexer<'a> {
     }
 
     fn try_emit_int(&mut self, number_string: String) {
-        match number_string.parse::<i32>() {
+        match number_string.parse::<i64>() {
             Ok(f) => self.emit(Token::Int(f)),
             Err(e) => self.emit(Token::Invalid(format!(
                 "lexing: invalid token found: {}",
                 e
             ))),
-        }
-    }
-
-    fn try_emit_smallint(&mut self, number_string: String) -> Result<(), ()> {
-        match number_string.parse::<i16>() {
-            Ok(i) => {
-                self.emit(Token::SmallInt(i));
-                Ok(())
-            }
-            Err(e) => {
-                self.emit(Token::Invalid(format!(
-                    "lexing: invalid token found: {}",
-                    e
-                )));
-                Err(())
-            }
         }
     }
 
@@ -306,10 +289,7 @@ impl<'a> Lexer<'a> {
                     }
                 }
             } else {
-                match self.try_emit_smallint(number_string.clone()) {
-                    Ok(_) => (),
-                    Err(_) => self.try_emit_int(number_string),
-                }
+                self.try_emit_int(number_string);
             }
         }
         Ok(())

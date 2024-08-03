@@ -6,7 +6,7 @@ use std::{
 use crate::{
     core::LErr,
     lexer::{CodeLoc, LocToken, Token},
-    ObjectType,
+    LInt, LNum, ObjectType,
 };
 
 // Precedence order, can/will be extended.
@@ -44,8 +44,7 @@ pub enum GetType {
 
 #[derive(Debug, Clone)]
 pub enum Expr {
-    SmallInt(i16),
-    Int(i32),
+    Int(LInt),
     Float(f32),
     String(String),
     Identifier(String),
@@ -85,8 +84,7 @@ impl fmt::Display for LumiExpr {
 impl fmt::Display for Expr {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Expr::SmallInt(val) => write!(f, "SMALL_INT {}", val),
-            Expr::Int(val) => write!(f, "INT {}", val),
+            Expr::Int(val) => write!(f, "INT {:?}", val), //  TODO: match statement
             Expr::Float(val) => write!(f, "FLOAT {}", val),
             Expr::String(val) => write!(f, "STRING {}", val),
             Expr::Identifier(name) => write!(f, "IDNETIFIER {}", name),
@@ -283,20 +281,12 @@ impl Parser {
         let start = self.peek_loc();
 
         match self.current_token() {
-            Some(Token::SmallInt(value)) => {
-                self.advance();
-                return Ok(LumiExpr {
-                    start,
-                    end: self.end_loc(),
-                    expr: Expr::SmallInt(value),
-                });
-            }
             Some(Token::Int(value)) => {
                 self.advance();
                 return Ok(LumiExpr {
                     start,
                     end: self.end_loc(),
-                    expr: Expr::Int(value),
+                    expr: Expr::Int(LInt::new(value)),
                 });
             }
             Some(Token::Float(value)) => {
@@ -347,18 +337,18 @@ impl Parser {
                                     });
                                 }
                             }
-                            Token::SmallInt(i) => {
+                            Token::Int(i) => {
                                 self.advance();
                                 // for loop
                                 while self.matcher(&[Token::To]) {
                                     let from = LumiExpr {
                                         start,
                                         end: self.end_loc(),
-                                        expr: Expr::SmallInt(i),
+                                        expr: Expr::Int(LInt::new(i)),
                                     };
                                     let to = match self.primary() {
                                         Ok(expr) => match expr.expr {
-                                            Expr::SmallInt(_) => expr,
+                                            Expr::Int(_) => expr,
                                             Expr::Identifier(_) => expr,
                                             _ => {
                                                 return Err(LErr::parsing_error(
@@ -377,7 +367,7 @@ impl Parser {
                                     )?;
                                     let step = match self.primary() {
                                         Ok(expr) => match expr.expr {
-                                            Expr::SmallInt(_) => expr,
+                                            Expr::Int(_) => expr,
                                             _ => {
                                                 return Err(LErr::parsing_error(
                                                     "Expected int value after 'step' keyword"

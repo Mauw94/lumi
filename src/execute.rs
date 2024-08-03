@@ -2,8 +2,8 @@ use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
     define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
-    CodeLoc, Env, Expr, Func, GetType, LErr, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType,
-    Seq, Struct, Token, EVAL,
+    CodeLoc, Env, Expr, Func, GetType, LErr, LInt, LNum, LRes, LookupType, LumiExpr, Obj,
+    ObjectType, Seq, Struct, Token, EVAL,
 };
 
 pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Obj> {
@@ -46,8 +46,11 @@ pub fn unary_exp(env: &Rc<RefCell<Env>>, token: &Token, expr: &LumiExpr) -> Resu
         }
         Token::Minus => match rhs {
             Obj::Num(lnum) => match lnum {
-                LNum::SmallInt(v) => return Ok(Obj::Num(LNum::SmallInt(-v))),
-                LNum::Int(v) => return Ok(Obj::Num(LNum::Int(-v))),
+                LNum::Int(v) => match v {
+                    crate::LInt::Small(i) => Ok(Obj::Num(LNum::Int(crate::LInt::Small(-i)))),
+                    crate::LInt::Big(i) => Ok(Obj::Num(LNum::Int(crate::LInt::Big(-i)))),
+                    crate::LInt::Long(i) => Ok(Obj::Num(LNum::Int(crate::LInt::Long(-i)))),
+                },
                 LNum::Float(v) => return Ok(Obj::Num(LNum::Float(-v))),
                 LNum::Byte(b) => return Ok(Obj::Num(LNum::Byte(b))), // Cannot negate unsigned
             },
@@ -272,21 +275,21 @@ pub fn for_expr(
     let mut objects: Vec<Obj> = Vec::new();
 
     let mut to = match interpreter::evaluate(env, to_expr) {
-        Ok(o) => match o.get_smallint_val() {
+        Ok(o) => match o.get_int_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
         Err(e) => return Err(e),
     };
     let from = match interpreter::evaluate(env, from_expr) {
-        Ok(o) => match o.get_smallint_val() {
+        Ok(o) => match o.get_int_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
         Err(e) => return Err(e),
     };
     let step = match interpreter::evaluate(env, step_expr) {
-        Ok(o) => match o.get_smallint_val() {
+        Ok(o) => match o.get_int_val() {
             Ok(v) => v,
             Err(e) => return Err(e),
         },
@@ -297,7 +300,7 @@ pub fn for_expr(
         env,
         index.to_string(),
         ObjectType::Int,
-        Obj::Num(LNum::SmallInt(to)),
+        Obj::Num(LNum::Int(LInt::new(to))),
     )?;
     while to <= from {
         for expr in body {
@@ -308,7 +311,7 @@ pub fn for_expr(
             env,
             index.to_string(),
             ObjectType::Int,
-            Obj::Num(LNum::SmallInt(to)),
+            Obj::Num(LNum::Int(LInt::new(to))),
         )?;
     }
 

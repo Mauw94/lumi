@@ -1,9 +1,9 @@
 use std::rc::Rc;
 
 use crate::{
-    core::{CompareType, LErr, LNum, LRes, Obj},
+    core::{CompareType, LErr, LRes, Obj},
     lexer::{CodeLoc, Token},
-    Seq,
+    LInt, LNum, Seq,
 };
 
 pub fn exec_binary_op(
@@ -124,11 +124,7 @@ pub fn exec_binary_op(
 
 fn return_correct_lnum_type(res: f32) -> LRes<Obj> {
     if res.fract() == 0.0 {
-        if LNum::fits_in_i16(res) {
-            Ok(Obj::Num(LNum::SmallInt(res as i16)))
-        } else {
-            Ok(Obj::Num(LNum::Int(res as i32)))
-        }
+        Ok(Obj::Num(LNum::Int(LInt::new(res as i64))))
     } else {
         Ok(Obj::Num(LNum::Float(res)))
     }

@@ -5,7 +5,7 @@ use chrono::{DateTime, Local};
 use crate::{
     check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
     get_all_namespaces, get_int_from_arg_obj, get_list_from_arg_obj, get_str_from_arg_obj,
-    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LNum, LRes,
+    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
     Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
@@ -124,8 +124,11 @@ impl Stringify {
     fn stringify_obj(&self, obj: &Obj, start: CodeLoc, end: CodeLoc) -> Result<String, LErr> {
         match obj {
             Obj::Num(n) => match n {
-                LNum::SmallInt(i) => Ok(i.to_string()),
-                LNum::Int(i) => Ok(i.to_string()),
+                LNum::Int(i) => match i {
+                    crate::LInt::Small(i) => Ok(i.to_string()),
+                    crate::LInt::Big(i) => Ok(i.to_string()),
+                    crate::LInt::Long(i) => Ok(i.to_string()),
+                },
                 LNum::Float(f) => Ok(f.to_string()),
                 LNum::Byte(b) => Ok(b.to_string()),
             },
@@ -311,10 +314,10 @@ impl Builtin for Len {
 
         if obj.is_string() {
             let res = get_str_from_args_vec_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(res.len() as i32)))
+            Ok(Obj::Num(LNum::Int(LInt::new(res.len() as i64))))
         } else if obj.is_list() {
             let res: Vec<Obj> = get_list_from_arg_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(res.len() as i32)))
+            Ok(Obj::Num(LNum::Int(LInt::new(res.len() as i64))))
         } else {
             Err(LErr::runtime_error(
                 format!(
@@ -410,17 +413,11 @@ impl Builtin for Sum {
             let list = obj.get_list_val()?;
             let obj_type = list[0].get_object_type()?;
             match obj_type {
-                ObjectType::SmallInt => {
-                    let vec = vectors::parse_lumi_list_to_rust_vec::<i16>(&list)?;
-                    let sum: i32 = vec.iter().map(|&x| x as i32).sum();
-
-                    return Ok(Obj::Num(LNum::Int(sum)));
-                }
                 ObjectType::Int => {
                     let vec = vectors::parse_lumi_list_to_rust_vec::<i32>(&list)?;
                     let sum: i32 = vec.iter().sum();
 
-                    return Ok(Obj::Num(LNum::Int(sum)));
+                    return Ok(Obj::Num(LNum::Int(LInt::new(sum as i64))));
                 }
                 ObjectType::Float => {
                     let vec = vectors::parse_lumi_list_to_rust_vec::<f32>(&list)?;
@@ -438,13 +435,13 @@ impl Builtin for Sum {
                     return Ok(Obj::Seq(Seq::String(Rc::new(concatenated))));
                 }
                 ObjectType::List => {
-                    let mut res: Vec<i32> = Vec::new();
+                    let mut res: Vec<i64> = Vec::new();
                     for o in list.iter() {
                         let val = self.run(_env, vec![o.clone()], start, end)?;
                         res.push(val.get_int_val()?);
                     }
 
-                    Ok(Obj::Num(LNum::Int(res.iter().sum())))
+                    Ok(Obj::Num(LNum::Int(LInt::new(res.iter().sum()))))
                 }
                 _ => Err(LErr::internal_error(format!(
                     "Sum on object of type {} is not possible.",

@@ -1,4 +1,5 @@
 ### TODOS
+* be able to see what actual INT we are dealing with (small, big, long)
 * Binary op on i32 MAX value should give an error or warning 
 * be able to convert from i32 to i64
 * Check the Obj is type functions
