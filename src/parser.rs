@@ -6,7 +6,7 @@ use std::{
 use crate::{
     core::LErr,
     lexer::{CodeLoc, LocToken, Token},
-    LInt, LNum, ObjectType,
+    LInt, ObjectType,
 };
 
 // Precedence order, can/will be extended.

@@ -1,3 +1,5 @@
+use num_traits::{Bounded, NumCast};
+
 use crate::CompareType;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -15,7 +17,6 @@ pub enum LInt {
 }
 
 impl LNum {
-    // TOOD: check byte comparing
     pub fn compare_lnums(num1: &LNum, num2: &LNum, compare_type: CompareType) -> bool {
         let f1 = match num1 {
             LNum::Float(f) => *f,
@@ -64,34 +65,28 @@ impl LNum {
     pub fn default_float() -> LNum {
         LNum::Float(0.0)
     }
-
-    pub fn fits_in_i16(f: i64) -> bool {
-        f >= i16::MIN as i64 && f <= i16::MAX as i64
-    }
-
-    pub fn fits_in_i32(f: i64) -> bool {
-        f >= i32::MIN as i64 && f <= i32::MAX as i64
-    }
-
-    pub fn make_int(i: i64) -> LNum {
-        if LNum::fits_in_i16(i) {
-            LNum::Int(LInt::Small(i as i16))
-        } else if LNum::fits_in_i32(i) {
-            LNum::Int(LInt::Big(i as i32))
-        } else {
-            LNum::Int(LInt::Long(i as i64))
-        }
-    }
 }
 
 impl LInt {
     pub fn new(i: i64) -> Self {
-        if LNum::fits_in_i16(i) {
-            LInt::Small(i as i16)
-        } else if LNum::fits_in_i32(i) {
-            LInt::Big(i as i32)
-        } else {
-            LInt::Long(i)
+        match i {
+            _ if Self::fits_in::<i16>(i) => LInt::Small(i as i16),
+            _ if Self::fits_in::<i32>(i) => LInt::Big(i as i32),
+            _ => LInt::Long(i),
         }
+    }
+
+    pub fn get_as_i64(&self) -> i64 {
+        match self {
+            LInt::Small(i) => *i as i64,
+            LInt::Big(i) => *i as i64,
+            LInt::Long(i) => *i as i64,
+        }
+    }
+
+    pub fn fits_in<T: Bounded + NumCast>(f: i64) -> bool {
+        let min = T::min_value().to_i64().unwrap();
+        let max = T::max_value().to_i64().unwrap();
+        f >= min && f <= max
     }
 }
