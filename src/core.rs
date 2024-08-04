@@ -328,7 +328,11 @@ impl Obj {
             Obj::Null => "nill",
             Obj::Bool(_) => "bool",
             Obj::Num(n) => match n {
-                LNum::Int(_) => "int",
+                LNum::Int(lint) => match lint {
+                    crate::LInt::Small(_) => "int (small)",
+                    crate::LInt::Big(_) => "int (big)",
+                    crate::LInt::Long(_) => "int (long)",
+                },
                 LNum::Float(_) => "float",
                 LNum::Byte(_) => "byte",
             },
