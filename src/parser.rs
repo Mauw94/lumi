@@ -545,13 +545,13 @@ impl Parser {
 
     fn call(&mut self) -> Result<LumiExpr, LErr> {
         let mut expr = self.primary()?;
-        let start = self.peek_loc();
+        let start = self.peek_loc();        
 
         loop {
             if self.matcher(&[Token::LeftParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
-                let name = match self.current_token() {
+                    let name = match self.current_token() {
                     Some(Token::Identifier(n)) => n,
                     _ => {
                         return Err(LErr::parsing_error(

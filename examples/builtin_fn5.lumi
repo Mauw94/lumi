@@ -1,6 +1,6 @@
 abc: list -> [12, 13, 15]
 
-a -> sum(abc)
+a -> abc.sum()
 
 if (a == 40) {
     print "gg"

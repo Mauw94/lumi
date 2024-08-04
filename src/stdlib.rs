@@ -6,7 +6,7 @@ use crate::{
     check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
     get_all_namespaces, get_int_from_arg_obj, get_list_from_arg_obj, get_str_from_arg_obj,
     get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
-    Namespace, NamespaceType, Obj, ObjectType, Seq,
+    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 #[derive(Debug)]
@@ -15,19 +15,19 @@ pub struct StdLib;
 impl Namespace for StdLib {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
-        e.insert_builtin(Time, NamespaceType::StdLib);
-        e.insert_builtin(Stringify, NamespaceType::StdLib);
-        e.insert_builtin(Vars, NamespaceType::StdLib);
-        e.insert_builtin(BuiltIn, NamespaceType::StdLib);
-        e.insert_builtin(Namespaces, NamespaceType::StdLib);
-        e.insert_builtin(Typeof, NamespaceType::StdLib);
-        e.insert_builtin(ConcatStr, NamespaceType::StdLib);
-        e.insert_builtin(Substr, NamespaceType::StdLib);
-        e.insert_builtin(Len, NamespaceType::StdLib);
-        e.insert_builtin(ContainsStr, NamespaceType::StdLib);
-        e.insert_builtin(ReplaceStr, NamespaceType::StdLib);
-        e.insert_builtin(Sum, NamespaceType::StdLib);
-        e.insert_builtin(Slice, NamespaceType::StdLib);
+        e.insert_builtin(Time, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(Stringify, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(Vars, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(BuiltIn, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(Namespaces, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(Typeof, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(ConcatStr, NamespaceType::StdLib(LibType::Str));
+        e.insert_builtin(Substr, NamespaceType::StdLib(LibType::Str));
+        e.insert_builtin(Len, NamespaceType::StdLib(LibType::Vec));
+        e.insert_builtin(ContainsStr, NamespaceType::StdLib(LibType::Str));
+        e.insert_builtin(ReplaceStr, NamespaceType::StdLib(LibType::Str));
+        // e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
+        e.insert_builtin(Slice, NamespaceType::StdLib(LibType::Str));
 
         Ok(())
     }
@@ -45,7 +45,7 @@ impl Namespace for StdLib {
         e.remove_builtin(Len.builtin_name())?;
         e.remove_builtin(ContainsStr.builtin_name())?;
         e.remove_builtin(ReplaceStr.builtin_name())?;
-        e.remove_builtin(Sum.builtin_name())?;
+        // e.remove_builtin(Sum.builtin_name())?;
         e.remove_builtin(Slice.builtin_name())?;
 
         Ok(())
@@ -64,7 +64,7 @@ impl Namespace for StdLib {
             Len.builtin_name().to_string(),
             ContainsStr.builtin_name().to_string(),
             ReplaceStr.builtin_name().to_string(),
-            Sum.builtin_name().to_string(),
+            // Sum.builtin_name().to_string(),
         ]
     }
 

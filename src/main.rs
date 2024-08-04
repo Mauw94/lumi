@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use lumi_lib::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, StdLib};
+use lumi_lib::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, StdLib, Vector};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -71,6 +71,7 @@ fn setup_env() -> Rc<RefCell<Env>> {
     initialize(&mut e);
     let ref_e = Rc::new(RefCell::new(e));
     StdLib.load_functions(&ref_e).unwrap();
+    Vector.load_functions(&ref_e).unwrap();
     ref_e
 }
 

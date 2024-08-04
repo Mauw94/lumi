@@ -79,6 +79,7 @@ fn setup_env() -> Rc<RefCell<Env>> {
     initialize(&mut e);
     let ref_e = Rc::new(RefCell::new(e));
     StdLib.load_functions(&ref_e).unwrap();
+    Vector.load_functions(&ref_e).unwrap();
     ref_e
 }
 
@@ -183,7 +184,7 @@ fn check_args(
         ));
     } else if args.len() < min {
         return Err(LErr::runtime_error(
-            format!("Expected at least 1 argument."),
+            format!("Expected at least {} arguments.", min),
             start,
             end,
         ));

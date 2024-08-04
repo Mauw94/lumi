@@ -395,51 +395,106 @@ pub fn declare_expr(
 
 pub fn get_expr(
     env: &Rc<RefCell<Env>>,
-    strct: &Box<LumiExpr>,
-    value: &String,
+    callee: &Box<LumiExpr>,
+    func_name: &String,
     args: &Option<Vec<Box<LumiExpr>>>,
     get_type: &GetType,
 ) -> Result<Obj, LErr> {
-    let res = interpreter::evaluate(env, strct)?;
-    match res {
+    let res = interpreter::evaluate(env, callee)?;
+    match res.clone() {
         Obj::Struct(mut s) => match get_type {
             GetType::Property => {
-                let var = lookup(&s.env, value, strct.start, strct.end, LookupType::Var)?;
+                let var = lookup(&s.env, func_name, callee.start, callee.end, LookupType::Var)?;
                 return Ok(var.1);
             }
-            GetType::Function => match s.find_method(value, strct.start, strct.end) {
+            GetType::Function => match s.find_method(func_name, callee.start, callee.end) {
                 Ok(m) => match interpreter::evaluate(&s.env, &m)? {
                     Obj::Func(f) => match *f {
                         Func::Closure(closure) => {
-                            return execute_closure_func_call(strct, closure, args, &s.env)
+                            return execute_closure_func_call(callee, closure, args, &s.env)
                         }
                         _ => {
                             return Err(LErr::runtime_error(
                                 "Expect closure".to_string(),
-                                strct.start,
-                                strct.end,
+                                callee.start,
+                                callee.end,
                             ))
                         }
                     },
                     _ => {
                         return Err(LErr::runtime_error(
                             "Expected a function object".to_string(),
-                            strct.start,
-                            strct.start,
+                            callee.start,
+                            callee.start,
                         ))
                     }
                 },
                 Err(err) => return Err(err),
             },
         },
+        // TODO: this needs to move somehow to a separate GET for vectors only
+        // TODO keep a list of functions that are only available to a vec
+        Obj::Seq(Seq::List(_lst)) => {
+            execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &res)
+        }
+        Obj::Seq(Seq::String(_s)) => {
+            execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &res)
+        }
         _ => {
             return Err(LErr::runtime_error(
-                "Expected a struct here.".to_string(),
-                strct.start,
-                strct.end,
+                "Expected a struct here.".to_string(), // FIXME can also be a list or another var
+                callee.start,
+                callee.end,
             ));
         }
     }
+}
+
+fn execute_lib_function(
+    env: &Rc<RefCell<Env>>,
+    func_name: &String,
+    callee: &Box<LumiExpr>,
+    args: &Vec<Box<LumiExpr>>,
+    res: &Obj,
+) -> Result<Obj, LErr> {
+    let built_in = lookup(
+        &env,
+        func_name,
+        callee.start,
+        callee.end,
+        LookupType::Function,
+    )?;
+    match built_in.1 {
+        Obj::Func(f) => match *f {
+            Func::Builtin(b) => {
+                if args.is_empty() {
+                    return b.run(env, vec![res.clone()], callee.start, callee.end);
+                } else {
+                    let mut arguments = args
+                        .into_iter()
+                        .map(|a| interpreter::evaluate(env, &a))
+                        .collect::<Result<Vec<Obj>, LErr>>()?;
+                    // Add the object we call this function on as the first argument in the vec.
+                    arguments.insert(0, res.clone());
+                    return b.run(env, arguments, callee.start, callee.end);
+                }
+            }
+            _ => {
+                return Err(LErr::runtime_error(
+                    "Expected a built_in function call here.".to_string(),
+                    callee.start,
+                    callee.end,
+                ))
+            }
+        },
+        _ => {
+            return Err(LErr::runtime_error(
+                "Callee is not a function.".to_string(),
+                callee.start,
+                callee.end,
+            ))
+        }
+    };
 }
 
 fn execute_closure_func_call(

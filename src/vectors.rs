@@ -1,6 +1,9 @@
 use std::rc::Rc;
 
-use crate::{LErr, LNum, LRes, Obj, Seq};
+use crate::{
+    check_args, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType,
+    Obj, ObjectType, Seq,
+};
 
 pub trait FromObj: Sized {
     fn from_obj(obj: &Obj) -> Result<Self, LErr>;
@@ -57,4 +60,115 @@ where
 pub fn parse_u8vec_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
     let lumi_vec: Vec<Obj> = bytes.iter().map(|b| Obj::Num(LNum::Byte(*b))).collect();
     Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
+}
+
+#[derive(Debug)]
+pub struct Vector;
+
+impl Namespace for Vector {
+    fn load_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
+        let mut e = env.borrow_mut();
+
+        e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
+
+        Ok(())
+    }
+
+    fn unload_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
+        let mut e = env.borrow_mut();
+
+        e.remove_builtin(Sum.builtin_name())?;
+
+        Ok(())
+    }
+
+    fn get_function_names(&self) -> Vec<String> {
+        todo!()
+    }
+
+    fn namespace_name(&self) -> &str {
+        todo!()
+    }
+}
+
+#[derive(Debug)]
+struct Sum;
+
+impl Builtin for Sum {
+    fn run(
+        &self,
+        env: &Rc<std::cell::RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let obj = args.get(0).unwrap();
+        if obj.is_list() {
+            let list = obj.get_list_val()?;
+            let obj_type = list[0].get_object_type()?;
+            match obj_type {
+                ObjectType::Int => {
+                    let vec = crate::vectors::parse_lumi_list_to_rust_vec::<i32>(&list)?;
+                    let sum: i32 = vec.iter().sum();
+
+                    return Ok(Obj::Num(LNum::Int(LInt::new(sum as i64))));
+                }
+                ObjectType::Float => {
+                    let vec = crate::vectors::parse_lumi_list_to_rust_vec::<f32>(&list)?;
+                    let sum: f32 = vec.iter().sum();
+
+                    return Ok(Obj::Num(LNum::Float(sum)));
+                }
+                ObjectType::String => {
+                    let vec = crate::vectors::parse_lumi_list_to_rust_vec::<String>(&list)?;
+                    let concatenated: String = vec.iter().fold(String::new(), |mut acc, s| {
+                        acc.push_str(&s);
+                        acc
+                    });
+
+                    return Ok(Obj::Seq(Seq::String(Rc::new(concatenated))));
+                }
+                ObjectType::List => {
+                    let mut res: Vec<i64> = Vec::new();
+                    for o in list.iter() {
+                        let val = self.run(env, vec![o.clone()], start, end)?;
+                        res.push(val.get_int_val()?);
+                    }
+
+                    Ok(Obj::Num(LNum::Int(LInt::new(res.iter().sum()))))
+                }
+                _ => Err(LErr::internal_error(format!(
+                    "Sum on object of type {} is not possible.",
+                    obj_type.get_type_name()
+                ))),
+            }
+        } else {
+            Err(LErr::internal_error("Expecting a list.".to_string()))
+        }
+    }
+
+    fn builtin_name(&self) -> &str {
+        "sum"
+    }
+}
+
+#[derive(Debug)]
+struct Len;
+
+impl Builtin for Len {
+    fn run(
+        &self,
+        _env: &Rc<std::cell::RefCell<Env>>,
+        _args: Vec<Obj>,
+        _start: CodeLoc,
+        _end: CodeLoc,
+    ) -> LRes<Obj> {
+        todo!()
+    }
+
+    fn builtin_name(&self) -> &str {
+        "len"
+    }
 }

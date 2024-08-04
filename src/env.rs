@@ -6,19 +6,30 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
-    ObjectType, Seq, StdLib,
+    ObjectType, Seq, StdLib, Vector,
 };
 
 #[derive(Debug)]
 pub enum NamespaceType {
-    StdLib,
+    StdLib(LibType),
     External(String),
+}
+
+#[derive(Debug)]
+pub enum LibType {
+    Std,
+    Str,
+    Vec,
 }
 
 impl NamespaceType {
     fn get_name(&self) -> String {
         match self {
-            NamespaceType::StdLib => format!("stdlib"),
+            NamespaceType::StdLib(lib_type) => match lib_type {
+                LibType::Std => format!("stdlib"),
+                LibType::Str => format!("stdlib (str)"),
+                LibType::Vec => format!("stdilib (vec)"),
+            },
             NamespaceType::External(n) => format!("{}", n),
         }
     }
@@ -119,6 +130,7 @@ impl Env {
 
 pub fn initialize(env: &mut Env) {
     env.insert_namespace(StdLib.namespace_name().to_string(), StdLib);
+    env.insert_namespace(StdLib.namespace_name().to_string(), Vector);
     env.insert_namespace(FileIO.namespace_name().to_string(), FileIO);
 }
 
@@ -144,7 +156,11 @@ pub fn define_function(
     let mut cur_env = try_borrow_mut(env)?;
     cur_env.functions.insert(
         var_name,
-        (obj_type, Box::new(RefCell::new(obj)), NamespaceType::StdLib),
+        (
+            obj_type,
+            Box::new(RefCell::new(obj)),
+            NamespaceType::StdLib(LibType::Std),
+        ),
     );
     Ok(())
 }
