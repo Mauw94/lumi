@@ -33,9 +33,7 @@ fn repl() {
                 let mut p = Parser::new(tokens);
                 match p.parse() {
                     Ok(expr) => match evaluate(&env, &expr) {
-                        Ok(x) => {
-                            x.print_value();
-                        }
+                        Ok(_) | Err(LErr::Return(_)) => {}
                         Err(e) => println!("{}", e.render(&input)),
                     },
                     Err(e) => println!("{}", e.render(&input)),
