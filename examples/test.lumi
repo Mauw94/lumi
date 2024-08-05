@@ -1,3 +1,4 @@
-a: str -> "hello world"
+a: list -> [1, 2, 3]
+a.push(4)
 
-print a.concat_str("hehe xd")
+print a

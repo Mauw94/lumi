@@ -26,7 +26,6 @@ impl Namespace for StdLib {
         e.insert_builtin(Len, NamespaceType::StdLib(LibType::Vec));
         e.insert_builtin(ContainsStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(ReplaceStr, NamespaceType::StdLib(LibType::Str));
-        // e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
         e.insert_builtin(Slice, NamespaceType::StdLib(LibType::Str));
 
         Ok(())
@@ -45,7 +44,6 @@ impl Namespace for StdLib {
         e.remove_builtin(Len.builtin_name())?;
         e.remove_builtin(ContainsStr.builtin_name())?;
         e.remove_builtin(ReplaceStr.builtin_name())?;
-        // e.remove_builtin(Sum.builtin_name())?;
         e.remove_builtin(Slice.builtin_name())?;
 
         Ok(())
@@ -64,7 +62,6 @@ impl Namespace for StdLib {
             Len.builtin_name().to_string(),
             ContainsStr.builtin_name().to_string(),
             ReplaceStr.builtin_name().to_string(),
-            // Sum.builtin_name().to_string(),
         ]
     }
 

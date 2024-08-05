@@ -1,10 +1,12 @@
 ### TODOS
+* Add docs that functions calls are also possible like var.abc() and not only abc(var)
+* add push, pop, 
+* Add default structs.
 * be able to convert from i32 to i64
 * Check the Obj is type functions
 * Struct functions expressions can be made Rc<LumiExpr>? Might save a clone
 * Extend obj and object_type comparisons
 * Be able to add and remove items from a list
-
 * Expr::Call needs to also output stuff, only outputs Obj::Null so it's useless for WASM
 * file input/output functions
 
@@ -19,7 +21,7 @@ String Manipulation Functions: Functions for manipulating strings, such as conca
 
 Mathematical Functions: Standard mathematical functions like trigonometric functions (sin, cos, tan), exponential and logarithmic functions (exp, log), and basic arithmetic operations.
 
-Data Structure Functions: Functions for working with common data structures like arrays, lists, sets, dictionaries/maps, and stacks/queues. This includes operations for insertion, deletion, updating, and accessing elements.
+Data Structure Functions: Functions for working with common data structures like arrays, lists, sets, dictionaries/maps, and stacks/queues. This includes operations for insertion, deletion, updating, and ac  cessing elements.
 
 File Input/Output Functions: Functions for reading from and writing to files, creating directories, listing directory contents, and managing file metadata.
 

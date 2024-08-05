@@ -62,6 +62,12 @@ pub fn parse_u8vec_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
     Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
 }
 
+pub fn get_list_type(lst: Vec<Obj>) -> Result<ObjectType, LErr> {
+    lst.first()
+        .and_then(|first_val| Some(first_val.get_object_type()))
+        .unwrap_or(Ok(ObjectType::None))
+}
+
 #[derive(Debug)]
 pub struct Vector;
 
@@ -70,6 +76,7 @@ impl Namespace for Vector {
         let mut e = env.borrow_mut();
 
         e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
+        e.insert_builtin(Push, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -78,16 +85,20 @@ impl Namespace for Vector {
         let mut e = env.borrow_mut();
 
         e.remove_builtin(Sum.builtin_name())?;
+        e.remove_builtin(Push.builtin_name())?;
 
         Ok(())
     }
 
     fn get_function_names(&self) -> Vec<String> {
-        todo!()
+        vec![
+            Sum.builtin_name().to_string(),
+            Push.builtin_name().to_string(),
+        ]
     }
 
     fn namespace_name(&self) -> &str {
-        todo!()
+        "vector"
     }
 }
 
@@ -170,5 +181,46 @@ impl Builtin for Len {
 
     fn builtin_name(&self) -> &str {
         "len"
+    }
+}
+
+#[derive(Debug)]
+struct Push;
+
+impl Builtin for Push {
+    fn run(
+        &self,
+        _env: &Rc<std::cell::RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(2, 2, &args, start, end)?;
+
+        let mut lst = args.get(0).unwrap().get_list_val()?;
+        let lst_type = get_list_type(lst.clone())?;
+        let val_to_add = args.get(1).unwrap();
+
+        if !val_to_add.is_type(&lst_type) {
+            return Err(LErr::internal_error(format!(
+                "Tried adding '{}' to a list of type: '{}'",
+                val_to_add.get_type_name(),
+                lst_type.get_type_name()
+            )));
+        }
+
+        lst.push(val_to_add.clone());
+
+        // FIXME: need to update the value inside the env
+
+        // let e = try_borrow_mut(&env)?;
+
+        // lookup(env, identifier, start, end, lookup_type);
+
+        Ok(Obj::Seq(Seq::List(Rc::new(lst))))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "push"
     }
 }
