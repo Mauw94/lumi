@@ -161,6 +161,7 @@ pub trait Builtin: Debug {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
+        trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,

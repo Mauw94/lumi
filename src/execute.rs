@@ -226,14 +226,14 @@ pub fn call_expr(
             }
             Func::Builtin(b) => {
                 if args.is_none() {
-                    return b.run(env, Vec::new(), callee.start, callee.end);
+                    return b.run(env, callee, Vec::new(), callee.start, callee.end);
                 } else {
                     let args_unwrapped = args.clone().unwrap();
                     let arguments = args_unwrapped
                         .into_iter()
                         .map(|a| interpreter::evaluate(env, &a))
                         .collect::<Result<Vec<Obj>, LErr>>()?;
-                    return b.run(env, arguments, callee.start, callee.end);
+                    return b.run(env, callee, arguments, callee.start, callee.end);
                 }
             }
             // TODO: parse Call func::namespace whenever 'include + identifier' is called
@@ -468,7 +468,7 @@ fn execute_lib_function(
         Obj::Func(f) => match *f {
             Func::Builtin(b) => {
                 if args.is_empty() {
-                    return b.run(env, vec![res.clone()], callee.start, callee.end);
+                    return b.run(env, callee, vec![res.clone()], callee.start, callee.end);
                 } else {
                     let mut arguments = args
                         .into_iter()
@@ -476,7 +476,7 @@ fn execute_lib_function(
                         .collect::<Result<Vec<Obj>, LErr>>()?;
                     // Add the object we call this function on as the first argument in the vec.
                     arguments.insert(0, res.clone());
-                    return b.run(env, arguments, callee.start, callee.end);
+                    return b.run(env, callee, arguments, callee.start, callee.end);
                 }
             }
             _ => {

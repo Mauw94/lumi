@@ -1,8 +1,8 @@
 use std::rc::Rc;
 
 use crate::{
-    check_args, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType,
-    Obj, ObjectType, Seq,
+    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, Expr, LErr, LInt, LNum, LRes,
+    LibType, LumiExpr, Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 pub trait FromObj: Sized {
@@ -109,6 +109,7 @@ impl Builtin for Sum {
     fn run(
         &self,
         env: &Rc<std::cell::RefCell<Env>>,
+        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -144,7 +145,7 @@ impl Builtin for Sum {
                 ObjectType::List => {
                     let mut res: Vec<i64> = Vec::new();
                     for o in list.iter() {
-                        let val = self.run(env, vec![o.clone()], start, end)?;
+                        let val = self.run(env, _trigger, vec![o.clone()], start, end)?;
                         res.push(val.get_int_val()?);
                     }
 
@@ -172,6 +173,7 @@ impl Builtin for Len {
     fn run(
         &self,
         _env: &Rc<std::cell::RefCell<Env>>,
+        _trigger: &Box<LumiExpr>,
         _args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
@@ -190,7 +192,8 @@ struct Push;
 impl Builtin for Push {
     fn run(
         &self,
-        _env: &Rc<std::cell::RefCell<Env>>,
+        env: &Rc<std::cell::RefCell<Env>>,
+        trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -211,13 +214,25 @@ impl Builtin for Push {
 
         lst.push(val_to_add.clone());
 
-        // FIXME: need to update the value inside the env
+        match &trigger.expr {
+            Expr::Identifier(identifier) => {
+                undefine_var(env, &identifier)?;
+                define_var(
+                    env,
+                    identifier.to_string(),
+                    ObjectType::List,
+                    Obj::Seq(Seq::List(Rc::new(lst.clone()))),
+                )?;
+            }
+            _ => {
+                return Err(LErr::internal_error(format!(
+                    "Expected an identifier here. Found {}",
+                    trigger.expr
+                )))
+            }
+        }
 
-        // let e = try_borrow_mut(&env)?;
-
-        // lookup(env, identifier, start, end, lookup_type);
-
-        Ok(Obj::Seq(Seq::List(Rc::new(lst))))
+        Ok(Obj::Null)
     }
 
     fn builtin_name(&self) -> &str {
