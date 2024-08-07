@@ -124,15 +124,15 @@ When you don't need the namespace anymore and want to clear it up we can call ``
 
 Used like:
 ```
-lumi>test: list -> [1, 2, 3, 4, 5]
-lumi>print test.first()
+lumi> test: list -> [1, 2, 3, 4, 5]
+lumi> print test.first()
 1
 ```
 
 ```
-lumi>test: list -> ["a", "d", "f", "g", "z"]
-lumi>another_var -> test.last()
-lumi>print another_var
+lumi> test: list -> ["a", "d", "f", "g", "z"]
+lumi> another_var -> test.last()
+lumi> print another_var
 "z"
 ```
 
