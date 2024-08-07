@@ -1,4 +1,4 @@
-use lumi_lib::{execute_examples, quick_eval, Obj};
+use lumi_lib::{execute_examples, quick_eval, LInt, LNum, Obj};
 
 extern crate lumi_lib;
 
@@ -96,4 +96,32 @@ fn and() {
 fn declare() {
     assert_eq!(quick_eval("a -> 2").unwrap(), Obj::Null);
     assert_eq!(quick_eval("b-> 5").unwrap(), Obj::Null);
+}
+
+#[test]
+fn list_functions() {
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n print a.first()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(1)))
+    );
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n print a.last()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(3)))
+    );
+}
+
+#[test]
+fn int_results() {
+    assert_eq!(
+        quick_eval("a: int -> 123\n print a").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(123)))
+    );
+    assert_eq!(
+        quick_eval("a: int -> 32768\n print a").unwrap(),
+        Obj::Num(LNum::Int(LInt::Big(32768)))
+    );
+    assert_eq!(
+        quick_eval("a: int -> 2147483648\n print a").unwrap(),
+        Obj::Num(LNum::Int(LInt::Long(2147483648)))
+    );
 }

@@ -45,7 +45,13 @@ lumi> print x[0]
 * Lists: `x: list -> [1, 2, 3, 4, 5]`
 * Dictionaries: `{a: b, c: e}` *not yet implemented*
 * Numbers:
-    * int: `x: int -> 2`  
+    * int: `x: int -> 2` 
+        * small (i16)
+        * big (i32)
+        * long (i64)
+            *int type is automatically created at runtime, no need to specify which int type it will have to be.*
+            *thus* `x: int -> 32768` *will be an i32. Smaller than 32767 will be i16*
+            *and* `x: int -> 2147483648` *will be an i64.*
     * float: `x: float -> 2.0`
 * Strings: `x: str -> "test"`
 * Booleans: `x: bool -> true` 
@@ -109,6 +115,25 @@ After the function we can see of which library the function is a part of.
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
 When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the Env.
+
+
+### List specific functions
+```first()```
+```last()```
+
+Used like:
+```
+lumi>test: list -> [1, 2, 3, 4, 5]
+lumi>print test.first()
+1
+```
+
+```
+lumi>test: list -> ["a", "d", "f", "g", "z"]
+lumi>another_var -> test.last()
+lumi>print another_var
+"z"
+```
 
 ### Loops
 ```

@@ -78,6 +78,7 @@ impl Namespace for Vector {
         e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(First, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -88,6 +89,7 @@ impl Namespace for Vector {
         e.remove_function(Sum.builtin_name())?;
         e.remove_function(Push.extension_name())?;
         e.remove_function(Last.extension_name())?;
+        e.remove_function(First.extension_name())?;
 
         Ok(())
     }
@@ -259,14 +261,38 @@ impl Extension for Last {
 
         let list_val = vec.get_list_val()?;
 
-        if list_val.is_empty() {
-            return Ok(Obj::Null);
-        }
-
-        Ok(list_val.last().unwrap().clone())
+        list_val
+            .last()
+            .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()))
     }
 
     fn extension_name(&self) -> &str {
         "last"
+    }
+}
+
+#[derive(Debug)]
+struct First;
+
+impl Extension for First {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &args, start, end)?;
+
+        let list_val = vec.get_list_val()?;
+        list_val
+            .first()
+            .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()))
+    }
+
+    fn extension_name(&self) -> &str {
+        "first"
     }
 }

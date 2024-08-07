@@ -16,16 +16,18 @@ pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes
         eval.res = results;
         return Ok(res);
     } else {
+        let mut evals: Vec<Obj> = Vec::new();
         for expr in exprs {
             let res = interpreter::evaluate(env, expr)?;
             results.push(res.format_value());
+            evals.push(res);
         }
 
         let mut eval = EVAL.lock().unwrap();
         eval.res = results;
-    }
 
-    Ok(Obj::Null)
+        return Ok(evals.last().unwrap().clone());
+    }
 }
 
 pub fn block_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<Obj, LErr> {

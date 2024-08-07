@@ -1,4 +1,5 @@
 ### TODOS
+* Add tests for some builtin functions
 * Add docs that functions calls are also possible like var.abc() and not only abc(var)
 * add push, pop, 
 * Add default structs.
