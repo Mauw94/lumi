@@ -7,6 +7,7 @@ use std::{
 
 use crate::{
     define_var, evaluate, lexer::CodeLoc, Builtin, Env, LNum, LocToken, LumiExpr, Namespace,
+    VecExten,
 };
 
 #[derive(Debug)]
@@ -217,6 +218,7 @@ impl Struct {
 #[derive(Debug, Clone)]
 pub enum Func {
     Builtin(Rc<dyn Builtin>),
+    Extension(Rc<dyn VecExten>),
     Closure(Box<Closure>),
     Namespace(Rc<dyn Namespace>),
 }
@@ -341,7 +343,12 @@ impl Obj {
                 Seq::List(_) => "list",
             },
             Obj::Output(_) => "nil",
-            Obj::Func(_) => "function",
+            Obj::Func(f) => match **f {
+                Func::Builtin(_) => "builtin",
+                Func::Extension(_) => "extension",
+                Func::Closure(_) => "closure",
+                Func::Namespace(_) => todo!(),
+            },
             Obj::Struct(_) => "struct",
         }
     }
@@ -563,6 +570,7 @@ impl Obj {
                 }
                 Func::Builtin(_) => {}
                 Func::Namespace(_) => {}
+                Func::Extension(_) => {}
             },
             Obj::Struct(s) => println!("{:?}", s),
         }
@@ -607,6 +615,9 @@ impl Obj {
                     format!("null")
                 }
                 Func::Namespace(_) => {
+                    format!("null")
+                }
+                Func::Extension(_) => {
                     format!("null")
                 }
             },

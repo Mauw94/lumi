@@ -1,7 +1,8 @@
 use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use crate::{
-    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env, LErr, LRes, LumiExpr, Namespace, NamespaceType, Obj, Seq
+    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
+    LErr, LRes, Namespace, NamespaceType, Obj, Seq,
 };
 
 #[derive(Debug)]
@@ -35,8 +36,8 @@ impl Namespace for FileIO {
 
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
-        e.remove_builtin(ReadFile.builtin_name())?;
-        e.remove_builtin(ByteToString.builtin_name())?;
+        e.remove_function(ReadFile.builtin_name())?;
+        e.remove_function(ByteToString.builtin_name())?;
 
         Ok(())
     }
@@ -49,7 +50,6 @@ impl Builtin for ReadFile {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -84,7 +84,6 @@ impl Builtin for ByteToString {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,

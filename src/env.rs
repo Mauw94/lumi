@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
-    ObjectType, Seq, StdLib, Vector,
+    ObjectType, Seq, StdLib, VecExten, Vector,
 };
 
 #[derive(Debug)]
@@ -64,6 +64,15 @@ impl Env {
         .unwrap();
     }
 
+    pub fn insert_extension(&mut self, e: impl VecExten + 'static, namespace_type: NamespaceType) {
+        self.insert_function(
+            e.extension_name().to_string(),
+            Obj::Func(Box::new(Func::Extension(Rc::new(e)))),
+            namespace_type,
+        )
+        .unwrap();
+    }
+
     pub fn insert_var(&mut self, key: String, obj_type: ObjectType, obj: Obj) -> LRes<()> {
         self.vars
             .insert(key, (obj_type, Box::new(RefCell::new(obj))));
@@ -105,7 +114,7 @@ impl Env {
         self.parent = Some(env);
     }
 
-    pub fn remove_builtin(&mut self, key: &str) -> Result<(), LErr> {
+    pub fn remove_function(&mut self, key: &str) -> Result<(), LErr> {
         match self.functions.get(key) {
             Some(built_in) => match built_in.0 {
                 ObjectType::Function => {

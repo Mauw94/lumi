@@ -219,25 +219,33 @@ pub fn call_expr(
     let func = interpreter::evaluate(env, callee)?;
     // seems like func(closures) are being put on the stack (LIFO)
     // and thus when we evaluate and reach a return value it still evaluates "older" calls afterwards
-    match func {
+    match func.clone() {
         Obj::Func(f) => match *f {
             Func::Closure(closure) => {
                 return execute_closure_func_call(callee, closure, args, env);
             }
             Func::Builtin(b) => {
                 if args.is_none() {
-                    return b.run(env, callee, Vec::new(), callee.start, callee.end);
+                    return b.run(env, Vec::new(), callee.start, callee.end);
                 } else {
                     let args_unwrapped = args.clone().unwrap();
                     let arguments = args_unwrapped
                         .into_iter()
                         .map(|a| interpreter::evaluate(env, &a))
                         .collect::<Result<Vec<Obj>, LErr>>()?;
-                    return b.run(env, callee, arguments, callee.start, callee.end);
+                    return b.run(env, arguments, callee.start, callee.end);
                 }
             }
-            // TODO: parse Call func::namespace whenever 'include + identifier' is called
-            Func::Namespace(_) => todo!(),
+            _ => {
+                return Err(LErr::runtime_error(
+                    format!(
+                        "Function type {:?} is not callable like this. Consider calling it on the appropriate property or variable.",
+                        func.get_type_name()
+                    ),
+                    callee.start,
+                    callee.end,
+                ))
+            }
         },
         _ => {
             return Err(LErr::runtime_error(
@@ -400,8 +408,8 @@ pub fn get_expr(
     args: &Option<Vec<Box<LumiExpr>>>,
     get_type: &GetType,
 ) -> Result<Obj, LErr> {
-    let res = interpreter::evaluate(env, callee)?;
-    match res.clone() {
+    let eval_res = interpreter::evaluate(env, callee)?;
+    match eval_res.clone() {
         Obj::Struct(mut s) => match get_type {
             GetType::Property => {
                 let var = lookup(&s.env, func_name, callee.start, callee.end, LookupType::Var)?;
@@ -434,11 +442,19 @@ pub fn get_expr(
         },
         // TODO: this needs to move somehow to a separate GET for vectors only
         // TODO keep a list of functions that are only available to a vec
-        Obj::Seq(Seq::List(_lst)) => {
-            execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &res)
-        }
+        Obj::Seq(Seq::List(_lst)) => execute_vec_function(
+            &env,
+            &eval_res,
+            get_callee_var_name(callee)?,
+            func_name,
+            callee.start,
+            callee.end,
+            &args.clone().unwrap(),
+        ),
         Obj::Seq(Seq::String(_s)) => {
-            execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &res)
+            // TODO this can be a custom function for Strings
+            //execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &eval_res)
+            todo!()
         }
         _ => {
             return Err(LErr::runtime_error(
@@ -450,48 +466,73 @@ pub fn get_expr(
     }
 }
 
-fn execute_lib_function(
+fn get_callee_var_name(callee: &Box<LumiExpr>) -> LRes<&str> {
+    match &callee.expr {
+        Expr::Identifier(identifier) => Ok(&identifier),
+        _ => Err(LErr::internal_error(format!(
+            "Expected a var name here. Found {}",
+            callee.expr
+        ))),
+    }
+}
+
+fn execute_vec_function(
     env: &Rc<RefCell<Env>>,
+    eval_res: &Obj,
+    var_name: &str,
     func_name: &String,
-    callee: &Box<LumiExpr>,
+    start: CodeLoc,
+    end: CodeLoc,
     args: &Vec<Box<LumiExpr>>,
-    res: &Obj,
 ) -> Result<Obj, LErr> {
-    let built_in = lookup(
-        &env,
-        func_name,
-        callee.start,
-        callee.end,
-        LookupType::Function,
-    )?;
-    match built_in.1 {
+    let function = lookup(&env, func_name, start, end, LookupType::Function)?;
+    match function.1 {
         Obj::Func(f) => match *f {
             Func::Builtin(b) => {
                 if args.is_empty() {
-                    return b.run(env, callee, vec![res.clone()], callee.start, callee.end);
+                    return b.run(env, vec![eval_res.clone()], start, end);
                 } else {
                     let mut arguments = args
                         .into_iter()
                         .map(|a| interpreter::evaluate(env, &a))
                         .collect::<Result<Vec<Obj>, LErr>>()?;
                     // Add the object we call this function on as the first argument in the vec.
-                    arguments.insert(0, res.clone());
-                    return b.run(env, callee, arguments, callee.start, callee.end);
+                    arguments.insert(0, eval_res.clone());
+                    return b.run(env, arguments, start, end);
                 }
+            }
+            Func::Extension(e) => {
+                if !eval_res.is_list() {
+                    return Err(LErr::runtime_error(
+                        format!("Expected a List object, found {}", eval_res.get_type_name()),
+                        start,
+                        end,
+                    ));
+                }
+
+                let arguments = args
+                    .into_iter()
+                    .map(|a| interpreter::evaluate(env, &a))
+                    .collect::<Result<Vec<Obj>, LErr>>()?;
+
+                return e.run(env, var_name, eval_res.clone(), arguments, start, end);
             }
             _ => {
                 return Err(LErr::runtime_error(
                     "Expected a built_in function call here.".to_string(),
-                    callee.start,
-                    callee.end,
+                    start,
+                    end,
                 ))
             }
         },
         _ => {
             return Err(LErr::runtime_error(
-                "Callee is not a function.".to_string(),
-                callee.start,
-                callee.end,
+                format!(
+                    "Object of type {:?} cannot be used as a function.",
+                    function.1.get_type_name()
+                ),
+                start,
+                end,
             ))
         }
     };

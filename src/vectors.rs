@@ -1,8 +1,8 @@
-use std::rc::Rc;
+use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, Expr, LErr, LInt, LNum, LRes,
-    LibType, LumiExpr, Namespace, NamespaceType, Obj, ObjectType, Seq,
+    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType,
+    Namespace, NamespaceType, Obj, ObjectType, Seq, VecExten,
 };
 
 pub trait FromObj: Sized {
@@ -62,7 +62,7 @@ pub fn parse_u8vec_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
     Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
 }
 
-pub fn get_list_type(lst: Vec<Obj>) -> Result<ObjectType, LErr> {
+pub fn get_list_type(lst: &Vec<Obj>) -> Result<ObjectType, LErr> {
     lst.first()
         .and_then(|first_val| Some(first_val.get_object_type()))
         .unwrap_or(Ok(ObjectType::None))
@@ -76,7 +76,7 @@ impl Namespace for Vector {
         let mut e = env.borrow_mut();
 
         e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
-        e.insert_builtin(Push, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -84,8 +84,8 @@ impl Namespace for Vector {
     fn unload_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
 
-        e.remove_builtin(Sum.builtin_name())?;
-        e.remove_builtin(Push.builtin_name())?;
+        e.remove_function(Sum.builtin_name())?;
+        e.remove_function(Push.extension_name())?;
 
         Ok(())
     }
@@ -93,7 +93,7 @@ impl Namespace for Vector {
     fn get_function_names(&self) -> Vec<String> {
         vec![
             Sum.builtin_name().to_string(),
-            Push.builtin_name().to_string(),
+            Push.extension_name().to_string(),
         ]
     }
 
@@ -109,7 +109,6 @@ impl Builtin for Sum {
     fn run(
         &self,
         env: &Rc<std::cell::RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -145,7 +144,7 @@ impl Builtin for Sum {
                 ObjectType::List => {
                     let mut res: Vec<i64> = Vec::new();
                     for o in list.iter() {
-                        let val = self.run(env, _trigger, vec![o.clone()], start, end)?;
+                        let val = self.run(env, vec![o.clone()], start, end)?;
                         res.push(val.get_int_val()?);
                     }
 
@@ -173,7 +172,6 @@ impl Builtin for Len {
     fn run(
         &self,
         _env: &Rc<std::cell::RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         _args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
@@ -189,20 +187,21 @@ impl Builtin for Len {
 #[derive(Debug)]
 struct Push;
 
-impl Builtin for Push {
+impl VecExten for Push {
     fn run(
         &self,
-        env: &Rc<std::cell::RefCell<Env>>,
-        trigger: &Box<LumiExpr>,
+        env: &Rc<RefCell<Env>>,
+        var_name: &str,
+        vec: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
     ) -> LRes<Obj> {
-        check_args(2, 2, &args, start, end)?;
+        check_args(1, 1, &args, start, end)?;
 
-        let mut lst = args.get(0).unwrap().get_list_val()?;
-        let lst_type = get_list_type(lst.clone())?;
-        let val_to_add = args.get(1).unwrap();
+        let mut list_val = vec.get_list_val()?;
+        let lst_type = get_list_type(&list_val)?;
+        let val_to_add = args.get(0).unwrap();
 
         if !val_to_add.is_type(&lst_type) {
             return Err(LErr::internal_error(format!(
@@ -212,30 +211,30 @@ impl Builtin for Push {
             )));
         }
 
-        lst.push(val_to_add.clone());
+        list_val.push(val_to_add.clone());
 
-        match &trigger.expr {
-            Expr::Identifier(identifier) => {
-                undefine_var(env, &identifier)?;
-                define_var(
-                    env,
-                    identifier.to_string(),
-                    ObjectType::List,
-                    Obj::Seq(Seq::List(Rc::new(lst.clone()))),
-                )?;
-            }
-            _ => {
-                return Err(LErr::internal_error(format!(
-                    "Expected an identifier here. Found {}",
-                    trigger.expr
-                )))
-            }
-        }
-
+        update_var_in_env(
+            env,
+            var_name,
+            Obj::Seq(Seq::List(Rc::new(list_val))),
+            ObjectType::List,
+        )?;
         Ok(Obj::Null)
     }
 
-    fn builtin_name(&self) -> &str {
+    fn extension_name(&self) -> &str {
         "push"
     }
+}
+
+fn update_var_in_env(
+    env: &Rc<RefCell<Env>>,
+    var_name: &str,
+    new_val: Obj,
+    obj_type: ObjectType,
+) -> LRes<bool> {
+    undefine_var(env, var_name)?;
+    define_var(env, var_name.to_string(), obj_type, new_val)?;
+
+    Ok(true)
 }

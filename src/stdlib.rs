@@ -3,7 +3,10 @@ use std::{cell::RefCell, rc::Rc};
 use chrono::{DateTime, Local};
 
 use crate::{
-    check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace, get_all_namespaces, get_int_from_arg_obj, get_list_from_arg_obj, get_str_from_arg_obj, get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, LumiExpr, Namespace, NamespaceType, Obj, ObjectType, Seq
+    check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
+    get_all_namespaces, get_int_from_arg_obj, get_list_from_arg_obj, get_str_from_arg_obj,
+    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
+    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 #[derive(Debug)]
@@ -30,18 +33,18 @@ impl Namespace for StdLib {
 
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
-        e.remove_builtin(Time.builtin_name())?;
-        e.remove_builtin(Stringify.builtin_name())?;
-        e.remove_builtin(Vars.builtin_name())?;
-        e.remove_builtin(BuiltIn.builtin_name())?;
-        e.remove_builtin(Namespaces.builtin_name())?;
-        e.remove_builtin(Typeof.builtin_name())?;
-        e.remove_builtin(ConcatStr.builtin_name())?;
-        e.remove_builtin(Substr.builtin_name())?;
-        e.remove_builtin(Len.builtin_name())?;
-        e.remove_builtin(ContainsStr.builtin_name())?;
-        e.remove_builtin(ReplaceStr.builtin_name())?;
-        e.remove_builtin(Slice.builtin_name())?;
+        e.remove_function(Time.builtin_name())?;
+        e.remove_function(Stringify.builtin_name())?;
+        e.remove_function(Vars.builtin_name())?;
+        e.remove_function(BuiltIn.builtin_name())?;
+        e.remove_function(Namespaces.builtin_name())?;
+        e.remove_function(Typeof.builtin_name())?;
+        e.remove_function(ConcatStr.builtin_name())?;
+        e.remove_function(Substr.builtin_name())?;
+        e.remove_function(Len.builtin_name())?;
+        e.remove_function(ContainsStr.builtin_name())?;
+        e.remove_function(ReplaceStr.builtin_name())?;
+        e.remove_function(Slice.builtin_name())?;
 
         Ok(())
     }
@@ -74,7 +77,6 @@ impl Builtin for Time {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         _args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
@@ -98,7 +100,6 @@ impl Builtin for Stringify {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -165,7 +166,6 @@ impl Builtin for Vars {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         _args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
@@ -201,7 +201,6 @@ impl Builtin for Typeof {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -234,7 +233,6 @@ impl Builtin for ConcatStr {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -261,7 +259,6 @@ impl Builtin for Substr {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -305,7 +302,6 @@ impl Builtin for Len {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -345,7 +341,6 @@ impl Builtin for ContainsStr {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -373,7 +368,6 @@ impl Builtin for ReplaceStr {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -405,7 +399,6 @@ impl Builtin for Sum {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -441,7 +434,7 @@ impl Builtin for Sum {
                 ObjectType::List => {
                     let mut res: Vec<i64> = Vec::new();
                     for o in list.iter() {
-                        let val = self.run(_env, _trigger, vec![o.clone()], start, end)?;
+                        let val = self.run(_env, vec![o.clone()], start, end)?;
                         res.push(val.get_int_val()?);
                     }
 
@@ -469,7 +462,6 @@ impl Builtin for Slice {
     fn run(
         &self,
         _env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
@@ -513,7 +505,6 @@ impl Builtin for BuiltIn {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,
@@ -542,7 +533,6 @@ impl Builtin for Namespaces {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
-        _trigger: &Box<LumiExpr>,
         _args: Vec<Obj>,
         _start: CodeLoc,
         _end: CodeLoc,

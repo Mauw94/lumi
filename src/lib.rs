@@ -161,13 +161,25 @@ pub trait Builtin: Debug {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
-        trigger: &Box<LumiExpr>,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
     ) -> LRes<Obj>;
 
     fn builtin_name(&self) -> &str;
+}
+
+pub trait VecExten: Debug {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj>;
+    fn extension_name(&self) -> &str;
 }
 
 fn check_args(
