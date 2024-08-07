@@ -49,9 +49,10 @@ lumi> print x[0]
         * small (i16)
         * big (i32)
         * long (i64)
+            
             *int type is automatically created at runtime, no need to specify which int type it will have to be.*
-            *thus* `x: int -> 32768` *will be an i32. Smaller than 32767 will be i16*
-            *and* `x: int -> 2147483648` *will be an i64.*
+            *thus* `x: int -> 32768` *will be an i32. Smaller than 32767 will be i16* *and* `x: int -> 2147483648` *will be an i64.*
+
     * float: `x: float -> 2.0`
 * Strings: `x: str -> "test"`
 * Booleans: `x: bool -> true` 
