@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType,
-    Namespace, NamespaceType, Obj, ObjectType, Seq, VecExten,
+    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes,
+    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 pub trait FromObj: Sized {
@@ -77,6 +77,7 @@ impl Namespace for Vector {
 
         e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -86,6 +87,7 @@ impl Namespace for Vector {
 
         e.remove_function(Sum.builtin_name())?;
         e.remove_function(Push.extension_name())?;
+        e.remove_function(Last.extension_name())?;
 
         Ok(())
     }
@@ -94,6 +96,7 @@ impl Namespace for Vector {
         vec![
             Sum.builtin_name().to_string(),
             Push.extension_name().to_string(),
+            Last.extension_name().to_string(),
         ]
     }
 
@@ -187,7 +190,7 @@ impl Builtin for Len {
 #[derive(Debug)]
 struct Push;
 
-impl VecExten for Push {
+impl Extension for Push {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,
@@ -237,4 +240,33 @@ fn update_var_in_env(
     define_var(env, var_name.to_string(), obj_type, new_val)?;
 
     Ok(true)
+}
+
+#[derive(Debug)]
+struct Last;
+
+impl Extension for Last {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &args, start, end)?;
+
+        let list_val = vec.get_list_val()?;
+
+        if list_val.is_empty() {
+            return Ok(Obj::Null);
+        }
+
+        Ok(list_val.last().unwrap().clone())
+    }
+
+    fn extension_name(&self) -> &str {
+        "last"
+    }
 }

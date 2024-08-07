@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
-    ObjectType, Seq, StdLib, VecExten, Vector,
+    ObjectType, Seq, StdLib, Extension, Vector,
 };
 
 #[derive(Debug)]
@@ -64,7 +64,7 @@ impl Env {
         .unwrap();
     }
 
-    pub fn insert_extension(&mut self, e: impl VecExten + 'static, namespace_type: NamespaceType) {
+    pub fn insert_extension(&mut self, e: impl Extension + 'static, namespace_type: NamespaceType) {
         self.insert_function(
             e.extension_name().to_string(),
             Obj::Func(Box::new(Func::Extension(Rc::new(e)))),

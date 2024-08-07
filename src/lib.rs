@@ -169,7 +169,7 @@ pub trait Builtin: Debug {
     fn builtin_name(&self) -> &str;
 }
 
-pub trait VecExten: Debug {
+pub trait Extension: Debug {
     fn run(
         &self,
         env: &Rc<RefCell<Env>>,

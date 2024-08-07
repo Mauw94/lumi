@@ -7,7 +7,7 @@ use std::{
 
 use crate::{
     define_var, evaluate, lexer::CodeLoc, Builtin, Env, LNum, LocToken, LumiExpr, Namespace,
-    VecExten,
+    Extension,
 };
 
 #[derive(Debug)]
@@ -218,7 +218,7 @@ impl Struct {
 #[derive(Debug, Clone)]
 pub enum Func {
     Builtin(Rc<dyn Builtin>),
-    Extension(Rc<dyn VecExten>),
+    Extension(Rc<dyn Extension>),
     Closure(Box<Closure>),
     Namespace(Rc<dyn Namespace>),
 }
