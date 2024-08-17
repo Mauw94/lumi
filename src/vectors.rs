@@ -79,6 +79,7 @@ impl Namespace for Vector {
         e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(First, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Pop, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -90,6 +91,7 @@ impl Namespace for Vector {
         e.remove_function(Push.extension_name())?;
         e.remove_function(Last.extension_name())?;
         e.remove_function(First.extension_name())?;
+        e.remove_function(Pop.extension_name())?;
 
         Ok(())
     }
@@ -99,6 +101,8 @@ impl Namespace for Vector {
             Sum.builtin_name().to_string(),
             Push.extension_name().to_string(),
             Last.extension_name().to_string(),
+            First.extension_name().to_string(),
+            Pop.extension_name().to_string(),
         ]
     }
 
@@ -294,5 +298,40 @@ impl Extension for First {
 
     fn extension_name(&self) -> &str {
         "first"
+    }
+}
+
+#[derive(Debug)]
+struct Pop;
+
+impl Extension for Pop {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &args, start, end)?;
+
+        let mut list_val = vec.get_list_val()?;
+        let result = list_val
+            .pop()
+            .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()));
+
+        update_var_in_env(
+            env,
+            var_name,
+            Obj::Seq(Seq::List(Rc::new(list_val))),
+            ObjectType::List,
+        )?;
+
+        result
+    }
+
+    fn extension_name(&self) -> &str {
+        "pop"
     }
 }

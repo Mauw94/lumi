@@ -1,4 +1,3 @@
 a: list -> [1, 2, 3]
-a.push(4)
-
-print a
+b -> a.pop()
+print b
