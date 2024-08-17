@@ -4,7 +4,7 @@ contents: list ->  read_file("test_files/1.txt")
 
 exclude fileio
 
-length: int -> len(contents)
+length: int -> contents.len()
 
 i: 1 to length step 1 {
     print contents[i - 1]

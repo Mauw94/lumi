@@ -199,6 +199,7 @@ pub fn struct_expr(
                 new_struct.properties.push(var_name.to_string());
                 declare_expr(&new_struct.env, expr, var_name, obj_type)?;
             }
+            // NOTE: Expr::Call shouldn't be possible here. Struct only contains properties or functions
             _ => {
                 return Err(LErr::runtime_error(
                     "Unexpected expression.".to_string(),

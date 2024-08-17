@@ -1,7 +1,7 @@
 struct arrayHelper() {
     b: int -> 2
     fn getArrLen(arr) {
-        return len(arr) + b
+        return arr.len() + b
     }
 }
 

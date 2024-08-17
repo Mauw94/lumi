@@ -76,6 +76,7 @@ impl Namespace for Vector {
         let mut e = env.borrow_mut();
 
         e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Len, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(First, NamespaceType::StdLib(LibType::Vec));
@@ -88,6 +89,7 @@ impl Namespace for Vector {
         let mut e = env.borrow_mut();
 
         e.remove_function(Sum.builtin_name())?;
+        e.remove_function(Len.extension_name())?;
         e.remove_function(Push.extension_name())?;
         e.remove_function(Last.extension_name())?;
         e.remove_function(First.extension_name())?;
@@ -99,6 +101,7 @@ impl Namespace for Vector {
     fn get_function_names(&self) -> Vec<String> {
         vec![
             Sum.builtin_name().to_string(),
+            Len.extension_name().to_string(),
             Push.extension_name().to_string(),
             Last.extension_name().to_string(),
             First.extension_name().to_string(),
@@ -177,18 +180,38 @@ impl Builtin for Sum {
 #[derive(Debug)]
 struct Len;
 
-impl Builtin for Len {
+impl Extension for Len {
     fn run(
         &self,
-        _env: &Rc<std::cell::RefCell<Env>>,
-        _args: Vec<Obj>,
-        _start: CodeLoc,
-        _end: CodeLoc,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
     ) -> LRes<Obj> {
-        todo!()
+        check_args(0, 0, &args, start, end)?;
+
+        // TODO: this needs to be removed from here. These functions only go for vecs
+        if vec.is_string() {
+            let str_val = vec.get_str_val()?;
+            Ok(Obj::Num(LNum::Int(LInt::new(str_val.len() as i64))))
+        } else if vec.is_list() {
+            let list_val = vec.get_list_val()?;
+            Ok(Obj::Num(LNum::Int(LInt::new(list_val.len() as i64))))
+        } else {
+            Err(LErr::runtime_error(
+                format!(
+                    "Argument needs to be of type list or str. Found {}",
+                    vec.get_type_name()
+                ),
+                start,
+                end,
+            ))
+        }
     }
 
-    fn builtin_name(&self) -> &str {
+    fn extension_name(&self) -> &str {
         "len"
     }
 }

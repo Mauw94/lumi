@@ -4,9 +4,9 @@ use chrono::{DateTime, Local};
 
 use crate::{
     check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
-    get_all_namespaces, get_int_from_arg_obj, get_list_from_arg_obj, get_str_from_arg_obj,
-    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
-    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
+    get_all_namespaces, get_int_from_arg_obj, get_str_from_arg_obj, get_str_from_args_vec_obj,
+    try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, Namespace,
+    NamespaceType, Obj, ObjectType, Seq,
 };
 
 #[derive(Debug)]
@@ -23,7 +23,6 @@ impl Namespace for StdLib {
         e.insert_builtin(Typeof, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(ConcatStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(Substr, NamespaceType::StdLib(LibType::Str));
-        e.insert_builtin(Len, NamespaceType::StdLib(LibType::Vec));
         e.insert_builtin(ContainsStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(ReplaceStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(Slice, NamespaceType::StdLib(LibType::Str));
@@ -41,7 +40,6 @@ impl Namespace for StdLib {
         e.remove_function(Typeof.builtin_name())?;
         e.remove_function(ConcatStr.builtin_name())?;
         e.remove_function(Substr.builtin_name())?;
-        e.remove_function(Len.builtin_name())?;
         e.remove_function(ContainsStr.builtin_name())?;
         e.remove_function(ReplaceStr.builtin_name())?;
         e.remove_function(Slice.builtin_name())?;
@@ -59,7 +57,6 @@ impl Namespace for StdLib {
             Typeof.builtin_name().to_string(),
             ConcatStr.builtin_name().to_string(),
             Substr.builtin_name().to_string(),
-            Len.builtin_name().to_string(),
             ContainsStr.builtin_name().to_string(),
             ReplaceStr.builtin_name().to_string(),
         ]
@@ -292,43 +289,6 @@ impl Builtin for Substr {
 
     fn builtin_name(&self) -> &str {
         "substr"
-    }
-}
-
-#[derive(Debug)]
-struct Len;
-
-impl Builtin for Len {
-    fn run(
-        &self,
-        _env: &Rc<RefCell<Env>>,
-        args: Vec<Obj>,
-        start: CodeLoc,
-        end: CodeLoc,
-    ) -> LRes<Obj> {
-        check_args(1, 1, &args, start, end)?;
-        let obj = args.get(0).unwrap();
-
-        if obj.is_string() {
-            let res = get_str_from_args_vec_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(LInt::new(res.len() as i64))))
-        } else if obj.is_list() {
-            let res: Vec<Obj> = get_list_from_arg_obj(0, &args)?;
-            Ok(Obj::Num(LNum::Int(LInt::new(res.len() as i64))))
-        } else {
-            Err(LErr::runtime_error(
-                format!(
-                    "Argument needs to be of type list or str. Found {}",
-                    obj.get_type_name()
-                ),
-                start,
-                end,
-            ))
-        }
-    }
-
-    fn builtin_name(&self) -> &str {
-        "len"
     }
 }
 
