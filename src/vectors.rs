@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, define_var, undefine_var, Builtin, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes,
-    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
+    check_args, define_var, undefine_var, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes, LibType,
+    Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 pub trait FromObj: Sized {
@@ -75,7 +75,7 @@ impl Namespace for Vector {
     fn load_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
 
-        e.insert_builtin(Sum, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Sum, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Len, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Push, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
@@ -88,7 +88,7 @@ impl Namespace for Vector {
     fn unload_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
 
-        e.remove_function(Sum.builtin_name())?;
+        e.remove_function(Sum.extension_name())?;
         e.remove_function(Len.extension_name())?;
         e.remove_function(Push.extension_name())?;
         e.remove_function(Last.extension_name())?;
@@ -100,7 +100,7 @@ impl Namespace for Vector {
 
     fn get_function_names(&self) -> Vec<String> {
         vec![
-            Sum.builtin_name().to_string(),
+            Sum.extension_name().to_string(),
             Len.extension_name().to_string(),
             Push.extension_name().to_string(),
             Last.extension_name().to_string(),
@@ -117,17 +117,19 @@ impl Namespace for Vector {
 #[derive(Debug)]
 struct Sum;
 
-impl Builtin for Sum {
+impl Extension for Sum {
     fn run(
         &self,
-        env: &Rc<std::cell::RefCell<Env>>,
+        env: &Rc<RefCell<Env>>,
+        var_name: &str,
+        _vec: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
     ) -> LRes<Obj> {
-        check_args(1, 1, &args, start, end)?;
+        check_args(0, 0, &args, start, end)?;
 
-        let obj = args.get(0).unwrap();
+        let obj: &Obj = args.get(0).unwrap();
         if obj.is_list() {
             let list = obj.get_list_val()?;
             let obj_type = list[0].get_object_type()?;
@@ -156,7 +158,7 @@ impl Builtin for Sum {
                 ObjectType::List => {
                     let mut res: Vec<i64> = Vec::new();
                     for o in list.iter() {
-                        let val = self.run(env, vec![o.clone()], start, end)?;
+                        let val = self.run(env, var_name, o.clone(), args.clone(), start, end)?;
                         res.push(val.get_int_val()?);
                     }
 
@@ -172,7 +174,7 @@ impl Builtin for Sum {
         }
     }
 
-    fn builtin_name(&self) -> &str {
+    fn extension_name(&self) -> &str {
         "sum"
     }
 }

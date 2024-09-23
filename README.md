@@ -113,6 +113,31 @@ After the function we can see of which library the function is a part of.
 * ```vars (stdlib)```
 * ```read_file (fileio)```
 
+
+### Built-in functions docs
+# STDLIB
+* time
+* stringify
+* vars
+* built_in
+* namespace
+* typeof
+* substr
+* namespaces
+* slice
+* string
+* contains_str
+* replace_str
+* concat_str 
+
+# Extensions (for Vectors)
+* sum
+* len
+* push
+* last
+* first
+* pop
+
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
 When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the Env.

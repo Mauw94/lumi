@@ -1,13 +1,14 @@
 ### TODOS
+* Add extensions(Vector) or extensions(str) as functions to see all the methods that can be used on vectors/strings
+* be able to call something like this docs [function_name], to get docs about a function and how to use it
+* When calling a functions docs, give also examples of the parameters usages
 * Add tests for some builtin functions
 * Add docs that functions calls are also possible like var.abc() and not only abc(var)
-* add push, pop, 
 * Add default structs.
 * be able to convert from i32 to i64
 * Check the Obj is type functions
 * Struct functions expressions can be made Rc<LumiExpr>? Might save a clone
 * Extend obj and object_type comparisons
-* Be able to add and remove items from a list
 * Expr::Call needs to also output stuff, only outputs Obj::Null so it's useless for WASM
 * file input/output functions
 

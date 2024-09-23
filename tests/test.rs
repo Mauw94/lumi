@@ -125,3 +125,8 @@ fn int_results() {
         Obj::Num(LNum::Int(LInt::Long(2147483648)))
     );
 }
+
+#[test]
+fn built_in() {
+    
+}

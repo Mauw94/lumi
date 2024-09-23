@@ -5,17 +5,17 @@ use std::{
 };
 
 use crate::{
-    try_borrow, try_borrow_mut, Builtin, CodeLoc, FileIO, Func, LErr, LRes, Namespace, Obj,
-    ObjectType, Seq, StdLib, Extension, Vector,
+    try_borrow, try_borrow_mut, Builtin, CodeLoc, Extension, FileIO, Func, LErr, LRes, Namespace,
+    Obj, ObjectType, Seq, StdLib, Vector,
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum NamespaceType {
     StdLib(LibType),
     External(String),
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum LibType {
     Std,
     Str,
@@ -28,7 +28,7 @@ impl NamespaceType {
             NamespaceType::StdLib(lib_type) => match lib_type {
                 LibType::Std => format!("stdlib"),
                 LibType::Str => format!("stdlib (str)"),
-                LibType::Vec => format!("stdilib (vec)"),
+                LibType::Vec => format!("stdlib (vec)"),
             },
             NamespaceType::External(n) => format!("{}", n),
         }
@@ -373,7 +373,7 @@ pub fn get_all_builtin_functions(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
                         built_in_function_names
                             .push((b.builtin_name().to_string(), namespace_type.get_name()));
                     }
-                    _ => return Err(LErr::internal_error("Not a function.".to_string())),
+                    _ => {} // Ignore other types of functions that are not built_in functions.
                 },
                 _ => return Err(LErr::internal_error("Not a function.".to_string())),
             }
@@ -435,7 +435,7 @@ pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
         match obj_borrow.clone() {
             Obj::Func(f) => match *f {
                 Func::Namespace(n) => namespace_names.push(n.namespace_name().to_string()),
-                _ => return Err(LErr::internal_error("Not a namespace.".to_string())),
+                _ => {} // Ignore other types of functions that are not namespaces.
             },
             _ => return Err(LErr::internal_error("Not a namespace.".to_string())),
         }
@@ -446,6 +446,46 @@ pub fn get_all_namespaces(env: &Rc<RefCell<Env>>) -> LRes<Obj> {
     }
 
     Ok(Obj::Null)
+}
+
+pub fn get_all_extension_functions(
+    env: &Rc<RefCell<Env>>,
+    lib_type: &Option<NamespaceType>,
+) -> LRes<Obj> {
+    let cur_env = try_borrow(&env)?;
+    let mut extension_names: Vec<(String, String)> = Vec::new();
+
+    for (_key, (obj_type, obj, lib)) in &cur_env.functions {
+        if let ObjectType::Function = obj_type {
+            let obj_borrow = obj.borrow();
+            match obj_borrow.clone() {
+                Obj::Func(f) => match *f {
+                    Func::Extension(b) => {
+                        if lib_type.is_none() {
+                            extension_names.push((b.extension_name().to_string(), lib.get_name()));
+                        } else if lib_type.is_some() && lib_type.as_ref().unwrap() == lib {
+                            extension_names.push((b.extension_name().to_string(), lib.get_name()));
+                        }
+                    }
+                    _ => {} // Ignore other types of functions that are not extension functions.
+                },
+                _ => return Err(LErr::internal_error("Not a function.".to_string())),
+            }
+        }
+    }
+
+    for name in &extension_names {
+        println!("{} ({})", name.0, name.1);
+    }
+
+    let eval_extension_function_names: Vec<String> = extension_names
+        .iter()
+        .map(|(name, n_t)| format!("{} ({})", name, n_t))
+        .collect();
+
+    return Ok(Obj::Seq(Seq::String(Rc::new(
+        eval_extension_function_names.join(", "),
+    ))));
 }
 
 fn find_key_containing_identifier(

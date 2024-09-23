@@ -4,9 +4,9 @@ use chrono::{DateTime, Local};
 
 use crate::{
     check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
-    get_all_namespaces, get_int_from_arg_obj, get_str_from_arg_obj, get_str_from_args_vec_obj,
-    try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, Namespace,
-    NamespaceType, Obj, ObjectType, Seq,
+    get_all_extension_functions, get_all_namespaces, get_int_from_arg_obj, get_str_from_arg_obj,
+    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
+    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
 };
 
 #[derive(Debug)]
@@ -15,12 +15,17 @@ pub struct StdLib;
 impl Namespace for StdLib {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
+
+        // LibType::Std
         e.insert_builtin(Time, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Stringify, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Vars, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(BuiltIn, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Namespaces, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Typeof, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(Extension, NamespaceType::StdLib(LibType::Std));
+
+        // LibType::Str
         e.insert_builtin(ConcatStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(Substr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(ContainsStr, NamespaceType::StdLib(LibType::Str));
@@ -43,6 +48,7 @@ impl Namespace for StdLib {
         e.remove_function(ContainsStr.builtin_name())?;
         e.remove_function(ReplaceStr.builtin_name())?;
         e.remove_function(Slice.builtin_name())?;
+        e.remove_function(Extension.builtin_name())?;
 
         Ok(())
     }
@@ -415,6 +421,9 @@ impl Builtin for Sum {
     }
 }
 
+// Slice takes 3 arguments
+// The list, start index, end index (not incl)
+// Returns a list.
 #[derive(Debug)]
 struct Slice;
 
@@ -449,7 +458,10 @@ impl Builtin for Slice {
 
             return Ok(Obj::Seq(Seq::List(Rc::new(res.to_vec()))));
         } else {
-            return Err(LErr::internal_error("Expected a list.".to_string()));
+            return Err(LErr::internal_error(format!(
+                "Expected a list, found {}",
+                obj.get_type_name()
+            )));
         }
     }
 
@@ -504,5 +516,38 @@ impl Builtin for Namespaces {
 
     fn builtin_name(&self) -> &str {
         "namespaces"
+    }
+}
+
+#[derive(Debug)]
+struct Extension;
+
+// We can pass 'vec' or 'str' here (as a string) to show all extension functions for Vectors or Strings.
+impl Builtin for Extension {
+    fn run(
+        &self,
+        env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 1, &args, start, end)?;
+
+        if args.len() == 0 {
+            get_all_extension_functions(env, &None)?;
+        } else {
+            let extensions_type = &get_str_from_arg_obj(0, &args)? as &str;
+            let lib_type = match extensions_type.to_lowercase().as_str() {
+                "vec" => NamespaceType::StdLib(LibType::Vec),
+                "str" => NamespaceType::StdLib(LibType::Str),
+                _ => NamespaceType::StdLib(LibType::Std),
+            };
+            get_all_extension_functions(env, &Some(lib_type))?;
+        }
+        Ok(Obj::Null)
+    }
+
+    fn builtin_name(&self) -> &str {
+        "extensions"
     }
 }
