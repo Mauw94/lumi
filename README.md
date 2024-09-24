@@ -114,10 +114,10 @@ After the function we can see of which library the function is a part of.
 * ```read_file (fileio)```
 
 
-### Built-in functions docs
-# STDLIB
+# Built-in functions docs
+### StdLib functions
+These functions are not called on an object e.g. ```a: int -> 45 string(a)``` or ```a: str -> "hello world" b -> concat_str(a, "test123")```
 * time
-* stringify
 * vars
 * built_in
 * namespace
@@ -130,7 +130,8 @@ After the function we can see of which library the function is a part of.
 * replace_str
 * concat_str 
 
-# Extensions (for Vectors)
+## Functions for Lists
+These functions are directly called on the list object e.g. ```a: list -> [1, 2, 3] a.pop()```
 * sum
 * len
 * push
