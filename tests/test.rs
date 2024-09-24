@@ -1,4 +1,6 @@
-use lumi_lib::{execute_examples, quick_eval, LInt, LNum, Obj};
+use std::rc::Rc;
+
+use lumi_lib::{execute_examples, quick_eval, LInt, LNum, Obj, Seq};
 
 extern crate lumi_lib;
 
@@ -127,6 +129,57 @@ fn int_results() {
 }
 
 #[test]
-fn built_in() {
-    
+fn built_in_vector_functions() {
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n a.pop()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(3)))
+    );
+
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n a.last()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(3)))
+    );
+
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n a.first()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(1)))
+    );
+
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n a.len()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(3)))
+    );
+
+    assert_eq!(
+        quick_eval("a: list -> [1, 2, 3]\n a.push(5)\n a.len()").unwrap(),
+        Obj::Num(LNum::Int(LInt::Small(4)))
+    );
+}
+
+#[test]
+fn built_in_stdlib_functions() {
+    assert_eq!(
+        quick_eval("a: int -> 44 \n string(a)").unwrap(),
+        Obj::Seq(Seq::String(Rc::new(String::from("44"))))
+    );
+
+    assert_eq!(
+        quick_eval("a: str -> \"hello world\" \n concat_str(a, \"test\")").unwrap(),
+        Obj::Seq(Seq::String(Rc::new(String::from("hello worldtest"))))
+    );
+
+    assert_eq!(
+        quick_eval("a: str -> \"hello world\" \n contains_str(a, \"hello\")").unwrap(),
+        Obj::Bool(true)
+    );
+
+    assert_eq!(
+        quick_eval("a: str -> \"hello world\" \n replace_str(a, \"world\", \"hehe xd\")").unwrap(),
+        Obj::Seq(Seq::String(Rc::new(String::from("hello hehe xd"))))
+    );
+
+    assert_eq!(
+        quick_eval("a: str -> \"hello world\" \n substr(a, 2, 4)").unwrap(),
+        Obj::Seq(Seq::String(Rc::new(String::from("ll"))))
+    );
 }
