@@ -1,4 +1,5 @@
 ### TODOS
+* Give appropriate error when not including a namespace but still calling one of its functions
 * be able to call something like this docs [function_name], to get docs about a function and how to use it
 * When calling a functions docs, give also examples of the parameters usages
 * Add tests for some builtin functions
