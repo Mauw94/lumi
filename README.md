@@ -144,11 +144,13 @@ These functions are directly called on the list object e.g. ```a: list -> [1, 2,
 * ```pop()```
     - Returns the last item of the list and removes it from the list.
 * ```slice(param1, param2)```
-    - Slices a part of the list without removing the elements.
-    
+    - Slices a part of the list without removing the elements. *param1 excluded, param2 included*
+
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
 When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the environment.
+*****
+An example of this can be found in /examples/namespace[1-4].lumi
 
 
 ### List specific functions usages
