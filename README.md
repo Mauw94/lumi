@@ -124,7 +124,6 @@ These functions are not called on an object e.g. ```a: int -> 45 string(a)``` or
 * typeof
 * substr
 * namespaces
-* slice
 * string
 * contains_str
 * replace_str
@@ -132,25 +131,27 @@ These functions are not called on an object e.g. ```a: int -> 45 string(a)``` or
 
 ## Functions for Lists
 These functions are directly called on the list object e.g. ```a: list -> [1, 2, 3] a.pop()```
-* sum
-    Sum the contents of a list. ```list.sum()```
-* len
-    Get the length of a list. ```list.len()```
-* push
-* last
-* first
-* pop
-
+* ```sum()```
+    - Sums contents of a list. Can also be used on a list containing only strings.
+* ```len()```
+    - Gives the length of a list.
+* ```push()```
+    - Adds an item to the end of the list.
+* ```last()```
+    - Returns the last item of the list without removing it from the list.
+* ```first()```
+    - Returns the first item of the list without removing it from the list.
+* ```pop()```
+    - Returns the last item of the list and removes it from the list.
+* ```slice(param1, param2)```
+    - Slices a part of the list without removing the elements.
+    
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
 When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the environment.
 
 
-### List specific functions
-* ```first()```
-* ```last()```
-
-Used like:
+### List specific functions usages
 ```
 lumi> test: list -> [1, 2, 3, 4, 5]
 lumi> print test.first()
@@ -162,6 +163,13 @@ lumi> test: list -> ["a", "d", "f", "g", "z"]
 lumi> another_var -> test.last()
 lumi> print another_var
 "z"
+```
+
+```
+lumi> test: list -> [1, 2, 3, 4, 5]
+lumi> test.push(6)
+lumi> print test.pop()
+6
 ```
 
 ### Loops
