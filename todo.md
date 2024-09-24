@@ -1,5 +1,4 @@
 ### TODOS
-* Add extensions(Vector) or extensions(str) as functions to see all the methods that can be used on vectors/strings
 * be able to call something like this docs [function_name], to get docs about a function and how to use it
 * When calling a functions docs, give also examples of the parameters usages
 * Add tests for some builtin functions

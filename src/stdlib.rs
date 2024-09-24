@@ -30,7 +30,6 @@ impl Namespace for StdLib {
         e.insert_builtin(Substr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(ContainsStr, NamespaceType::StdLib(LibType::Str));
         e.insert_builtin(ReplaceStr, NamespaceType::StdLib(LibType::Str));
-        e.insert_builtin(Slice, NamespaceType::StdLib(LibType::Str));
 
         Ok(())
     }
@@ -47,7 +46,6 @@ impl Namespace for StdLib {
         e.remove_function(Substr.builtin_name())?;
         e.remove_function(ContainsStr.builtin_name())?;
         e.remove_function(ReplaceStr.builtin_name())?;
-        e.remove_function(Slice.builtin_name())?;
         e.remove_function(Extension.builtin_name())?;
 
         Ok(())
@@ -418,55 +416,6 @@ impl Builtin for Sum {
 
     fn builtin_name(&self) -> &str {
         "sum"
-    }
-}
-
-// Slice takes 3 arguments
-// The list, start index, end index (not incl)
-// Returns a list.
-#[derive(Debug)]
-struct Slice;
-
-impl Builtin for Slice {
-    fn run(
-        &self,
-        _env: &Rc<RefCell<Env>>,
-        args: Vec<Obj>,
-        start: CodeLoc,
-        end: CodeLoc,
-    ) -> LRes<Obj> {
-        check_args(3, 3, &args, start, end)?;
-
-        let obj = args.get(0).unwrap();
-        let from_obj = args.get(1).unwrap();
-        let to_obj = args.get(2).unwrap();
-
-        if obj.is_list() {
-            let list = obj.get_list_val()?;
-            let from = from_obj.get_int_val()? as usize;
-            let to = to_obj.get_int_val()? as usize;
-
-            if to > list.len() {
-                return Err(LErr::runtime_error(
-                    format!("Index out of bounds. Index {to}."),
-                    start,
-                    end,
-                ));
-            }
-
-            let res = &list[from..to];
-
-            return Ok(Obj::Seq(Seq::List(Rc::new(res.to_vec()))));
-        } else {
-            return Err(LErr::internal_error(format!(
-                "Expected a list, found {}",
-                obj.get_type_name()
-            )));
-        }
-    }
-
-    fn builtin_name(&self) -> &str {
-        "slice"
     }
 }
 

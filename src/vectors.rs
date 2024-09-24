@@ -81,6 +81,7 @@ impl Namespace for Vector {
         e.insert_extension(Last, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(First, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Pop, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Slice, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -94,6 +95,7 @@ impl Namespace for Vector {
         e.remove_function(Last.extension_name())?;
         e.remove_function(First.extension_name())?;
         e.remove_function(Pop.extension_name())?;
+        e.remove_function(Slice.extension_name())?;
 
         Ok(())
     }
@@ -122,16 +124,15 @@ impl Extension for Sum {
         &self,
         env: &Rc<RefCell<Env>>,
         var_name: &str,
-        _vec: Obj,
+        vec: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,
     ) -> LRes<Obj> {
         check_args(0, 0, &args, start, end)?;
 
-        let obj: &Obj = args.get(0).unwrap();
-        if obj.is_list() {
-            let list = obj.get_list_val()?;
+        if vec.is_list() {
+            let list = vec.get_list_val()?;
             let obj_type = list[0].get_object_type()?;
             match obj_type {
                 ObjectType::Int => {
@@ -358,5 +359,55 @@ impl Extension for Pop {
 
     fn extension_name(&self) -> &str {
         "pop"
+    }
+}
+
+// Slice takes 3 arguments
+// The list, start index, end index (not incl)
+// Returns a list.
+#[derive(Debug)]
+struct Slice;
+
+impl Extension for Slice {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
+        vec: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(2, 2, &args, start, end)?;
+
+        let from_obj = args.get(0).unwrap();
+        let to_obj = args.get(1).unwrap();
+
+        if vec.is_list() {
+            let list = vec.get_list_val()?;
+            let from = from_obj.get_int_val()? as usize;
+            let to = to_obj.get_int_val()? as usize;
+
+            if to > list.len() {
+                return Err(LErr::runtime_error(
+                    format!("Index out of bounds. Index {to}."),
+                    start,
+                    end,
+                ));
+            }
+
+            let res = &list[from..to];
+
+            return Ok(Obj::Seq(Seq::List(Rc::new(res.to_vec()))));
+        } else {
+            return Err(LErr::internal_error(format!(
+                "Expected a list, found {}",
+                vec.get_type_name()
+            )));
+        }
+    }
+
+    fn extension_name(&self) -> &str {
+        "slice"
     }
 }

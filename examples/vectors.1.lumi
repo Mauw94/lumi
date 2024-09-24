@@ -1,0 +1,4 @@
+a: list -> [1, 2, 3, 4, 5]
+b -> a.slice(2, 4)
+typeof(b) // Prints list
+print b // Prints 3, 4
