@@ -133,7 +133,9 @@ These functions are not called on an object e.g. ```a: int -> 45 string(a)``` or
 ## Functions for Lists
 These functions are directly called on the list object e.g. ```a: list -> [1, 2, 3] a.pop()```
 * sum
+    Sum the contents of a list. ```list.sum()```
 * len
+    Get the length of a list. ```list.len()```
 * push
 * last
 * first
@@ -141,7 +143,7 @@ These functions are directly called on the list object e.g. ```a: list -> [1, 2,
 
 ### Or include a namespace for more functionality, such as the FileIO namespace
 These can be used like ```include fileio``` and all of its funtionality will be loaded into the current top environment.
-When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the Env.
+When you don't need the namespace anymore and want to clear it up we can call ```exclude fileio``` and the namespaces will be unloaded from the environment.
 
 
 ### List specific functions
