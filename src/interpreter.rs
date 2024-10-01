@@ -74,6 +74,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
         Expr::Namespace(name, start, end, is_include) => {
             execute::namespace_expr(env, name, start, end, is_include)
         }
+        Expr::Every(list, operator, term) => execute::every_expr(env, list, operator, term),
     }
 }
 

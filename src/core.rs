@@ -294,6 +294,11 @@ impl ObjectType {
 }
 
 impl Obj {
+    pub fn new_list_obj(vec: Vec<f32>) -> Obj {
+        let obj_list: Vec<Obj> = vec.iter().map(|f| Obj::f32(*f)).collect();
+        Obj::Seq(Seq::List(Rc::new(obj_list)))
+    }
+
     pub fn is_same_type(&self, other: &Obj) -> bool {
         match (self, other) {
             (Obj::Null, Obj::Null)
@@ -382,6 +387,11 @@ impl Obj {
     pub fn get_float_val(&self) -> Result<f32, LErr> {
         match self {
             Obj::Num(lnum) => match lnum {
+                LNum::Int(lint) => match lint {
+                    crate::LInt::Small(i) => Ok(*i as f32),
+                    crate::LInt::Big(i) => Ok(*i as f32),
+                    crate::LInt::Long(i) => Ok(*i as f32),
+                },
                 LNum::Float(i) => Ok(*i),
                 _ => Err(LErr::internal_error(
                     "Expected Num to be of type LNum::float".to_string(),

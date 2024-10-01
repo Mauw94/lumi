@@ -1,7 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    define_function, define_struct, define_var, interpreter, lookup, undefine_var, Builtin, Closure, CodeLoc, Env, Expr, Func, GetType, LErr, LInt, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct, Token, EVAL
+    define_function, define_struct, define_var, interpreter, lookup, undefine_var, vectors, Builtin, Closure, CodeLoc, Env, Expr, Func, GetType, LErr, LInt, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct, Token, EVAL
 };
 
 pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Obj> {
@@ -420,6 +420,42 @@ pub fn declare_expr(
             obj_type.to_owned(),
             Obj::get_default_value(&obj_type)?,
         )?),
+    }
+}
+
+pub fn every_expr(env: &Rc<RefCell<Env>>, callee: &Box<LumiExpr>, token: &Token, term: &Box<LumiExpr>) -> Result<Obj, LErr> {
+    let evaluated_list = interpreter::evaluate(env, &callee)?;
+    if !evaluated_list.is_list() {
+        return Err(LErr::runtime_error("The 'every' keyword can only be used after a list expression.".to_string(), callee.start, callee.end));
+    }
+
+    let list = evaluated_list.get_list_val()?;
+    let rust_list = vectors::parse_lumi_list_to_rust_vec::<f32>(&list)?;
+
+    let evaluated_term = interpreter::evaluate(env, &term)?;
+    if !evaluated_term.is_number() {
+        return Err(LErr::runtime_error("Expected a number after the 'every' keyword.".to_string(), term.start, term.end));
+    }
+    let term_in_number = evaluated_term.get_num_value(term.start, term.end)?;
+
+    match token {
+        Token::Star => {
+                let modified_vec: Vec<f32> = rust_list.iter().map(|&x| x * term_in_number).collect();
+                return Ok(Obj::new_list_obj(modified_vec));
+        },
+        Token::Minus => {
+            let modified_vec: Vec<f32> = rust_list.iter().map(|&x| x - term_in_number).collect();
+                return Ok(Obj::new_list_obj(modified_vec));
+        },
+        Token::Plus =>  {
+            let modified_vec: Vec<f32> = rust_list.iter().map(|&x| x + term_in_number).collect();
+                return Ok(Obj::new_list_obj(modified_vec));
+        },
+        Token::Slash => {
+            let modified_vec: Vec<f32> = rust_list.iter().map(|&x| x / term_in_number).collect();
+                return Ok(Obj::new_list_obj(modified_vec));
+        },
+        _ => return Err(LErr::runtime_error(format!("Unexpected token. Found {:?}, but expected either '-, +, * or /'.", token), callee.end, term.start))
     }
 }
 

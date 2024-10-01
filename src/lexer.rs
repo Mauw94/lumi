@@ -65,6 +65,7 @@ pub enum Token {
     Exclude,
     Comment(String),
     Invalid(String),
+    Multiply
 }
 
 pub struct Lexer<'a> {

@@ -73,6 +73,7 @@ pub enum Expr {
     Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
     Print(Box<LumiExpr>),
     Struct(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
+    Every(Box<LumiExpr>, Token, Box<LumiExpr>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -158,6 +159,11 @@ impl fmt::Display for Expr {
                 )
             }
             Expr::Namespace(name, _start, _end, _bool) => write!(f, "NAMESPACE {:?}", name),
+            Expr::Every(list, operator, term) => write!(
+                f,
+                "LIST {:?}, OPERATOR: {:?}, TERM {:?}",
+                list, operator, term
+            ),
         }
     }
 }
@@ -543,15 +549,43 @@ impl Parser {
         });
     }
 
-    fn call(&mut self) -> Result<LumiExpr, LErr> {
+    fn every(&mut self) -> Result<LumiExpr, LErr> {
+        let start = self.peek_loc();
         let mut expr = self.primary()?;
-        let start = self.peek_loc();        
+
+        if self.matcher(&[Token::Every]) {
+            while self.matcher(&[Token::Star, Token::Minus, Token::Plus, Token::Slash]) {
+                match self.previous() {
+                    Some(op) => {
+                        let right = self.term()?;
+                        expr = LumiExpr {
+                            start,
+                            end: self.peek_loc(),
+                            expr: Expr::Every(Box::new(expr), op.token, Box::new(right)),
+                        }
+                    }
+                    None => {
+                        return Err(LErr::parsing_error(
+                            "Expected a term or factor after the 'every' keyword.".to_string(),
+                            self.previous().unwrap(),
+                        ))
+                    }
+                }
+            }
+        }
+
+        Ok(expr)
+    }
+
+    fn call(&mut self) -> Result<LumiExpr, LErr> {
+        let mut expr = self.every()?;
+        let start = self.peek_loc();
 
         loop {
             if self.matcher(&[Token::LeftParen]) {
                 expr = self.finish_call(expr)?;
             } else if self.matcher(&[Token::Dot]) {
-                    let name = match self.current_token() {
+                let name = match self.current_token() {
                     Some(Token::Identifier(n)) => n,
                     _ => {
                         return Err(LErr::parsing_error(
