@@ -6,8 +6,8 @@ use std::{
 };
 
 use crate::{
-    define_var, evaluate, lexer::CodeLoc, Builtin, Env, LNum, LocToken, LumiExpr, Namespace,
-    Extension,
+    define_var, evaluate, lexer::CodeLoc, Builtin, Env, Extension, LNum, LocToken, LumiExpr,
+    Namespace,
 };
 
 #[derive(Debug)]
@@ -144,6 +144,13 @@ pub enum Obj {
     Output(String),
     Func(Box<Func>),
     Struct(Struct),
+    LResult(LResult),
+}
+
+#[derive(Debug, Clone)]
+pub enum LResult {
+    Res(Box<Obj>),
+    Error(String),
 }
 
 #[derive(Debug, Clone)]
@@ -350,6 +357,7 @@ impl Obj {
                 Func::Namespace(_) => todo!(),
             },
             Obj::Struct(_) => "struct",
+            Obj::LResult(_) => "result",
         }
     }
 
@@ -454,6 +462,7 @@ impl Obj {
             Obj::Output(_) => Ok(ObjectType::None),
             Obj::Func(_) => Ok(ObjectType::Function),
             Obj::Struct(_) => Ok(ObjectType::Struct),
+            Obj::LResult(_) => Ok(ObjectType::Bool),
         }
     }
 
@@ -573,6 +582,7 @@ impl Obj {
                 Func::Extension(_) => {}
             },
             Obj::Struct(s) => println!("{:?}", s),
+            Obj::LResult(r) => println!("{:?}", r),
         }
     }
 
@@ -622,6 +632,7 @@ impl Obj {
                 }
             },
             Obj::Struct(s) => format!("{:?}", s),
+            Obj::LResult(r) => format!("{:?}", r),
         }
     }
 

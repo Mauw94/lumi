@@ -1,9 +1,7 @@
 use std::{cell::RefCell, collections::HashMap, rc::Rc};
 
 use crate::{
-    define_function, define_struct, define_var, interpreter, lookup, undefine_var, Closure,
-    CodeLoc, Env, Expr, Func, GetType, LErr, LInt, LNum, LRes, LookupType, LumiExpr, Obj,
-    ObjectType, Seq, Struct, Token, EVAL,
+    define_function, define_struct, define_var, interpreter, lookup, undefine_var, Builtin, Closure, CodeLoc, Env, Expr, Func, GetType, LErr, LInt, LNum, LRes, LookupType, LumiExpr, Obj, ObjectType, Seq, Struct, Token, EVAL
 };
 
 pub fn sequence_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> LRes<Obj> {
@@ -229,14 +227,16 @@ pub fn call_expr(
             }
             Func::Builtin(b) => {
                 if args.is_none() {
-                    return b.run(env, Vec::new(), callee.start, callee.end);
+                    return evaluate_lresult(b, env, Vec::new(), callee.start, callee.end);
                 } else {
                     let args_unwrapped = args.clone().unwrap();
+ 
                     let arguments = args_unwrapped
                         .into_iter()
                         .map(|a| interpreter::evaluate(env, &a))
                         .collect::<Result<Vec<Obj>, LErr>>()?;
-                    return b.run(env, arguments, callee.start, callee.end);
+
+                    return evaluate_lresult(b, env, arguments, callee.start, callee.end);
                 }
             }
             _ => {
@@ -258,6 +258,25 @@ pub fn call_expr(
             ))
         }
     };
+}
+
+fn evaluate_lresult(built_in: Rc<dyn Builtin>, env: &Rc<RefCell<Env>>, arguments: Vec<Obj> , start: CodeLoc, end: CodeLoc) -> Result<Obj, LErr> {
+    match built_in.run(env, arguments, start, end) {
+        Ok(obj) => match obj {
+            
+            Obj::LResult(lresult) => match lresult {
+                crate::LResult::Res(obj) => { 
+                    return Ok(*obj);
+                },
+                crate::LResult::Error(e) => { 
+                    eprintln!("{:?}", e);
+                    return Ok(Obj::Null);
+                },
+            },
+            _ => return Ok(obj)
+        },
+        Err(e) => return Err(e),
+    }
 }
 
 pub fn function_expr(

@@ -2,7 +2,7 @@ use std::{cell::RefCell, fs, path::Path, rc::Rc};
 
 use crate::{
     check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
-    LErr, LRes, Namespace, NamespaceType, Obj, Seq,
+    LErr, LRes, LResult, Namespace, NamespaceType, Obj, Seq,
 };
 
 #[derive(Debug)]
@@ -61,14 +61,21 @@ impl Builtin for ReadFile {
                 let path = get_str_from_args_vec_obj(0, &args)?;
                 let file_loc = Path::new(&path);
                 match fs::read(file_loc) {
-                    Ok(contents) => return vectors::parse_u8vec_to_lumi_vec(contents),
-                    Err(e) => return Err(LErr::internal_error(e.to_string())), // TODO return Err as some sort of new Result object, so we don't exit the program
+                    Ok(contents) => match vectors::parse_u8vec_to_lumi_vec(contents) {
+                        Ok(res) => return Ok(Obj::LResult(LResult::Res(Box::new(res)))),
+                        Err(e) => return Err(e),
+                    },
+                    Err(e) => {
+                        // println!("Error {:?}", e.to_string());
+                        println!("we do return this error here?");
+                        return Ok(Obj::LResult(LResult::Error(e.to_string())));
+                    } // TODO return Err as some sort of new Result object, so we don't exit the program
                 }
             }
             2 => println!("2 args"),
             _ => println!("no args? impossible to get here tho."),
         }
-         
+
         // TODO: use namespace4.lumi as example, if read_file goes wrong the rest of the code should still execute.
         Ok(Obj::Null) // TODO: return a result of sorts
     }

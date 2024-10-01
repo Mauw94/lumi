@@ -4,8 +4,8 @@ struct fileReader() {
 
     fn read() {
         include fileio
-        byte_content -> read_file("test_files/1.txt")
-        file_read = true
+        byte_content -> read_file("test_filess/1.txt")
+        file_read = false
     }
 
     fn  showFileContent() {

@@ -7,7 +7,7 @@ use std::{
     time::Instant,
 };
 
-use lumi_lib::{evaluate, initialize, Env, LErr, Lexer, Namespace, Parser, StdLib, Vector};
+use lumi_lib::{evaluate, initialize, Env, LErr, LResult, Lexer, Namespace, Obj, Parser, StdLib, Vector};
 
 fn prompt(input: &mut String) -> bool {
     input.clear();
@@ -52,6 +52,10 @@ fn run_code(code: &str) {
             let mut p = Parser::new(tokens);
             match p.parse() {
                 Ok(expr) => match evaluate(&env, &expr) {
+                    Ok(Obj::LResult(LResult::Error(e))) => {
+                        println!("are we printing here?");
+                        eprintln!("{:?}", e);
+                    }
                     Ok(_) | Err(LErr::Return(_)) => {}
                     Err(e) => {
                         println!("{}", e.render(&code));
