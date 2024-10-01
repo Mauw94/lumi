@@ -1,10 +1,6 @@
-struct test() {
-    a: str -> "hello world"
+include fileio
+byte_content -> read_file("test_files/1.txt")
 
-    fn do_something() {
-        a = "hello different world"
-        return a
-    }
+if (!is_null(byte_content)) {
+    print "this is not null"
 }
-
-print test.do_something() == "hello different world"

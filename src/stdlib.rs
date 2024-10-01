@@ -24,6 +24,7 @@ impl Namespace for StdLib {
         e.insert_builtin(Namespaces, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Typeof, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Extension, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(IsNull, NamespaceType::StdLib(LibType::Std));
 
         // LibType::Str
         e.insert_builtin(ConcatStr, NamespaceType::StdLib(LibType::Str));
@@ -47,6 +48,7 @@ impl Namespace for StdLib {
         e.remove_function(ContainsStr.builtin_name())?;
         e.remove_function(ReplaceStr.builtin_name())?;
         e.remove_function(Extension.builtin_name())?;
+        e.remove_function(IsNull.builtin_name())?;
 
         Ok(())
     }
@@ -224,6 +226,29 @@ impl Builtin for Typeof {
 
     fn builtin_name(&self) -> &str {
         "typeof"
+    }
+}
+
+#[derive(Debug)]
+struct IsNull;
+
+impl Builtin for IsNull {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let o = args.get(0).unwrap();
+
+        Ok(Obj::Bool(o.is_null()))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "is_null"
     }
 }
 

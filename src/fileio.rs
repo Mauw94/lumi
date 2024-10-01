@@ -66,18 +66,17 @@ impl Builtin for ReadFile {
                         Err(e) => return Err(e),
                     },
                     Err(e) => {
-                        // println!("Error {:?}", e.to_string());
-                        println!("we do return this error here?");
-                        return Ok(Obj::LResult(LResult::Error(e.to_string())));
-                    } // TODO return Err as some sort of new Result object, so we don't exit the program
+                        eprintln!("{:?}", e.to_string());
+                        return Ok(Obj::Null);
+                        // return Ok(Obj::LResult(LResult::Error(e.to_string())));
+                    }
                 }
             }
             2 => println!("2 args"),
             _ => println!("no args? impossible to get here tho."),
         }
 
-        // TODO: use namespace4.lumi as example, if read_file goes wrong the rest of the code should still execute.
-        Ok(Obj::Null) // TODO: return a result of sorts
+        Ok(Obj::Null)
     }
 
     fn builtin_name(&self) -> &str {

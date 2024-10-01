@@ -517,6 +517,13 @@ impl Obj {
         }
     }
 
+    pub fn is_null(&self) -> bool {
+        match self {
+            Obj::Null => true,
+            _ => false,
+        }
+    }
+
     fn is_bool(&self) -> bool {
         match self {
             Obj::Bool(_) => true,
