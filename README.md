@@ -14,8 +14,22 @@
 * Functions `fn add(x, b) { return a + b }`
 
 ## Build wasm-pack
+To build the project as WASM, run the following command:
 * run command wasm-pack build --target web
-* use files in pkg folder
+
+The wasm files need are found inside the pkg folder.
+
+## Syntactic suger
+When working with a list of numbers we can use the ```every``` keyword. 
+
+e.g. 
+```
+a: list -> [1, 2, 3, 4, 5]
+b -> a every * 2
+```
+
+All the elements in ```a``` will now be multiplied by 2 and collected in a new vec ```b```.
+Other operators supported with the ```every``` keyword are +, -, / and *
 
 ## Variables and assignments
 Declare with ```->``` and assign with ```=```
