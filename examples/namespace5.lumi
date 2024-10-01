@@ -1,0 +1,17 @@
+struct fileReader() {
+    byte_content: list -> []
+    file_read: bool -> false
+
+    fn read() {
+        include fileio
+        byte_content -> read_file("test_files/1.txt")
+        file_read = false
+    }
+
+    fn showFileContent() {
+        fileReader.read()
+    }
+}
+
+print fileReader.showFileContent()
+print fileReader.byte_content
