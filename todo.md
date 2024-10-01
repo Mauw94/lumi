@@ -1,5 +1,6 @@
 ### TODOS
 * Add error handling E.G. read_file can return a result or an error, when an error is returned we can handle it without completely shutting down the current process
+    - TODO: use namespace4.lumi as example, if read_file goes wrong the rest of the code should still execute.
 * Give appropriate error when not including a namespace but still calling one of its functions
 * be able to call something like this docs [function_name], to get docs about a function and how to use it
 * When calling a functions docs, give also examples of the parameters usages

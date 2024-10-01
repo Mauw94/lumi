@@ -62,14 +62,15 @@ impl Builtin for ReadFile {
                 let file_loc = Path::new(&path);
                 match fs::read(file_loc) {
                     Ok(contents) => return vectors::parse_u8vec_to_lumi_vec(contents),
-                    Err(e) => return Err(LErr::internal_error(e.to_string())),
+                    Err(e) => return Err(LErr::internal_error(e.to_string())), // TODO return Err as some sort of new Result object, so we don't exit the program
                 }
             }
             2 => println!("2 args"),
             _ => println!("no args? impossible to get here tho."),
         }
-
-        Ok(Obj::Null)
+         
+        // TODO: use namespace4.lumi as example, if read_file goes wrong the rest of the code should still execute.
+        Ok(Obj::Null) // TODO: return a result of sorts
     }
 
     fn builtin_name(&self) -> &str {

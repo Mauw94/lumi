@@ -1,0 +1,3 @@
+a: int -> 569237
+typeof(a)
+// Prints int (big)

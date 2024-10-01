@@ -1,0 +1,3 @@
+a: int -> 23
+typeof(a)
+// Prints int (small)
