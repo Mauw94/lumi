@@ -75,6 +75,17 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
             execute::namespace_expr(env, name, start, end, is_include)
         }
         Expr::Every(list, operator, term) => execute::every_expr(env, list, operator, term),
+        Expr::Foreach(iterable, token, identifier, body) => {
+            return execute::foreach_expr(
+                env,
+                iterable,
+                token,
+                identifier,
+                body,
+                &expr.start,
+                &expr.end,
+            );
+        }
     }
 }
 

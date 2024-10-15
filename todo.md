@@ -1,5 +1,5 @@
 ### TODOS
-* implement every, multiple keywords to work with a list
+* implement parsing from string to int
 * Add error handling E.G. read_file can return a result or an error, when an error is returned we can handle it without completely shutting down the current process
     - TODO: use namespace4.lumi as example, if read_file goes wrong the rest of the code should still execute.
     - Be able to evaluate result of a function in lumi code using the eval keyword and then checking for a result or error.

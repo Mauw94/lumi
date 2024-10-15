@@ -350,6 +350,49 @@ pub fn for_expr(
     Ok(Obj::Seq(Seq::List(Rc::new(objects))))
 }
 
+pub fn foreach_expr(
+    env: &Rc<RefCell<Env>>,
+    iterable: &String,
+    _token: &Token,
+    identifier: &String,
+    body: &Vec<Box<LumiExpr>>,
+    start: &CodeLoc,
+    end: &CodeLoc
+) -> Result<Obj, LErr>
+{
+    let mut index: usize = 0;
+    let mut objects: Vec<Obj> = Vec::new();
+    let iter = lookup(&env, iterable, *start, *end, LookupType::Var)?;
+
+    if !iter.1.is_string() && !iter.1.is_list() {
+        return Err(LErr::runtime_error("Expected a string or list in foreach statement.".to_string(), *start, *end));
+    }
+
+    // FIXME: this is pretty slow
+    if iter.1.is_string() {
+        let iter_str = iter.1.get_str_val()?;
+        let str_length= iter_str.len();
+
+        define_var(env, String::from("i"), ObjectType::String, Obj::new_number_obj(index))?;
+        while index < str_length {
+            let current_value = match iter_str.chars().nth(index) {
+                Some(c) => c,
+                None => return Err(LErr::internal_error("String contains a non-char character.".to_string())),
+            };
+            define_var(env, identifier.to_string(), ObjectType::String, Obj::new_str_obj(current_value))?;
+            for expr in body {
+                objects.push(interpreter::evaluate(env, expr)?);
+            }
+            index += 1;
+            define_var(env, String::from("i"), ObjectType::String, Obj::new_number_obj(index))?;
+        }
+    }
+
+    undefine_var(env, "i")?;
+
+    Ok(Obj::Seq(Seq::List(Rc::new(objects))))
+}
+
 pub fn namespace_expr(
     env: &Rc<RefCell<Env>>,
     name: &String,

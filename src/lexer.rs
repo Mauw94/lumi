@@ -65,7 +65,9 @@ pub enum Token {
     Exclude,
     Comment(String),
     Invalid(String),
-    Multiply
+    Multiply,
+    Foreach,
+    As,
 }
 
 pub struct Lexer<'a> {
@@ -336,6 +338,8 @@ impl<'a> Lexer<'a> {
         keywords.insert("struct", Token::Struct);
         keywords.insert("include", Token::Include);
         keywords.insert("exclude", Token::Exclude);
+        keywords.insert("foreach", Token::Foreach);
+        keywords.insert("as", Token::As);
 
         if keywords.contains_key(keyword) {
             self.emit(keywords[keyword].clone());

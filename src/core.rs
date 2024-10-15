@@ -6,7 +6,7 @@ use std::{
 };
 
 use crate::{
-    define_var, evaluate, lexer::CodeLoc, Builtin, Env, Extension, LNum, LocToken, LumiExpr,
+    define_var, evaluate, lexer::CodeLoc, Builtin, Env, Extension, LInt, LNum, LocToken, LumiExpr,
     Namespace,
 };
 
@@ -297,6 +297,14 @@ impl Obj {
     pub fn new_list_obj(vec: Vec<f32>) -> Obj {
         let obj_list: Vec<Obj> = vec.iter().map(|f| Obj::f32(*f)).collect();
         Obj::Seq(Seq::List(Rc::new(obj_list)))
+    }
+
+    pub fn new_str_obj(char: char) -> Obj {
+        Obj::Seq(Seq::String(Rc::new(char.to_string())))
+    }
+
+    pub fn new_number_obj(number: usize) -> Obj {
+        Obj::Num(LNum::Int(LInt::new(number as i64)))
     }
 
     pub fn is_same_type(&self, other: &Obj) -> bool {

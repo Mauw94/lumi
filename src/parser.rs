@@ -74,6 +74,7 @@ pub enum Expr {
     Print(Box<LumiExpr>),
     Struct(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Every(Box<LumiExpr>, Token, Box<LumiExpr>),
+    Foreach(String, Token, String, Vec<Box<LumiExpr>>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -163,6 +164,14 @@ impl fmt::Display for Expr {
                 f,
                 "LIST {:?}, OPERATOR: {:?}, TERM {:?}",
                 list, operator, term
+            ),
+            Expr::Foreach(loop_over, _token, identifier, body) => write!(
+                // Discard token for now.
+                f,
+                "LOOPING OVER {:?}, IDENTIFIER: {:?}, BODY {:?}",
+                loop_over,
+                identifier,
+                body
             ),
         }
     }
@@ -989,6 +998,48 @@ impl Parser {
                 });
             }
         }
+        // foreach statement
+        if self.matcher(&[Token::Foreach]) {
+            let start = self.peek_loc();
+            let iterable = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect iterable".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+
+            self.advance();
+            self.consume(
+                Token::As,
+                "Expect 'as' keyword after foreach and iterable statement".to_string(),
+                self.previous().unwrap(),
+            )?;
+
+            let identifier = match self.current_token() {
+                Some(Token::Identifier(name)) => name,
+                _ => {
+                    return Err(LErr::parsing_error(
+                        "Expect identifier name".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+            self.advance();
+            self.consume(
+                Token::LeftBrace,
+                "Expect '{' after foreach statement".to_string(),
+                self.previous().unwrap(),
+            )?;
+            let body = self.block()?;
+            return Ok(LumiExpr {
+                start,
+                end: self.end_loc(),
+                expr: Expr::Foreach(iterable, Token::As, identifier, body),
+            });
+        }
         // include (namespace) statement.
         if self.matcher(&[Token::Include]) {
             let start = self.peek_loc();
@@ -1008,6 +1059,7 @@ impl Parser {
                 expr: Expr::Namespace(namespace_name, start, self.peek_loc(), true),
             });
         }
+        // exluce (namespace) statement
         if self.matcher(&[Token::Exclude]) {
             let start = self.peek_loc();
             let namespace_name = match self.current_token() {
