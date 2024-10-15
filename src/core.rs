@@ -302,7 +302,7 @@ impl Obj {
     pub fn new_str_obj(char: char) -> Obj {
         Obj::Seq(Seq::String(Rc::new(char.to_string())))
     }
-
+    
     pub fn new_number_obj(number: usize) -> Obj {
         Obj::Num(LNum::Int(LInt::new(number as i64)))
     }

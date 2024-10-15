@@ -20,7 +20,7 @@ fn calculate_floor(content) {
 fn check_basement(content) {
     result: int
 
-    foreach content as c {
+    foreach content as (c, i) {
         if (c == "(") {
             result = result + 1
         } else {

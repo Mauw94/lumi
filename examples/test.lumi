@@ -1,7 +1,6 @@
-a: list -> [1, 2, 3, 4, 5]
+vec: list -> [1, 2, 3, 4, 5]
 
-b -> a every * 5
-
-print a
-print "-------"
-print b
+foreach vec as (a, i) {
+    print a
+    print i 
+}

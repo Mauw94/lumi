@@ -74,7 +74,7 @@ pub enum Expr {
     Print(Box<LumiExpr>),
     Struct(String, Rc<Vec<Box<String>>>, Rc<Vec<Box<LumiExpr>>>),
     Every(Box<LumiExpr>, Token, Box<LumiExpr>),
-    Foreach(String, Token, String, Vec<Box<LumiExpr>>),
+    Foreach(String, Token, String, Option<String>, Vec<Box<LumiExpr>>),
 }
 
 impl fmt::Display for LumiExpr {
@@ -165,12 +165,13 @@ impl fmt::Display for Expr {
                 "LIST {:?}, OPERATOR: {:?}, TERM {:?}",
                 list, operator, term
             ),
-            Expr::Foreach(loop_over, _token, identifier, body) => write!(
+            Expr::Foreach(loop_over, _token, identifier, index_identifier, body) => write!(
                 // Discard token for now.
                 f,
-                "LOOPING OVER {:?}, IDENTIFIER: {:?}, BODY {:?}",
+                "LOOPING OVER {:?}, IDENTIFIER: {:?}, INDEX_IDENTIFIER {:?}, BODY {:?}",
                 loop_over,
                 identifier,
+                index_identifier,
                 body
             ),
         }
@@ -1018,6 +1019,26 @@ impl Parser {
                 self.previous().unwrap(),
             )?;
 
+            let match_index_identifier = match self.current_token() {
+                Some(t) => {
+                    if t == Token::LeftParen {
+                        true
+                    } else {
+                        false
+                    }
+                }
+                None => {
+                    return Err(LErr::parsing_error(
+                        "Expect identifier or '(' after 'as' keyword.".to_string(),
+                        self.previous().unwrap(),
+                    ))
+                }
+            };
+
+            if match_index_identifier {
+                self.advance();
+            }
+
             let identifier = match self.current_token() {
                 Some(Token::Identifier(name)) => name,
                 _ => {
@@ -1027,17 +1048,45 @@ impl Parser {
                     ))
                 }
             };
+
             self.advance();
+            let mut index_identifier: Option<String> = None;
+
+            if match_index_identifier {
+                self.consume(
+                    Token::Comma,
+                    "Expect ',' after identifier in foreach statement".to_string(),
+                    self.previous().unwrap(),
+                )?;
+
+                index_identifier = match self.current_token() {
+                    Some(Token::Identifier(name)) => Some(name),
+                    _ => {
+                        return Err(LErr::parsing_error(
+                            "Expect identifier name for index in foreach statement.".to_string(),
+                            self.previous().unwrap(),
+                        ))
+                    }
+                };
+
+                self.advance();
+                self.consume(
+                    Token::RightParen,
+                    "Expect ')' after index identifier in foreach statement.".to_string(),
+                    self.previous().unwrap(),
+                )?;
+            }
+
             self.consume(
                 Token::LeftBrace,
-                "Expect '{' after foreach statement".to_string(),
+                "Expect '}' after foreach statement".to_string(),
                 self.previous().unwrap(),
             )?;
             let body = self.block()?;
             return Ok(LumiExpr {
                 start,
                 end: self.end_loc(),
-                expr: Expr::Foreach(iterable, Token::As, identifier, body),
+                expr: Expr::Foreach(iterable, Token::As, identifier, index_identifier, body),
             });
         }
         // include (namespace) statement.
