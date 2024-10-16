@@ -359,9 +359,7 @@ pub fn foreach_expr(
     body: &Vec<Box<LumiExpr>>,
     start: &CodeLoc,
     end: &CodeLoc
-) -> Result<Obj, LErr>
-{
-    let mut index: usize = 0;
+) -> Result<Obj, LErr> {
     let mut objects: Vec<Obj> = Vec::new();
     let iter = lookup(&env, iterable, *start, *end, LookupType::Var)?;
 
@@ -369,60 +367,33 @@ pub fn foreach_expr(
         return Err(LErr::runtime_error("Expected a string or list in foreach statement.".to_string(), *start, *end));
     }
 
-    // FIXME: clean-up code.
-    // FIXME: this is pretty slow
-    if iter.1.is_string() {
-        let iter_str = iter.1.get_str_val()?;
-        let str_length= iter_str.len();
-
-        if index_identifier.is_some() {
-            let index_str = index_identifier.as_ref().unwrap();
+    // Helper function to handle iteration and evaluation logic
+    let mut execute_body = |index: usize, current_value: Obj| -> Result<(), LErr> {
+        if let Some(index_str) = index_identifier {
             define_var(env, index_str.to_string(), ObjectType::String, Obj::new_number_obj(index))?;
         }
-        while index < str_length {
-            let current_value = match iter_str.chars().nth(index) {
-                Some(c) => c,
-                None => return Err(LErr::internal_error("String contains a non-char character.".to_string())),
-            };
-            define_var(env, identifier.to_string(), ObjectType::String, Obj::new_str_obj(current_value))?;
-            for expr in body {
-                objects.push(interpreter::evaluate(env, expr)?);
-            }
-            index += 1;
-            if index_identifier.is_some() {
-                let index_str = index_identifier.as_ref().unwrap();
-                define_var(env, index_str.to_string(), ObjectType::String, Obj::new_number_obj(index))?;
-            }
+        define_var(env, identifier.to_string(), ObjectType::String, current_value)?;
+        for expr in body {
+            objects.push(interpreter::evaluate(env, expr)?);
+        }
+        Ok(())
+    };
+
+    if iter.1.is_string() {
+        let iter_str = iter.1.get_str_val()?;
+        for (index, current_value) in iter_str.chars().enumerate() {
+            execute_body(index, Obj::new_str_obj(current_value))?;
         }
     } else if iter.1.is_list() {
         let iter_list = iter.1.get_list_val()?;
-        let list_length  = iter_list.len();
-
-        if index_identifier.is_some() {
-            let index_str = index_identifier.as_ref().unwrap();
-            define_var(env, index_str.to_string(), ObjectType::String, Obj::new_number_obj(index))?;
-        }
-        while index < list_length {
-            let current_value = match iter_list.get(index) {
-                Some(o) => o,
-                None => return Err(LErr::runtime_error(format!("Unexpected value in list {:?}.", iter_list), *start, *end)),
-            };
-            define_var(env, identifier.to_string(), ObjectType::String, current_value.clone())?;
-            for expr in body {
-                objects.push(interpreter::evaluate(env, expr)?);
-            }
-            index += 1;
-            if index_identifier.is_some() {
-                let index_str = index_identifier.as_ref().unwrap();
-                define_var(env, index_str.to_string(), ObjectType::String, Obj::new_number_obj(index))?;
-            }
+        for (index, current_value) in iter_list.iter().enumerate() {
+            execute_body(index, current_value.clone())?;
         }
     }
 
-    if index_identifier.is_some() {
-        let index = index_identifier.as_ref().unwrap();
-        undefine_var(env, index)?;
-    }   
+    if let Some(index_str) = index_identifier {
+        undefine_var(env, index_str)?;
+    }
 
     Ok(Obj::Seq(Seq::List(Rc::new(objects))))
 }
