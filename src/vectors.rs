@@ -82,6 +82,8 @@ impl Namespace for Vector {
         e.insert_extension(First, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Pop, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Slice, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(OrderBy, NamespaceType::StdLib(LibType::Vec));
+        e.insert_extension(Take, NamespaceType::StdLib(LibType::Vec));
 
         Ok(())
     }
@@ -96,6 +98,8 @@ impl Namespace for Vector {
         e.remove_function(First.extension_name())?;
         e.remove_function(Pop.extension_name())?;
         e.remove_function(Slice.extension_name())?;
+        e.remove_function(OrderBy.extension_name())?;
+        e.remove_function(Take.extension_name())?;
 
         Ok(())
     }
@@ -108,6 +112,8 @@ impl Namespace for Vector {
             Last.extension_name().to_string(),
             First.extension_name().to_string(),
             Pop.extension_name().to_string(),
+            OrderBy.extension_name().to_string(),
+            Take.extension_name().to_string(),
         ]
     }
 
@@ -409,5 +415,70 @@ impl Extension for Slice {
 
     fn extension_name(&self) -> &str {
         "slice"
+    }
+}
+
+#[derive(Debug)]
+struct OrderBy;
+
+// TODO: extend so it'll also work for floats, etc...
+impl Extension for OrderBy {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        __var_name: &str,
+        obj: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(0, 0, &args, start, end)?;
+
+        let vec_value = obj.get_list_val()?;
+        let mut real_val: Vec<i64> = vec_value
+            .iter()
+            .map(|v| v.get_int_val())
+            .collect::<Result<_, _>>()?;
+
+        real_val.sort_by(|a, b| a.abs().cmp(&b.abs()));
+        let res: Vec<Obj> = real_val
+            .iter()
+            .map(|v| Obj::Num(LNum::Int(LInt::new(*v))))
+            .collect();
+
+        Ok(Obj::Seq(Seq::List(Rc::new(res))))
+    }
+
+    fn extension_name(&self) -> &str {
+        "order_by"
+    }
+}
+
+#[derive(Debug)]
+struct Take;
+
+impl Extension for Take {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
+        obj: Obj,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let take_amount = args.get(0).unwrap();
+        let take = take_amount.get_int_val()?;
+
+        let vec_value = obj.get_list_val()?;
+        let res: Vec<Obj> = vec_value.iter().take(take as usize).cloned().collect();
+
+        Ok(Obj::Seq(Seq::List(Rc::new(res))))
+    }
+
+    fn extension_name(&self) -> &str {
+        "take"
     }
 }

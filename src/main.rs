@@ -88,7 +88,7 @@ fn main() {
         let start = Instant::now();
 
         let filename = &args[1];
-        let input_folder = Path::new("examples");
+        let input_folder = Path::new("runnables");
         let file_path = input_folder.join(filename);
 
         match fs::read_to_string(&file_path) {

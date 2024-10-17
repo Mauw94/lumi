@@ -36,7 +36,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 None => Ok(Obj::Null),
             };
         }
-        Expr::Binary(lv, op, rv) => {
+        Expr::Binary(lv, op, rv) => {            
             let lhs = evaluate(env, lv)?;
             let rhs = evaluate(env, rv)?;
 

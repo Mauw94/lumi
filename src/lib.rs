@@ -119,9 +119,9 @@ fn add_err_res_to_eval(res: String) {
     eval.res = vec![res];
 }
 
-pub fn execute_examples() -> Result<Vec<Obj>, LErr> {
+pub fn execute_test_examples() -> Result<Vec<Obj>, LErr> {
     let mut results: Vec<Obj> = Vec::new();
-    let input_folder = Path::new("examples");
+    let input_folder = Path::new("test_examples");
     if let Ok(entries) = fs::read_dir(input_folder) {
         println!("{:?}", entries);
         for entry in entries {

@@ -1,4 +1,10 @@
-use std::{cell::RefCell, fs, path::Path, rc::Rc};
+use std::{
+    cell::RefCell,
+    fs::{self, File},
+    io::{BufRead, BufReader},
+    path::Path,
+    rc::Rc,
+};
 
 use crate::{
     check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
@@ -11,12 +17,17 @@ pub struct FileIO;
 impl Namespace for FileIO {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
+
         e.insert_builtin(
             ReadFile,
             NamespaceType::External(FileIO.namespace_name().to_string()),
         );
         e.insert_builtin(
             ByteToString,
+            NamespaceType::External(FileIO.namespace_name().to_string()),
+        );
+        e.insert_builtin(
+            ReadFileLines,
             NamespaceType::External(FileIO.namespace_name().to_string()),
         );
 
@@ -27,6 +38,7 @@ impl Namespace for FileIO {
         vec![
             ReadFile.builtin_name().to_string(),
             ByteToString.builtin_name().to_string(),
+            ReadFileLines.builtin_name().to_string(),
         ]
     }
 
@@ -36,8 +48,10 @@ impl Namespace for FileIO {
 
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
         let mut e = env.borrow_mut();
+
         e.remove_function(ReadFile.builtin_name())?;
         e.remove_function(ByteToString.builtin_name())?;
+        e.remove_function(ReadFileLines.builtin_name())?;
 
         Ok(())
     }
@@ -81,6 +95,45 @@ impl Builtin for ReadFile {
 
     fn builtin_name(&self) -> &str {
         "read_file"
+    }
+}
+
+#[derive(Debug)]
+struct ReadFileLines;
+
+impl Builtin for ReadFileLines {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let path = get_str_from_args_vec_obj(0, &args)?;
+        let file_loc = Path::new(&path);
+
+        let file = match File::open(file_loc) {
+            Ok(f) => f,
+            Err(e) => return Err(LErr::internal_error(e.to_string())),
+        };
+
+        let reader = BufReader::new(file);
+        let lines: Vec<String> = match reader.lines().collect::<Result<_, _>>() {
+            Ok(lines) => lines,
+            Err(e) => return Err(LErr::internal_error(e.to_string())),
+        };
+        let lines_res: Vec<Obj> = lines
+            .iter()
+            .map(|l| Obj::Seq(Seq::String(Rc::new(l.to_string()))))
+            .collect();
+
+        Ok(Obj::Seq(Seq::List(Rc::new(lines_res))))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "read_file_lines"
     }
 }
 

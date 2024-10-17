@@ -1,0 +1,7 @@
+a: list -> [3, 5, 1, 8, 12, 4]
+b -> a.order_by()
+c -> b.take(2)
+
+print b
+print "------"
+print c

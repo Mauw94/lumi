@@ -1,6 +1,6 @@
 use std::rc::Rc;
 
-use lumi_lib::{execute_examples, quick_eval, LInt, LNum, Obj, Seq};
+use lumi_lib::{execute_test_examples, quick_eval, LInt, LNum, Obj, Seq};
 
 extern crate lumi_lib;
 
@@ -25,7 +25,7 @@ fn b(x: bool) -> Obj {
 // cargo test examples -- --nocapture
 #[test]
 fn examples() {
-    let passed_tests = match execute_examples() {
+    let passed_tests = match execute_test_examples() {
         Ok(_) => true,
         Err(e) => {
             eprintln!("{:?}", e);

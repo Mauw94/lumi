@@ -20,7 +20,14 @@
 * file input/output functions
 
 ### BUGS
-* 
+left = 3
+right = 2
+something -> left * right
+
+* This throws an error (A number was expected). The left hand side of the evaluation is seen as 'something' and not as 'left', therefore giving us a Null.
+something: int
+something = left * right
+* This does work. But it should also work as in the example above.
 
 # structs
 When evaluating a declared variable inside a struct with the same name as a variable outside of the struct, it gets the wrong value from the env.
