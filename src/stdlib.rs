@@ -134,6 +134,9 @@ impl Stringify {
             },
             Obj::Bool(b) => Ok(b.to_string()),
             Obj::Seq(seq) => match seq {
+                Seq::Dict(_) => Err(LErr::internal_error(
+                    "Can't stringify a dictionary object.".to_string(),
+                )),
                 Seq::String(s) => Ok(s.to_string()),
                 Seq::List(lst) => {
                     let res = lst

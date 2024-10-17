@@ -157,6 +157,7 @@ pub enum LResult {
 pub enum Seq {
     String(Rc<String>),
     List(Rc<Vec<Obj>>),
+    Dict(Rc<HashMap<Obj, Obj>>), // TODO: extend
 }
 
 pub type LRes<T> = Result<T, LErr>;
@@ -178,6 +179,7 @@ pub enum ObjectType {
     String,
     Bool,
     List,
+    Dict,
     Function,
     Struct,
     None,
@@ -289,6 +291,7 @@ impl ObjectType {
             ObjectType::None => "none",
             ObjectType::Namespace => "namespace",
             ObjectType::Byte => "byte",
+            ObjectType::Dict => "dict",
         }
     }
 }
@@ -302,7 +305,7 @@ impl Obj {
     pub fn new_str_obj(char: char) -> Obj {
         Obj::Seq(Seq::String(Rc::new(char.to_string())))
     }
-    
+
     pub fn new_number_obj(number: usize) -> Obj {
         Obj::Num(LNum::Int(LInt::new(number as i64)))
     }
@@ -329,6 +332,7 @@ impl Obj {
             ObjectType::None => true,
             ObjectType::Namespace => todo!(),
             ObjectType::Byte => todo!(),
+            ObjectType::Dict => self.is_dict(),
         }
     }
 
@@ -361,6 +365,7 @@ impl Obj {
             Obj::Seq(sq) => match sq {
                 Seq::String(_) => "str",
                 Seq::List(_) => "list",
+                Seq::Dict(_) => "dict",
             },
             Obj::Output(_) => "nil",
             Obj::Func(f) => match **f {
@@ -476,6 +481,7 @@ impl Obj {
             Obj::Seq(seq) => match seq {
                 Seq::String(_) => Ok(ObjectType::String),
                 Seq::List(_) => Ok(ObjectType::List),
+                Seq::Dict(_) => Ok(ObjectType::Dict),
             },
             Obj::Output(_) => Ok(ObjectType::None),
             Obj::Func(_) => Ok(ObjectType::Function),
@@ -573,6 +579,16 @@ impl Obj {
         }
     }
 
+    pub fn is_dict(&self) -> bool {
+        match &self {
+            Obj::Seq(sq) => match sq {
+                Seq::Dict(_) => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
     pub fn print_value(&self) {
         match &self {
             Obj::Null => {}
@@ -591,6 +607,11 @@ impl Obj {
                 Seq::List(objs) => {
                     for obj in objs.clone().iter() {
                         obj.print_value();
+                    }
+                }
+                Seq::Dict(dict) => {
+                    for (key, value) in dict.iter() {
+                        println!("{} {}", key.format_value(), value.format_value());
                     }
                 }
             },
@@ -632,6 +653,14 @@ impl Obj {
                     let mut result = Vec::new();
                     for obj in objs.clone().iter() {
                         result.push(obj.format_value());
+                    }
+
+                    result.join(" ")
+                }
+                Seq::Dict(dict) => {
+                    let mut result: Vec<String> = Vec::new();
+                    for (key, value) in dict.iter() {
+                        result.push(format!("{} {}", key.format_value(), value.format_value()));
                     }
 
                     result.join(" ")
