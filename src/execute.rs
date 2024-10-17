@@ -546,9 +546,7 @@ pub fn get_expr(
                 Err(err) => return Err(err),
             },
         },
-        // TODO: this needs to move somehow to a separate GET for vectors only
-        // TODO keep a list of functions that are only available to a vec
-        Obj::Seq(Seq::List(_lst)) => execute_vec_function(
+        Obj::Seq(Seq::List(_lst)) => execute_function(
             &env,
             &eval_res,
             get_callee_var_name(callee)?,
@@ -557,11 +555,16 @@ pub fn get_expr(
             callee.end,
             &args.clone().unwrap(),
         ),
-        Obj::Seq(Seq::String(_s)) => {
-            // TODO this can be a custom function for Strings
-            //execute_lib_function(&env, func_name, &callee, &args.clone().unwrap(), &eval_res)
-            todo!()
-        }
+        Obj::Seq(Seq::String(_s)) =>
+            execute_function(
+                &env,
+                &eval_res,
+                get_callee_var_name(callee)?,
+                func_name,
+                callee.start,
+                callee.end,
+                &args.clone().unwrap(),
+            ),
         _ => {
             return Err(LErr::runtime_error(
                 "Expected a struct here.".to_string(), // FIXME can also be a list or another var
@@ -582,7 +585,7 @@ fn get_callee_var_name(callee: &Box<LumiExpr>) -> LRes<&str> {
     }
 }
 
-fn execute_vec_function(
+fn execute_function(
     env: &Rc<RefCell<Env>>,
     eval_res: &Obj,
     var_name: &str,
@@ -608,19 +611,10 @@ fn execute_vec_function(
                 }
             }
             Func::Extension(e) => {
-                if !eval_res.is_list() {
-                    return Err(LErr::runtime_error(
-                        format!("Expected a List object, found {}", eval_res.get_type_name()),
-                        start,
-                        end,
-                    ));
-                }
-
                 let arguments = args
                     .into_iter()
                     .map(|a| interpreter::evaluate(env, &a))
                     .collect::<Result<Vec<Obj>, LErr>>()?;
-
                 return e.run(env, var_name, eval_res.clone(), arguments, start, end);
             }
             _ => {

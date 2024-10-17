@@ -21,6 +21,7 @@ pub use crate::lexer::*;
 pub use crate::lnum::*;
 pub use crate::parser::*;
 pub use crate::stdlib::*;
+pub use crate::str::*;
 pub use crate::vectors::*;
 
 mod core;
@@ -34,6 +35,7 @@ mod lexer;
 mod lnum;
 mod parser;
 mod stdlib;
+mod str;
 mod vectors;
 
 pub struct Eval {
@@ -80,6 +82,7 @@ fn setup_env() -> Rc<RefCell<Env>> {
     let ref_e = Rc::new(RefCell::new(e));
     StdLib.load_functions(&ref_e).unwrap();
     Vector.load_functions(&ref_e).unwrap();
+    Str.load_functions(&ref_e).unwrap();
     ref_e
 }
 
@@ -174,7 +177,7 @@ pub trait Extension: Debug {
         &self,
         env: &Rc<RefCell<Env>>,
         var_name: &str,
-        vec: Obj,
+        obj: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
         end: CodeLoc,

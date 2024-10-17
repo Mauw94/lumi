@@ -6,7 +6,7 @@ use std::{
 
 use crate::{
     try_borrow, try_borrow_mut, Builtin, CodeLoc, Extension, FileIO, Func, LErr, LRes, Namespace,
-    Obj, ObjectType, Seq, StdLib, Vector,
+    Obj, ObjectType, Seq, StdLib, Str, Vector,
 };
 
 #[derive(Debug, PartialEq)]
@@ -141,6 +141,7 @@ pub fn initialize(env: &mut Env) {
     env.insert_namespace(StdLib.namespace_name().to_string(), StdLib);
     env.insert_namespace(StdLib.namespace_name().to_string(), Vector);
     env.insert_namespace(FileIO.namespace_name().to_string(), FileIO);
+    env.insert_namespace(Str.namespace_name().to_string(), Str);
 }
 
 pub fn define_var(

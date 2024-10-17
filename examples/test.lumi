@@ -1,6 +1,4 @@
-vec: list -> [1, 2, 3, 4, 5]
+a: str -> "axaxaxa"
+b -> a.split("x")
 
-foreach vec as (a, i) {
-    print a
-    print i 
-}
+print b

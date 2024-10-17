@@ -1,0 +1,8 @@
+vec: list -> [1, 2, 3, 4, 5]
+
+foreach vec as (a, i) {
+    print "first loop"
+    foreach vec as (b, j) {
+        print j
+    }
+}

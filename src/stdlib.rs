@@ -25,6 +25,7 @@ impl Namespace for StdLib {
         e.insert_builtin(Typeof, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(Extension, NamespaceType::StdLib(LibType::Std));
         e.insert_builtin(IsNull, NamespaceType::StdLib(LibType::Std));
+        e.insert_builtin(ParseInt, NamespaceType::StdLib(LibType::Std));
 
         // LibType::Str
         e.insert_builtin(ConcatStr, NamespaceType::StdLib(LibType::Str));
@@ -65,6 +66,8 @@ impl Namespace for StdLib {
             Substr.builtin_name().to_string(),
             ContainsStr.builtin_name().to_string(),
             ReplaceStr.builtin_name().to_string(),
+            IsNull.builtin_name().to_string(),
+            ParseInt.builtin_name().to_string(),
         ]
     }
 
@@ -526,5 +529,32 @@ impl Builtin for Extension {
 
     fn builtin_name(&self) -> &str {
         "extensions"
+    }
+}
+
+#[derive(Debug)]
+struct ParseInt;
+
+impl Builtin for ParseInt {
+    fn run(
+        &self,
+        _env: &Rc<RefCell<Env>>,
+        args: Vec<Obj>,
+        start: CodeLoc,
+        end: CodeLoc,
+    ) -> LRes<Obj> {
+        check_args(1, 1, &args, start, end)?;
+
+        let str_value = args.get(0).unwrap().get_str_val()?;
+        let int_value = match str_value.parse::<i64>() {
+            Ok(v) => v,
+            Err(e) => return Err(LErr::internal_error(e.to_string())),
+        };
+
+        Ok(Obj::Num(LNum::Int(LInt::new(int_value))))
+    }
+
+    fn builtin_name(&self) -> &str {
+        "parse_int"
     }
 }
