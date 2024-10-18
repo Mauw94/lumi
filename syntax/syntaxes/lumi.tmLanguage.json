@@ -1,0 +1,63 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "Lumi Programming Language",
+
+	"scopeName": "source.lumi",
+	"patterns": [
+	  {
+		"name": "comment.line.double-slash.lumi",
+		"begin": "//",
+		"end": "$"
+	  },
+	  {
+		"name": "keyword.control.lumi",
+		"match": "\\b(fn|include|foreach|if|else|as|return|while|for|break|continue)\\b"
+	  },
+	  {
+		"name": "keyword.operator.lumi",
+		"match": "(->|=>|=|\\+|\\-|\\*|\\/|>|<|>=|<=|==|!=|&&|\\|\\||!)"
+	  },
+	  {
+		"name": "constant.numeric.lumi",
+		"match": "\\b\\d+\\b"
+	  },
+	  {
+		"name": "variable.parameter.lumi",
+		"match": "\\b\\w+(?=(:\\s*\\w+)?\\s*(->|=|$))\\b"
+	  },
+	  {
+		"name": "storage.type.built-in.primitive.lumi",
+		"match": "\\b(int|str|list|float|bool)\\b"
+	  },
+	  {
+		"name": "support.function.lumi",
+		"match": "\\b(read_file_lines|parse_int|split|print|string|len|clone|new|take|order_by|first|last|pop|slice|sum)\\b"
+	  },
+	  {
+		"name": "punctuation.section.block.lumi",
+		"match": "[{}]"
+	  },
+	  {
+		"name": "punctuation.section.brackets.lumi",
+		"match": "[\\[\\]]"
+	  },
+	  {
+		"name": "punctuation.separator.lumi",
+		"match": "[,;]"
+	  },
+	  {
+		"name": "string.quoted.double.lumi",
+		"begin": "\"",
+		"end": "\""
+	  }
+	],
+	"repository": {
+	  "comment": {
+		"name": "comment.line.double-slash.lumi",
+		"begin": "//",
+		"end": "$"
+	  }
+	},
+	"scope": "source.lumi"
+  }
+  

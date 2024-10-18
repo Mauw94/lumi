@@ -19,6 +19,10 @@ To build the project as WASM, run the following command:
 
 The wasm files need are found inside the pkg folder.
 
+## Add custom lumi syntax highlighting extension to vscode
+* Go to the root dir, then copy the syntax folder to the vscode extensions folder
+* cp -r syntax ~/.vscode/extensions (on macOS)
+
 ## Syntactic suger
 When working with a list of numbers we can use the ```every``` keyword. 
 
