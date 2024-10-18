@@ -11,7 +11,7 @@
 	  },
 	  {
 		"name": "keyword.control.lumi",
-		"match": "\\b(fn|include|foreach|if|else|as|return|while|for|break|continue)\\b"
+		"match": "\\b(fn|include|foreach|if|else|as|return|while|for|break|continue|print)\\b"
 	  },
 	  {
 		"name": "keyword.operator.lumi",
@@ -29,6 +29,10 @@
 		"name": "storage.type.built-in.primitive.lumi",
 		"match": "\\b(int|str|list|float|bool)\\b"
 	  },
+	  {
+		"name": "entity.name.function.lumi",
+		"match": "\\b\\w+(?=\\s*\\()"
+	  },	  
 	  {
 		"name": "support.function.lumi",
 		"match": "\\b(read_file_lines|parse_int|split|print|string|len|clone|new|take|order_by|first|last|pop|slice|sum)\\b"
