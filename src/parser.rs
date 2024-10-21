@@ -1,12 +1,15 @@
 use std::{
+    cell::RefCell,
+    collections::HashMap,
     fmt::{self},
     rc::Rc,
 };
 
 use crate::{
     core::LErr,
+    evaluate,
     lexer::{CodeLoc, LocToken, Token},
-    LInt, ObjectType,
+    Env, LInt, Obj, ObjectType,
 };
 
 // Precedence order, can/will be extended.
@@ -69,6 +72,7 @@ pub enum Expr {
     Sequence(Vec<Box<LumiExpr>>),
     Block(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
+    Dict(Rc<HashMap<Obj, Obj>>),
     Index(String, Box<LumiExpr>),
     Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
     Print(Box<LumiExpr>),
@@ -174,18 +178,24 @@ impl fmt::Display for Expr {
                 index_identifier,
                 body
             ),
+            Expr::Dict(dict) => write!(f, "DICTIONARY: {:?}", dict),
         }
     }
 }
 
-pub struct Parser {
+pub struct Parser<'a> {
+    top_env: &'a Rc<RefCell<Env>>,
     tokens: Vec<LocToken>,
     i: usize,
 }
 
-impl Parser {
-    pub fn new(tokens: Vec<LocToken>) -> Self {
-        Self { tokens, i: 0 }
+impl<'a> Parser<'a> {
+    pub fn new(tokens: Vec<LocToken>, env: &'a Rc<RefCell<Env>>) -> Self {
+        Self {
+            top_env: env,
+            tokens,
+            i: 0,
+        }
     }
 
     fn is_at_end(&self) -> bool {
@@ -333,6 +343,14 @@ impl Parser {
                                     if self.matcher(&[Token::LeftBracket]) {
                                         // TODO be able to define data type
                                         self.parse_list_expr(ident, start, obj_type)
+                                    } else if self.matcher(&[Token::LeftBrace]) {
+                                        // parse dictionary
+                                        println!(
+                                            "PARSING DICTIONARY WITH TYPE DECLARATION {:?}",
+                                            obj_type
+                                        );
+                                        println!("IDENT {:?}", ident);
+                                        self.parse_dictionary_expr(ident, start, obj_type)
                                     } else {
                                         let expr = self.unary()?;
                                         return Ok(LumiExpr {
@@ -452,6 +470,10 @@ impl Parser {
                 } else if self.matcher(&[Token::Declare]) {
                     if self.matcher(&[Token::LeftBracket]) {
                         self.parse_list_expr(ident, start, ObjectType::List)
+                    } else if self.matcher(&[Token::LeftBrace]) {
+                        // parsing dictonary
+                        println!("PARSING DICTIONARY WITHOUT TYPE DECLARATION");
+                        todo!();
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
@@ -556,6 +578,59 @@ impl Parser {
             start,
             end,
             expr: Expr::Declare(value, obj_type, Some(Box::new(list_expr))),
+        });
+    }
+
+    fn parse_dictionary_expr(
+        &mut self,
+        _value: String,
+        start: CodeLoc,
+        _obj_type: ObjectType,
+    ) -> Result<LumiExpr, LErr> {
+        let end = self.peek_loc();
+        let mut dict: HashMap<Obj, Obj> = HashMap::new();
+        while !self.matcher(&[Token::RightBrace]) {
+            match self.current_token() {
+                Some(t) => {
+                    if t != Token::Comma {
+                        let key = self.primary()?;
+                        match self.current_token() {
+                            Some(t) => {
+                                println!("{:?}", t);
+                                if t == Token::Colon {
+                                    self.advance();
+                                }
+                            }
+                            None => {
+                                return Err(LErr::parsing_error(
+                                    "Expected a ';' after a key when declaring a dictionary"
+                                        .to_string(),
+                                    self.previous().unwrap(),
+                                ))
+                            }
+                        }
+                        let value = self.primary()?;
+                        let key_res = evaluate(&self.top_env, &key)?;
+                        let value_res = evaluate(&self.top_env, &value)?;
+
+                        dict.insert(key_res, value_res);
+                    } else {
+                        self.advance();
+                    }
+                }
+                None => self.consume(
+                    self.previous().unwrap().token,
+                    "Expect '}' after dictionary declaration".to_string(),
+                    self.previous().unwrap(),
+                )?,
+            }
+        }
+
+        // TODO: add dictionary name to the env
+        return Ok(LumiExpr {
+            start,
+            end,
+            expr: Expr::Dict(Rc::new(dict)),
         });
     }
 

@@ -36,7 +36,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 None => Ok(Obj::Null),
             };
         }
-        Expr::Binary(lv, op, rv) => {            
+        Expr::Binary(lv, op, rv) => {
             let lhs = evaluate(env, lv)?;
             let rhs = evaluate(env, rv)?;
 
@@ -86,6 +86,13 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 &expr.start,
                 &expr.end,
             );
+        }
+        Expr::Dict(dict) => {
+            for (k, v) in dict.iter() {
+                println!("KEY {:?}, VALUE {:?}", k, v);
+            }
+
+            Ok(Obj::Null)
         }
     }
 }

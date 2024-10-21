@@ -32,7 +32,7 @@ fn repl() {
         let mut lexer = Lexer::new(&input);
         match lexer.lex() {
             Ok(tokens) => {
-                let mut p = Parser::new(tokens);
+                let mut p = Parser::new(tokens, &env);
                 match p.parse() {
                     Ok(expr) => match evaluate(&env, &expr) {
                         Ok(_) | Err(LErr::Return(_)) => {}
@@ -51,7 +51,7 @@ fn run_code(code: &str) {
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
         Ok(tokens) => {
-            let mut p = Parser::new(tokens);
+            let mut p = Parser::new(tokens, &env);
             match p.parse() {
                 Ok(expr) => match evaluate(&env, &expr) {
                     Ok(Obj::LResult(LResult::Error(e))) => {

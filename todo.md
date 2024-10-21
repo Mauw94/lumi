@@ -1,6 +1,7 @@
 ### TODOS
 * create VSCode extension for syntax highlighting
 * implement dictionaries
+* implement type checking for lists/dictionaries
 * implement including another lumi file (be able to pass current env when including)
 * implement parsing from string to int
 * Add error handling E.G. read_file can return a result or an error, when an error is returned we can handle it without completely shutting down the current process

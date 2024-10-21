@@ -62,7 +62,7 @@ pub fn get_eval() -> Vec<String> {
 pub fn quick_eval(code: &str) -> Result<Obj, LErr> {
     let env = setup_env();
     let mut lexer = Lexer::new(code);
-    let mut parser = Parser::new(lexer.lex().unwrap());
+    let mut parser = Parser::new(lexer.lex().unwrap(), &env);
 
     match evaluate(&env, &parser.parse().unwrap()) {
         Ok(obj) => Ok(obj),
@@ -92,7 +92,7 @@ pub fn run_code(code: &str) -> Vec<String> {
     let mut lexer = Lexer::new(code);
     match lexer.lex() {
         Ok(tokens) => {
-            let mut p = Parser::new(tokens);
+            let mut p = Parser::new(tokens, &env);
             match p.parse() {
                 Ok(expr) => match evaluate(&env, &expr) {
                     Ok(_) | Err(LErr::Return(_)) => {}

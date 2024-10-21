@@ -2,6 +2,8 @@ use std::{
     cell::{Ref, RefCell, RefMut},
     collections::HashMap,
     fmt::Debug,
+    hash::Hash,
+    hash::Hasher,
     rc::Rc,
 };
 
@@ -135,6 +137,7 @@ pub fn try_borrow_mut<'a, T>(r: &'a RefCell<T>) -> LRes<RefMut<'a, T>> {
     }
 }
 
+// TODO: need to write custom Eq, and Hash for Obj
 #[derive(Debug, Clone)]
 pub enum Obj {
     Null,
@@ -706,19 +709,58 @@ impl Obj {
 
 impl PartialEq for Obj {
     fn eq(&self, other: &Self) -> bool {
-        match (self, other) {
-            (Self::Bool(l0), Self::Bool(r0)) => l0 == r0,
-            (Self::Num(l0), Self::Num(r0)) => l0 == r0,
-            (Self::Seq(l0), Self::Seq(r0)) => match (l0, r0) {
-                (Seq::String(s1), Seq::String(s2)) => s1 == s2,
-                (Seq::List(_), Seq::List(_)) => todo!(),
-                _ => todo!(),
-            },
-            (Self::Output(l0), Self::Output(r0)) => l0 == r0,
-            // (Self::Func(l0), Self::Func(r0)) => l0 == r0,
-            // (Self::Struct(l0), Self::Struct(r0)) => l0 == r0,
-            _ => core::mem::discriminant(self) == core::mem::discriminant(other),
+        total_eq_of_keys(&self, &other)
+    }
+}
+
+impl Eq for Obj {}
+
+impl Hash for Obj {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        // TODO: fix
+        total_hash_of_keys(&self, state)
+    }
+}
+
+fn total_hash_of_keys<H: Hasher>(a: &Obj, state: &mut H) {
+    match a {
+        Obj::Null => state.write_u8(0),
+        Obj::Num(a) => {
+            state.write_u8(1);
+            a.total_hash(state);
         }
+        Obj::Seq(a) => match a {
+            Seq::String(s) => {
+                state.write_u8(2);
+                s.hash(state);
+            }
+            _ => panic!("Attempting to hash invalid Obj: {:?}", a)
+            // TODO: hash list and dict
+            // Seq::List(rc) => todo!(),
+            // Seq::Dict(rc) => todo!(),
+        },
+        _ => panic!("Attempting to hash invalid Obj: {:?}", a),
+    }
+}
+
+fn total_eq_of_key_seqs(a: &Seq, b: &Seq) -> bool {
+    match (a, b) {
+        (Seq::List(a), Seq::List(b)) => {
+            a.len() == b.len() && a.iter().zip(b.iter()).all(|(a, b)| total_eq_of_keys(a, b))
+        }
+        (Seq::String(a), Seq::String(b)) => a == b,
+        // TODO: check eq for dict and list
+        _ => false,
+    }
+}
+
+fn total_eq_of_keys(a: &Obj, b: &Obj) -> bool {
+    match (a, b) {
+        (Obj::Null, Obj::Null) => true,
+        (Obj::Num(a), Obj::Num(b)) => a == b,
+        (Obj::Bool(a), Obj::Bool(b)) => a == b,
+        (Obj::Seq(a), Obj::Seq(b)) => total_eq_of_key_seqs(a, b),
+        _ => false,
     }
 }
 
