@@ -350,7 +350,7 @@ impl<'a> Parser<'a> {
                                             obj_type
                                         );
                                         println!("IDENT {:?}", ident);
-                                        self.parse_dictionary_expr(ident, start, obj_type)
+                                        self.parse_dictionary_expr(ident, start)
                                     } else {
                                         let expr = self.unary()?;
                                         return Ok(LumiExpr {
@@ -581,12 +581,7 @@ impl<'a> Parser<'a> {
         });
     }
 
-    fn parse_dictionary_expr(
-        &mut self,
-        _value: String,
-        start: CodeLoc,
-        _obj_type: ObjectType,
-    ) -> Result<LumiExpr, LErr> {
+    fn parse_dictionary_expr(&mut self, value: String, start: CodeLoc) -> Result<LumiExpr, LErr> {
         let end = self.peek_loc();
         let mut dict: HashMap<Obj, Obj> = HashMap::new();
         while !self.matcher(&[Token::RightBrace]) {
@@ -627,10 +622,15 @@ impl<'a> Parser<'a> {
         }
 
         // TODO: add dictionary name to the env
-        return Ok(LumiExpr {
+        let dict_expr = LumiExpr {
             start,
             end,
             expr: Expr::Dict(Rc::new(dict)),
+        };
+        return Ok(LumiExpr {
+            start,
+            end,
+            expr: Expr::Declare(value, ObjectType::Dict, Some(Box::new(dict_expr))),
         });
     }
 
