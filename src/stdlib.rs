@@ -3,10 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use chrono::{DateTime, Local};
 
 use crate::{
-    check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace,
-    get_all_extension_functions, get_all_namespaces, get_int_from_arg_obj, get_str_from_arg_obj,
-    get_str_from_args_vec_obj, try_borrow, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes,
-    LibType, Namespace, NamespaceType, Obj, ObjectType, Seq,
+    check_args, get_all_builtin_functions, get_all_builtin_functions_for_namespace, get_all_extension_functions, get_all_namespaces, get_int_from_arg_obj, get_str_from_arg_obj, get_str_from_args_vec_obj, try_borrow, try_borrow_mut, vectors, Builtin, CodeLoc, Env, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType, Obj, ObjectType, Seq
 };
 
 #[derive(Debug)]
@@ -14,7 +11,7 @@ pub struct StdLib;
 
 impl Namespace for StdLib {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         // LibType::Std
         e.insert_builtin(Time, NamespaceType::StdLib(LibType::Std));
@@ -37,7 +34,7 @@ impl Namespace for StdLib {
     }
 
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
         e.remove_function(Time.builtin_name())?;
         e.remove_function(Stringify.builtin_name())?;
         e.remove_function(Vars.builtin_name())?;

@@ -1,8 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType,
-    Obj, ObjectType, Seq,
+    check_args, try_borrow_mut, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType, Obj, ObjectType, Seq
 };
 
 pub trait FromObj: Sized {
@@ -74,7 +73,7 @@ pub struct Vector;
 
 impl Namespace for Vector {
     fn load_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.insert_extension(Sum, NamespaceType::StdLib(LibType::Vec));
         e.insert_extension(Len, NamespaceType::StdLib(LibType::Vec));
@@ -90,7 +89,7 @@ impl Namespace for Vector {
     }
 
     fn unload_functions(&self, env: &Rc<std::cell::RefCell<crate::Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.remove_function(Sum.extension_name())?;
         e.remove_function(Len.extension_name())?;
@@ -244,7 +243,7 @@ impl Extension for Push {
         check_args(1, 1, &args, start, end)?;
 
         let list_val = vec.get_list_val()?;
-        let mut list = list_val.borrow_mut();
+        let mut list = try_borrow_mut(list_val)?;
         let lst_type = get_list_type(&list)?;
         let val_to_add = args.get(0).unwrap();
 
@@ -333,7 +332,7 @@ impl Extension for Pop {
         check_args(0, 0, &args, start, end)?;
 
         let list_val = vec.get_list_val()?;
-        let mut list = list_val.borrow_mut();
+        let mut list = try_borrow_mut(list_val)?;
         let result = list.pop().map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()));
 
         result

@@ -7,8 +7,7 @@ use std::{
 };
 
 use crate::{
-    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, vectors, Builtin, CodeLoc, Env,
-    LErr, LRes, LResult, Namespace, NamespaceType, Obj, Seq,
+    check_args, get_list_from_arg_obj, get_str_from_args_vec_obj, try_borrow_mut, vectors, Builtin, CodeLoc, Env, LErr, LRes, LResult, Namespace, NamespaceType, Obj, Seq
 };
 
 #[derive(Debug)]
@@ -16,7 +15,7 @@ pub struct FileIO;
 
 impl Namespace for FileIO {
     fn load_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.insert_builtin(
             ReadFile,
@@ -47,7 +46,7 @@ impl Namespace for FileIO {
     }
 
     fn unload_functions(&self, env: &Rc<RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.remove_function(ReadFile.builtin_name())?;
         e.remove_function(ByteToString.builtin_name())?;

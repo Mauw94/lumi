@@ -1,7 +1,7 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, CodeLoc, Env, Extension, LRes, LibType, Namespace, NamespaceType, Obj, Seq,
+    check_args, try_borrow_mut, CodeLoc, Env, Extension, LRes, LibType, Namespace, NamespaceType, Obj, Seq
 };
 
 #[derive(Debug)]
@@ -9,7 +9,7 @@ pub struct Str;
 
 impl Namespace for Str {
     fn load_functions(&self, env: &std::rc::Rc<std::cell::RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.insert_extension(Split, NamespaceType::StdLib(LibType::Str));
         e.insert_extension(Trim, NamespaceType::StdLib(LibType::Str));
@@ -18,7 +18,7 @@ impl Namespace for Str {
     }
 
     fn unload_functions(&self, env: &std::rc::Rc<std::cell::RefCell<Env>>) -> LRes<()> {
-        let mut e = env.borrow_mut();
+        let mut e = try_borrow_mut(env)?;
 
         e.remove_function(Split.extension_name())?;
         e.remove_function(Trim.extension_name())?;
