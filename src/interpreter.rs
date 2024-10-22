@@ -87,13 +87,7 @@ pub fn evaluate(env: &Rc<RefCell<Env>>, expr: &LumiExpr) -> Result<Obj, LErr> {
                 &expr.end,
             );
         }
-        Expr::Dict(dict) => {
-            for (k, v) in dict.iter() {
-                println!("KEY {:?}, VALUE {:?}", k, v);
-            }
-
-            Ok(Obj::Null)
-        }
+        Expr::Dict(dict) => Ok(Obj::Seq(Seq::Dict(dict.clone()))),
     }
 }
 

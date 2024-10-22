@@ -345,11 +345,6 @@ impl<'a> Parser<'a> {
                                         self.parse_list_expr(ident, start, obj_type)
                                     } else if self.matcher(&[Token::LeftBrace]) {
                                         // parse dictionary
-                                        println!(
-                                            "PARSING DICTIONARY WITH TYPE DECLARATION {:?}",
-                                            obj_type
-                                        );
-                                        println!("IDENT {:?}", ident);
                                         self.parse_dictionary_expr(ident, start)
                                     } else {
                                         let expr = self.unary()?;
@@ -471,9 +466,7 @@ impl<'a> Parser<'a> {
                     if self.matcher(&[Token::LeftBracket]) {
                         self.parse_list_expr(ident, start, ObjectType::List)
                     } else if self.matcher(&[Token::LeftBrace]) {
-                        // parsing dictonary
-                        println!("PARSING DICTIONARY WITHOUT TYPE DECLARATION");
-                        todo!();
+                        self.parse_dictionary_expr(ident, start)
                     } else {
                         let expr = self.unary()?;
                         return Ok(LumiExpr {
@@ -591,7 +584,6 @@ impl<'a> Parser<'a> {
                         let key = self.primary()?;
                         match self.current_token() {
                             Some(t) => {
-                                println!("{:?}", t);
                                 if t == Token::Colon {
                                     self.advance();
                                 }
@@ -605,6 +597,7 @@ impl<'a> Parser<'a> {
                             }
                         }
                         let value = self.primary()?;
+
                         let key_res = evaluate(&self.top_env, &key)?;
                         let value_res = evaluate(&self.top_env, &value)?;
 
@@ -621,7 +614,6 @@ impl<'a> Parser<'a> {
             }
         }
 
-        // TODO: add dictionary name to the env
         let dict_expr = LumiExpr {
             start,
             end,

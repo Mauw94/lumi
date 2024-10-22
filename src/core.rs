@@ -472,6 +472,15 @@ impl Obj {
         }
     }
 
+    pub fn get_dict_val(&self) -> Result<Rc<HashMap<Obj, Obj>>, LErr> {
+        match self {
+            Obj::Seq(Seq::Dict(dict)) => Ok(dict.clone()),
+            _ => Err(LErr::internal_error(
+                "Expected Seq to be of type dictionary.".to_string(),
+            )),
+        }
+    }
+
     pub fn get_object_type(&self) -> Result<ObjectType, LErr> {
         match self {
             Obj::Null => Ok(ObjectType::None),

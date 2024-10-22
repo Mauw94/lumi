@@ -8,7 +8,8 @@ use std::{
 };
 
 use lumi_lib::{
-    evaluate, initialize, Env, LErr, LResult, Lexer, Namespace, Obj, Parser, StdLib, Str, Vector,
+    evaluate, initialize, Dictionary, Env, LErr, LResult, Lexer, Namespace, Obj, Parser, StdLib,
+    Str, Vector,
 };
 
 fn prompt(input: &mut String) -> bool {
@@ -74,9 +75,12 @@ fn setup_env() -> Rc<RefCell<Env>> {
     let mut e = Env::new(None);
     initialize(&mut e);
     let ref_e = Rc::new(RefCell::new(e));
+
     StdLib.load_functions(&ref_e).unwrap();
     Vector.load_functions(&ref_e).unwrap();
     Str.load_functions(&ref_e).unwrap();
+    Dictionary.load_functions(&ref_e).unwrap();
+
     ref_e
 }
 

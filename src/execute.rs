@@ -555,6 +555,15 @@ pub fn get_expr(
             callee.end,
             &args.clone().unwrap(),
         ),
+        Obj::Seq(Seq::Dict(_dict)) => execute_function(
+            &env,
+            &eval_res,
+            get_callee_var_name(callee)?,
+            func_name,
+            callee.start,
+            callee.end,
+            &args.clone().unwrap(),
+        ),
         Obj::Seq(Seq::String(_s)) =>
             execute_function(
                 &env,

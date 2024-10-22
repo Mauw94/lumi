@@ -11,6 +11,7 @@ use std::sync::Mutex;
 use wasm_bindgen::prelude::wasm_bindgen;
 
 pub use crate::core::*;
+pub use crate::dictionary::*;
 pub use crate::env::*;
 pub use crate::eval::*;
 pub use crate::execute::*;
@@ -25,6 +26,7 @@ pub use crate::str::*;
 pub use crate::vectors::*;
 
 mod core;
+mod dictionary;
 mod env;
 mod eval;
 mod execute;
@@ -80,9 +82,12 @@ fn setup_env() -> Rc<RefCell<Env>> {
     let mut e = Env::new(None);
     initialize(&mut e);
     let ref_e = Rc::new(RefCell::new(e));
+    
     StdLib.load_functions(&ref_e).unwrap();
     Vector.load_functions(&ref_e).unwrap();
     Str.load_functions(&ref_e).unwrap();
+    Dictionary.load_functions(&ref_e).unwrap();
+    
     ref_e
 }
 

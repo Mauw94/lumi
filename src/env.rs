@@ -20,6 +20,7 @@ pub enum LibType {
     Std,
     Str,
     Vec,
+    Dict,
 }
 
 impl NamespaceType {
@@ -29,6 +30,7 @@ impl NamespaceType {
                 LibType::Std => format!("stdlib"),
                 LibType::Str => format!("stdlib (str)"),
                 LibType::Vec => format!("stdlib (vec)"),
+                LibType::Dict => format!("stdlib (dict)"),
             },
             NamespaceType::External(n) => format!("{}", n),
         }
