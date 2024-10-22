@@ -11,7 +11,7 @@
 	  },
 	  {
 		"name": "keyword.control.lumi",
-		"match": "\\b(fn|include|foreach|if|else|as|return|while|for|break|continue|print)\\b"
+		"match": "\\b(fn|include|foreach|if|else|as|return|while|for|break|continue|print|struct)\\b"
 	  },
 	  {
 		"name": "keyword.operator.lumi",
