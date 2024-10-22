@@ -54,12 +54,12 @@ impl Extension for Split {
         let split_value = args.get(0).unwrap().get_str_val()?;
 
         let split_res: Vec<&str> = str_value.split(&split_value).collect();
-        let res = split_res
+        let res:Vec<Obj> = split_res
             .iter()
             .map(|s| Obj::Seq(Seq::String(Rc::new(s.to_string()))))
             .collect();
 
-        Ok(Obj::Seq(Seq::List(Rc::new(res))))
+        Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(res)))))
     }
 
     fn extension_name(&self) -> &str {

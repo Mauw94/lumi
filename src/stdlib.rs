@@ -142,7 +142,8 @@ impl Stringify {
                 )),
                 Seq::String(s) => Ok(s.to_string()),
                 Seq::List(lst) => {
-                    let res = lst
+                    let list = lst.borrow();
+                    let res = list
                         .iter()
                         .map(|o| self.stringify_obj(o, start, end))
                         .collect::<Result<Vec<String>, LErr>>()?;
@@ -402,7 +403,8 @@ impl Builtin for Sum {
 
         let obj = args.get(0).unwrap();
         if obj.is_list() {
-            let list = obj.get_list_val()?;
+            let list_val = obj.get_list_val()?;
+            let list = list_val.borrow();
             let obj_type = list[0].get_object_type()?;
             match obj_type {
                 ObjectType::Int => {

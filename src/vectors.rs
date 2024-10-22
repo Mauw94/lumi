@@ -1,8 +1,8 @@
 use std::{cell::RefCell, rc::Rc};
 
 use crate::{
-    check_args, define_var, undefine_var, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes, LibType,
-    Namespace, NamespaceType, Obj, ObjectType, Seq,
+    check_args, CodeLoc, Env, Extension, LErr, LInt, LNum, LRes, LibType, Namespace, NamespaceType,
+    Obj, ObjectType, Seq,
 };
 
 pub trait FromObj: Sized {
@@ -59,7 +59,8 @@ where
 
 pub fn parse_u8vec_to_lumi_vec(bytes: Vec<u8>) -> LRes<Obj> {
     let lumi_vec: Vec<Obj> = bytes.iter().map(|b| Obj::Num(LNum::Byte(*b))).collect();
-    Ok(Obj::Seq(Seq::List(Rc::new(lumi_vec))))
+
+    Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(lumi_vec)))))
 }
 
 pub fn get_list_type(lst: &Vec<Obj>) -> Result<ObjectType, LErr> {
@@ -138,7 +139,8 @@ impl Extension for Sum {
         check_args(0, 0, &args, start, end)?;
 
         if vec.is_list() {
-            let list = vec.get_list_val()?;
+            let list_val = vec.get_list_val()?;
+            let list = list_val.borrow();
             let obj_type = list[0].get_object_type()?;
             match obj_type {
                 ObjectType::Int => {
@@ -207,7 +209,8 @@ impl Extension for Len {
             Ok(Obj::Num(LNum::Int(LInt::new(str_val.len() as i64))))
         } else if vec.is_list() {
             let list_val = vec.get_list_val()?;
-            Ok(Obj::Num(LNum::Int(LInt::new(list_val.len() as i64))))
+            let list = list_val.borrow();
+            Ok(Obj::Num(LNum::Int(LInt::new(list.len() as i64))))
         } else {
             Err(LErr::runtime_error(
                 format!(
@@ -231,8 +234,8 @@ struct Push;
 impl Extension for Push {
     fn run(
         &self,
-        env: &Rc<RefCell<Env>>,
-        var_name: &str,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
         vec: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
@@ -240,8 +243,9 @@ impl Extension for Push {
     ) -> LRes<Obj> {
         check_args(1, 1, &args, start, end)?;
 
-        let mut list_val = vec.get_list_val()?;
-        let lst_type = get_list_type(&list_val)?;
+        let list_val = vec.get_list_val()?;
+        let mut list = list_val.borrow_mut();
+        let lst_type = get_list_type(&list)?;
         let val_to_add = args.get(0).unwrap();
 
         if !val_to_add.is_type(&lst_type) {
@@ -252,32 +256,14 @@ impl Extension for Push {
             )));
         }
 
-        list_val.push(val_to_add.clone());
+        list.push(val_to_add.clone());
 
-        update_var_in_env(
-            env,
-            var_name,
-            Obj::Seq(Seq::List(Rc::new(list_val))),
-            ObjectType::List,
-        )?;
         Ok(Obj::Null)
     }
 
     fn extension_name(&self) -> &str {
         "push"
     }
-}
-
-fn update_var_in_env(
-    env: &Rc<RefCell<Env>>,
-    var_name: &str,
-    new_val: Obj,
-    obj_type: ObjectType,
-) -> LRes<bool> {
-    undefine_var(env, var_name)?;
-    define_var(env, var_name.to_string(), obj_type, new_val)?;
-
-    Ok(true)
 }
 
 #[derive(Debug)]
@@ -296,10 +282,8 @@ impl Extension for Last {
         check_args(0, 0, &args, start, end)?;
 
         let list_val = vec.get_list_val()?;
-
-        list_val
-            .last()
-            .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()))
+        let list = list_val.borrow();
+        list.last().map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()))
     }
 
     fn extension_name(&self) -> &str {
@@ -323,8 +307,8 @@ impl Extension for First {
         check_args(0, 0, &args, start, end)?;
 
         let list_val = vec.get_list_val()?;
-        list_val
-            .first()
+        let list = list_val.borrow();
+        list.first()
             .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()))
     }
 
@@ -339,8 +323,8 @@ struct Pop;
 impl Extension for Pop {
     fn run(
         &self,
-        env: &Rc<RefCell<Env>>,
-        var_name: &str,
+        _env: &Rc<RefCell<Env>>,
+        _var_name: &str,
         vec: Obj,
         args: Vec<Obj>,
         start: CodeLoc,
@@ -348,17 +332,9 @@ impl Extension for Pop {
     ) -> LRes<Obj> {
         check_args(0, 0, &args, start, end)?;
 
-        let mut list_val = vec.get_list_val()?;
-        let result = list_val
-            .pop()
-            .map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()));
-
-        update_var_in_env(
-            env,
-            var_name,
-            Obj::Seq(Seq::List(Rc::new(list_val))),
-            ObjectType::List,
-        )?;
+        let list_val = vec.get_list_val()?;
+        let mut list = list_val.borrow_mut();
+        let result = list.pop().map_or_else(|| Ok(Obj::Null), |v| Ok(v.clone()));
 
         result
     }
@@ -390,7 +366,8 @@ impl Extension for Slice {
         let to_obj = args.get(1).unwrap();
 
         if vec.is_list() {
-            let list = vec.get_list_val()?;
+            let list_val = vec.get_list_val()?;
+            let list = list_val.borrow();
             let from = from_obj.get_int_val()? as usize;
             let to = to_obj.get_int_val()? as usize;
 
@@ -404,7 +381,7 @@ impl Extension for Slice {
 
             let res = &list[from..to];
 
-            return Ok(Obj::Seq(Seq::List(Rc::new(res.to_vec()))));
+            return Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(res.to_vec())))));
         } else {
             return Err(LErr::internal_error(format!(
                 "Expected a list, found {}",
@@ -434,8 +411,9 @@ impl Extension for OrderBy {
     ) -> LRes<Obj> {
         check_args(0, 0, &args, start, end)?;
 
-        let vec_value = obj.get_list_val()?;
-        let mut real_val: Vec<i64> = vec_value
+        let list_val = obj.get_list_val()?;
+        let list = list_val.borrow();
+        let mut real_val: Vec<i64> = list
             .iter()
             .map(|v| v.get_int_val())
             .collect::<Result<_, _>>()?;
@@ -446,7 +424,7 @@ impl Extension for OrderBy {
             .map(|v| Obj::Num(LNum::Int(LInt::new(*v))))
             .collect();
 
-        Ok(Obj::Seq(Seq::List(Rc::new(res))))
+        Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(res)))))
     }
 
     fn extension_name(&self) -> &str {
@@ -472,10 +450,11 @@ impl Extension for Take {
         let take_amount = args.get(0).unwrap();
         let take = take_amount.get_int_val()?;
 
-        let vec_value = obj.get_list_val()?;
-        let res: Vec<Obj> = vec_value.iter().take(take as usize).cloned().collect();
+        let list_val = obj.get_list_val()?;
+        let list = list_val.borrow();
+        let res: Vec<Obj> = list.iter().take(take as usize).cloned().collect();
 
-        Ok(Obj::Seq(Seq::List(Rc::new(res))))
+        Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(res)))))
     }
 
     fn extension_name(&self) -> &str {

@@ -155,7 +155,7 @@ pub fn list_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<O
         .collect::<Result<Vec<Obj>, LErr>>()?;
 
     if objs.is_empty() {
-        return Ok(Obj::Seq(Seq::List(Rc::new(Vec::new()))));
+        return Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(Vec::new())))));
     } else {
         let first_type = objs.first().unwrap(); // We expect the first value to be available
         for (i, o) in objs.iter().enumerate() {
@@ -172,7 +172,7 @@ pub fn list_expr(env: &Rc<RefCell<Env>>, exprs: &Vec<Box<LumiExpr>>) -> Result<O
             }
         }
     }
-    Ok(Obj::Seq(Seq::List(Rc::new(objs))))
+    Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(objs)))))
 }
 
 pub fn struct_expr(
@@ -347,7 +347,7 @@ pub fn for_expr(
 
     undefine_var(env, &index)?; // Remove index var
 
-    Ok(Obj::Seq(Seq::List(Rc::new(objects))))
+    Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(objects)))))
 }
 
 pub fn foreach_expr(
@@ -386,16 +386,19 @@ pub fn foreach_expr(
         }
     } else if iter.1.is_list() {
         let iter_list = iter.1.get_list_val()?;
-        for (index, current_value) in iter_list.iter().enumerate() {
+        let list = iter_list.borrow();
+        for (index, current_value) in list.iter().enumerate() {
             execute_body(index, current_value.clone())?;
         }
     }
+
+    // TODO: add dictionary
 
     if let Some(index_str) = index_identifier {
         undefine_var(env, index_str)?;
     }
 
-    Ok(Obj::Seq(Seq::List(Rc::new(objects))))
+    Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(objects)))))
 }
 
 pub fn namespace_expr(
@@ -477,7 +480,8 @@ pub fn every_expr(env: &Rc<RefCell<Env>>, callee: &Box<LumiExpr>, token: &Token,
         return Err(LErr::runtime_error("The 'every' keyword can only be used after a list expression.".to_string(), callee.start, callee.end));
     }
 
-    let list = evaluated_list.get_list_val()?;
+    let list_val = evaluated_list.get_list_val()?;
+    let list = list_val.borrow();
     let rust_list = vectors::parse_lumi_list_to_rust_vec::<f32>(&list)?;
 
     let evaluated_term = interpreter::evaluate(env, &term)?;
@@ -711,11 +715,11 @@ fn get_value_by_index_from_list(
     match lookup(env, var, start, end, LookupType::Var) {
         Ok(o) => match o.1 {
             Obj::Seq(sq) => match sq {
-                Seq::List(list) => {
+                Seq::List(list_val) => {
+                    let list = list_val.borrow();
                     if list.len() > index {
-                        let cloned_rc_list = Rc::clone(&list);
-                        if let Some(obj) = cloned_rc_list.get(index) {
-                            return Ok(obj.clone());
+                        if let Some(x) = list.get(index) {
+                            return Ok(x.clone());
                         } else {
                             return Err(LErr::runtime_error(
                                 format!("Did not find an object with index {}", index),

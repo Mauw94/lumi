@@ -129,7 +129,7 @@ impl Builtin for ReadFileLines {
             .map(|l| Obj::Seq(Seq::String(Rc::new(l.to_string()))))
             .collect();
 
-        Ok(Obj::Seq(Seq::List(Rc::new(lines_res))))
+        Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(lines_res)))))
     }
 
     fn builtin_name(&self) -> &str {
@@ -149,7 +149,8 @@ impl Builtin for ByteToString {
         end: CodeLoc,
     ) -> LRes<Obj> {
         check_args(1, 1, &args, start, end)?;
-        let list = get_list_from_arg_obj(0, &args)?;
+        let list_val = get_list_from_arg_obj(0, &args)?;
+        let list = list_val.borrow();
         let vec: Vec<u8> = vectors::parse_lumi_list_to_rust_vec::<u8>(&list)?;
 
         match String::from_utf8(vec) {

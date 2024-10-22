@@ -159,7 +159,7 @@ pub enum LResult {
 #[derive(Debug, Clone)]
 pub enum Seq {
     String(Rc<String>),
-    List(Rc<Vec<Obj>>),
+    List(Rc<RefCell<Vec<Obj>>>),
     Dict(Rc<HashMap<Obj, Obj>>), // TODO: extend
 }
 
@@ -302,7 +302,7 @@ impl ObjectType {
 impl Obj {
     pub fn new_list_obj(vec: Vec<f32>) -> Obj {
         let obj_list: Vec<Obj> = vec.iter().map(|f| Obj::f32(*f)).collect();
-        Obj::Seq(Seq::List(Rc::new(obj_list)))
+        Obj::Seq(Seq::List(Rc::new(RefCell::new(obj_list))))
     }
 
     pub fn new_str_obj(char: char) -> Obj {
@@ -463,18 +463,18 @@ impl Obj {
         }
     }
 
-    pub fn get_list_val(&self) -> Result<Vec<Obj>, LErr> {
+    pub fn get_list_val(&self) -> Result<&Rc<RefCell<Vec<Obj>>>, LErr> {
         match self {
-            Obj::Seq(Seq::List(lst)) => Ok(lst.to_vec()),
+            Obj::Seq(Seq::List(lst)) => Ok(lst),
             _ => Err(LErr::internal_error(
                 "Expect Seq to be of type list".to_string(),
             )),
         }
     }
 
-    pub fn get_dict_val(&self) -> Result<Rc<HashMap<Obj, Obj>>, LErr> {
+    pub fn get_dict_val(&self) -> Result<&Rc<HashMap<Obj, Obj>>, LErr> {
         match self {
-            Obj::Seq(Seq::Dict(dict)) => Ok(dict.clone()),
+            Obj::Seq(Seq::Dict(dict)) => Ok(dict),
             _ => Err(LErr::internal_error(
                 "Expected Seq to be of type dictionary.".to_string(),
             )),
@@ -508,7 +508,7 @@ impl Obj {
             ObjectType::Float => Ok(Obj::Num(LNum::default_float())),
             ObjectType::String => Ok(Obj::Seq(Seq::String(Rc::new("".to_string())))),
             ObjectType::Bool => Ok(Obj::Bool(false)),
-            ObjectType::List => Ok(Obj::Seq(Seq::List(Rc::new(Vec::new())))),
+            ObjectType::List => Ok(Obj::Seq(Seq::List(Rc::new(RefCell::new(Vec::new()))))),
             _ => Err(LErr::internal_error(format!(
                 "Object type {} does not have a defautl value.",
                 object_type.get_type_name()
@@ -617,7 +617,8 @@ impl Obj {
             Obj::Seq(v) => match v {
                 Seq::String(s) => println!("\"{}\"", s),
                 Seq::List(objs) => {
-                    for obj in objs.clone().iter() {
+                    let list = objs.borrow();
+                    for obj in list.clone().iter() {
                         obj.print_value();
                     }
                 }
@@ -662,8 +663,9 @@ impl Obj {
             Obj::Seq(v) => match v {
                 Seq::String(s) => format!("{}", s),
                 Seq::List(objs) => {
+                    let list = objs.borrow();
                     let mut result = Vec::new();
-                    for obj in objs.clone().iter() {
+                    for obj in list.clone().iter() {
                         result.push(obj.format_value());
                     }
 
@@ -754,7 +756,9 @@ fn total_hash_of_keys<H: Hasher>(a: &Obj, state: &mut H) {
 
 fn total_eq_of_key_seqs(a: &Seq, b: &Seq) -> bool {
     match (a, b) {
-        (Seq::List(a), Seq::List(b)) => {
+        (Seq::List(a_val), Seq::List(b_val)) => {
+            let a = a_val.borrow();
+            let b = b_val.borrow();
             a.len() == b.len() && a.iter().zip(b.iter()).all(|(a, b)| total_eq_of_keys(a, b))
         }
         (Seq::String(a), Seq::String(b)) => a == b,
@@ -821,7 +825,10 @@ pub fn get_float_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<f32, LErr
     }
 }
 
-pub fn get_list_from_arg_obj(index: usize, args: &Vec<Obj>) -> Result<Vec<Obj>, LErr> {
+pub fn get_list_from_arg_obj(
+    index: usize,
+    args: &Vec<Obj>,
+) -> Result<&Rc<RefCell<Vec<Obj>>>, LErr> {
     match args.get(index) {
         Some(o) => {
             if o.is_type(&ObjectType::List) {
