@@ -1,6 +1,4 @@
 a: dict -> { 1: 5, 2: 3 }
-print a.get(1)
-
 a.insert(3, 4)
 
 print a.get(3)

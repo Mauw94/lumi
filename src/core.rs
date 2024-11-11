@@ -160,7 +160,7 @@ pub enum LResult {
 pub enum Seq {
     String(Rc<String>),
     List(Rc<RefCell<Vec<Obj>>>),
-    Dict(Rc<HashMap<Obj, Obj>>), // TODO: extend
+    Dict(Rc<RefCell<HashMap<Obj, Obj>>>), // TODO: extend
 }
 
 pub type LRes<T> = Result<T, LErr>;
@@ -472,7 +472,7 @@ impl Obj {
         }
     }
 
-    pub fn get_dict_val(&self) -> Result<&Rc<HashMap<Obj, Obj>>, LErr> {
+    pub fn get_dict_val(&self) -> Result<&Rc<RefCell<HashMap<Obj, Obj>>>, LErr> {
         match self {
             Obj::Seq(Seq::Dict(dict)) => Ok(dict),
             _ => Err(LErr::internal_error(
@@ -623,6 +623,11 @@ impl Obj {
                     }
                 }
                 Seq::Dict(dict) => {
+                    let dict = match try_borrow_mut(dict) {
+                        Ok(d) => d,
+                        Err(_) => todo!(),
+                    };
+
                     for (key, value) in dict.iter() {
                         println!("{} {}", key.format_value(), value.format_value());
                     }
@@ -673,6 +678,10 @@ impl Obj {
                 }
                 Seq::Dict(dict) => {
                     let mut result: Vec<String> = Vec::new();
+                    let dict = match try_borrow_mut(dict) {
+                        Ok(d) => d,
+                        Err(_) => todo!(),
+                    };
                     for (key, value) in dict.iter() {
                         result.push(format!("{} {}", key.format_value(), value.format_value()));
                     }

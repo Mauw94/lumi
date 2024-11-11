@@ -72,7 +72,7 @@ pub enum Expr {
     Sequence(Vec<Box<LumiExpr>>),
     Block(Vec<Box<LumiExpr>>),
     List(Vec<Box<LumiExpr>>),
-    Dict(Rc<HashMap<Obj, Obj>>),
+    Dict(Rc<RefCell<HashMap<Obj, Obj>>>),
     Index(String, Box<LumiExpr>),
     Return(Option<Box<LumiExpr>>), // Make this Option, and LErr can throw Break and Return Err so we "cancel" the rest of the expression.
     Print(Box<LumiExpr>),
@@ -617,7 +617,7 @@ impl<'a> Parser<'a> {
         let dict_expr = LumiExpr {
             start,
             end,
-            expr: Expr::Dict(Rc::new(dict)),
+            expr: Expr::Dict(Rc::new(RefCell::new(dict))),
         };
         return Ok(LumiExpr {
             start,
