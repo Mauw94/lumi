@@ -1,5 +1,5 @@
 <p align="center">
-    <b>Lumi</b>
+    <h1><b>Lumi</b></h1>
 </p>
 
 ## What's in it?
