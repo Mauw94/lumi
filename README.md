@@ -1,5 +1,5 @@
 <p align="center">
-    <h1><b>Lumi</b></h1>
+    <b>Lumi</b>
 </p>
 
 ## What's in it?
@@ -249,4 +249,27 @@ lumi> abc.sum()
 This is just a fun project to learn more about interpreters and the Rust programming language. I will try to solve some AoC puzzles using Lumi and continue tinkering and see how far we get. This is, and will never be, a language suitable for proper development.
 
 ### Known bugs and/or shortcomings
-The return statement inside an IF statement inside a function will not work properly. (yet)
+* The return statement inside an if statement inside a function does not work properly. 
+* An error is thrown (A number was expected) when trying to evaluate a binary operation and collecting the result in a variable without a previously declared type.
+e.g.
+
+```
+left -> 4
+right -> 5
+something -> left * right
+```
+```
+left -> 4
+right -> 5
+something: int -> left * right
+```
+This throws the error.
+
+```
+left -> 4
+right -> 5
+something: int
+something = left * right
+```
+This does not throw an error.
+
